@@ -1,0 +1,117 @@
+tower_defense/
+│
+├── README.md
+├── requirements.txt
+├── setup.py
+├── pyproject.toml
+│
+├── src/
+│   └── tower_defense/
+│       │
+│       ├── __init__.py
+│       ├── main.py                    # Точка входа в приложение
+│       │
+│       ├── core/                      # Ядро игры (Domain Logic)
+│       │   ├── __init__.py
+│       │   ├── game_session.py        # GameSession - главная игровая сессия
+│       │   ├── game_state.py          # GameState, GameStateManager
+│       │   ├── map.py                 # Map, Path, Waypoint
+│       │   ├── zone.py                # Zone и подклассы
+│       │   └── coordinate.py          # Coordinate (dataclass)
+│       │
+│       ├── entities/                  # Игровые сущности
+│       │   ├── __init__.py
+│       │   ├── entity.py              # Abstract Entity
+│       │   ├── hostile_entity.py      # HostileEntity + подклассы
+│       │   ├── defense_module.py      # DefenseModule + башни
+│       │   ├── projectile.py          # Projectile
+│       │   ├── colony_base.py         # ColonyBase
+│       │   ├── commander.py           # Commander
+│       │   └── faction.py             # Faction
+│       │
+│       ├── systems/                   # Игровые системы
+│       │   ├── __init__.py
+│       │   ├── wave_protocol.py       # WaveProtocol, WaveConfig
+│       │   ├── resource_bank.py       # ResourceBank
+│       │   ├── commander_pool.py      # CommanderPool
+│       │   ├── environment_state.py   # EnvironmentState
+│       │   ├── defense_analyzer.py    # DefenseAnalyzer
+│       │   ├── collision_detector.py  # CollisionDetector
+│       │   └── input_handler.py       # InputHandler
+│       │
+│       ├── skills/                    # Система навыков
+│       │   ├── __init__.py
+│       │   ├── skill.py               # Abstract Skill
+│       │   ├── orbital_strike.py
+│       │   ├── overclock.py
+│       │   ├── deploy_shield.py
+│       │   └── repair_drone.py
+│       │
+│       ├── config/                    # Конфигурация
+│       │   ├── __init__.py
+│       │   ├── tower_config.py        # TowerConfig
+│       │   ├── enemy_config.py        # EnemyConfig
+│       │   ├── config_loader.py       # ConfigLoader (JSON/YAML)
+│       │   └── data_manager.py        # DataManager
+│       │
+│       ├── factories/                 # Factory паттерн
+│       │   ├── __init__.py
+│       │   ├── tower_factory.py       # TowerFactory
+│       │   └── enemy_factory.py       # EnemyFactory
+│       │
+│       ├── events/                    # Event System
+│       │   ├── __init__.py
+│       │   ├── game_event.py          # Abstract GameEvent
+│       │   ├── event_bus.py           # EventBus
+│       │   ├── event_listener.py      # EventListener
+│       │   └── events.py              # Конкретные события
+│       │
+│       ├── save_load/                 # Сохранения
+│       │   ├── __init__.py
+│       │   └── save_system.py         # SaveSystem
+│       │
+│       ├── enums/                     # Перечисления
+│       │   └── __init__.py            # Все enums в одном месте
+│       │
+│       └── ui/                        # UI слой (отделен от логики)
+│           ├── __init__.py
+│           ├── game_window.py         # Главное окно (PyQt/Pygame)
+│           ├── map_renderer.py        # Отрисовка карты
+│           ├── ui_manager.py          # UIManager
+│           ├── shop_panel.py          # Панель выбора башен
+│           ├── game_over_screen.py    # Экран победы/поражения
+│           └── widgets/               # UI компоненты
+│               ├── __init__.py
+│               ├── health_bar.py
+│               ├── resource_display.py
+│               └── wave_info.py
+│
+├── data/                              # Игровые данные
+│   ├── config/
+│   │   ├── towers.json                # Конфигурация башен
+│   │   ├── enemies.json               # Конфигурация врагов
+│   │   └── waves.json                 # Конфигурация волн
+│   ├── maps/
+│   │   └── map1.json                  # Карты
+│   └── saves/                         # Сохранения
+│
+├── tests/                             # Тесты (ОБЯЗАТЕЛЬНО по ТЗ!)
+│   ├── __init__.py
+│   ├── test_resource_bank.py          # Тесты ресурсов
+│   ├── test_tower_placement.py        # Размещение башен
+│   ├── test_enemy_movement.py         # Движение врагов
+│   ├── test_damage_system.py          # Система урона
+│   ├── test_wave_protocol.py          # Волны
+│   ├── test_victory_defeat.py         # Победа/поражение
+│   └── test_collision.py              # Коллизии
+│
+├── assets/                            # Ресурсы (спрайты, звуки)
+│   ├── images/
+│   │   ├── towers/
+│   │   ├── enemies/
+│   │   └── ui/
+│   └── sounds/
+│
+└── docs/                              # Документация
+    ├── diagrams/                      # Диаграммы
+    └── requirements.md
