@@ -21,7 +21,7 @@ class HostileEntity(Entity, ABC):
         reduction = 0.0
         if self.armor == ArmorType.HEAVY and damage_type == DamageType.KINETIC:
             reduction = 0.5
-        elif self.armor == ArmorType.SHIELDED and damage_type == DamageType.ENERGY:
+        elif self.armor == ArmorType.ENERGY_SHIELDED and damage_type == DamageType.ENERGY:
             reduction = 0.5
 
         final_damage = amount * (1 - reduction)
@@ -32,24 +32,25 @@ class HostileEntity(Entity, ABC):
         return self.health > 0
 
     def move_along_path(self, path: List[Coordinate], delta_time: float) -> bool:
-        """Движение по пути. Возвращает True, если дошел до конца"""
         if not path or self.path_index >= len(path):
             return True
 
-        target_point = path[self.path_index]
-
-        dx = target_point.x - self.position.x
-        dy = target_point.y - self.position.y
-        dist = (dx ** 2 + dy ** 2) ** 0.5
-
         move_distance = self.speed * delta_time
 
-        if dist <= move_distance:
-            self.position = target_point
-            self.path_index += 1
-        else:
-            self.position.x += (dx / dist) * move_distance
-            self.position.y += (dy / dist) * move_distance
+        while self.path_index < len(path) and move_distance > 0:
+            target_point = path[self.path_index]
+            dx = target_point.x - self.position.x
+            dy = target_point.y - self.position.y
+            dist = (dx ** 2 + dy ** 2) ** 0.5
+
+            if dist <= move_distance:
+                move_distance -= dist
+                self.position = target_point
+                self.path_index += 1
+            else:
+                self.position.x += (dx / dist) * move_distance
+                self.position.y += (dy / dist) * move_distance
+                move_distance = 0
 
         return self.path_index >= len(path)
 
