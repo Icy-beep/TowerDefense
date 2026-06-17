@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from src.entities.coordinate import Coordinate
 from src.entities.defense_module import DefenseModule
 from src.entities.hostile_entity import HostileEntity
@@ -17,18 +17,28 @@ class Map:
     def spawn_enemy(self, enemy: HostileEntity):
         self.enemies.append(enemy)
 
-    def update(self, delta_time: float):
-        for enemy in self.enemies[:]:
+    def update(self, delta_time: float) -> Tuple[List[HostileEntity], List[HostileEntity]]:
+        enemies_reached_base = []
+        enemies_killed = []
+        surviving_enemies = []
+
+        for enemy in self.enemies:
             if not enemy.is_alive():
-                self.enemies.remove(enemy)
+                enemies_killed.append(enemy)
+                continue
+            if enemy.path_index >= len(self.path):
+                enemies_reached_base.append(enemy)
                 continue
             enemy.move_along_path(self.path, delta_time)
+            surviving_enemies.append(enemy)
+
+        self.enemies = surviving_enemies
 
         for module in self.modules:
-            fired_proj = module.update(delta_time, self.enemies)
-            if fired_proj:
-                self.projectiles.append(fired_proj)
+            projectile = module.update(delta_time, self.enemies)
+            if projectile:
+                self.projectiles.append(projectile)
 
-        for proj in self.projectiles[:]:
-            if not proj.update(delta_time):
-                self.projectiles.remove(proj)
+        self.projectiles = [p for p in self.projectiles if p.update(delta_time)]
+
+        return enemies_reached_base, enemies_killed

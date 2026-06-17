@@ -1,15 +1,13 @@
 from abc import ABC, abstractmethod
 from .entity import Entity
 from .coordinate import Coordinate
-from src.enums.enums import DamageType, ArmorType
+from src.enums import DamageType, ArmorType
 from typing import List
 
-
 class HostileEntity(Entity, ABC):
-    """Базовый класс для всех врагов"""
-
     def __init__(self, position: Coordinate, max_health: float, speed: float, armor: ArmorType, reward: int):
         super().__init__(position)
+        self.position = Coordinate(position.x, position.y)
         self.max_health = max_health
         self.health = max_health
         self.speed = speed
@@ -18,15 +16,13 @@ class HostileEntity(Entity, ABC):
         self.path_index = 0
 
     def take_damage(self, amount: float, damage_type: DamageType):
+        if not self.is_alive(): return
         reduction = 0.0
         if self.armor == ArmorType.HEAVY and damage_type == DamageType.KINETIC:
             reduction = 0.5
         elif self.armor == ArmorType.ENERGY_SHIELDED and damage_type == DamageType.ENERGY:
             reduction = 0.5
-
-        final_damage = amount * (1 - reduction)
-        self.health -= final_damage
-        print(f"Enemy at {self.position} took {final_damage} dmg. HP: {self.health}")
+        self.health -= amount * (1 - reduction)
 
     def is_alive(self) -> bool:
         return self.health > 0
@@ -45,7 +41,7 @@ class HostileEntity(Entity, ABC):
 
             if dist <= move_distance:
                 move_distance -= dist
-                self.position = target_point
+                self.position = Coordinate(target_point.x, target_point.y)
                 self.path_index += 1
             else:
                 self.position.x += (dx / dist) * move_distance

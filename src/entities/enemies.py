@@ -21,7 +21,7 @@ class GiantRoach(HostileEntity):
 class ScoutDrone(HostileEntity):
     """Разведчик, средняя броня, высокая награда"""
     def __init__(self, position: Coordinate):
-        super().__init__(position, max_health=100, speed=70, armor=ArmorType.SHIELDED, reward=60)
+        super().__init__(position, max_health=100, speed=70, armor=ArmorType.ENERGY_SHIELDED, reward=60)
 
     def act(self, delta_time: float):
         pass
