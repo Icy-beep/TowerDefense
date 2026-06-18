@@ -32,9 +32,8 @@ class GameSession:
             Coordinate(3800, 3800)
         ]
 
-        print(f"✅ Карта инициализирована")
-        print(f"🏠 База: {self.base_position}")
-        print(f"👾 Враги будут атаковать с углов")
+        print(f"Карта инициализирована")
+        print(f"База: {self.base_position}")
 
         from src.entities.enemies import DroneWalker, GiantRoach, ScoutDrone
         waves = [

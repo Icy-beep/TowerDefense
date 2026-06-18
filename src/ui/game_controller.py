@@ -144,6 +144,7 @@ class GameController:
 
     def deselect(self):
         self.selected_module = None
+        self.selected_tower_type = None
 
     def start_next_wave(self) -> bool:
         if self.session.wave_protocol.is_active: return False
