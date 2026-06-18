@@ -44,7 +44,6 @@ class DefenseModule(Entity, ABC):
         return None
 
     def find_target(self, enemies: List['HostileEntity']) -> Optional['HostileEntity']:
-        """Ищет ближайшего врага в радиусе действия"""
         valid_targets = [
             e for e in enemies
             if self.position.distance_to(e.position) <= self.range_radius

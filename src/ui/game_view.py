@@ -6,6 +6,37 @@ from src.ui.game_controller import GameController
 from src.entities.turrets import LaserTurret, BulletTurret, MortarTurret
 from src.enums import GameState
 
+class Camera:
+    def __init__(self, width, height):
+        self.x = 0.0
+        self.y = 0.0
+        self.width, self.height = width, height
+        self.map_width, self.map_height = 4000, 4000
+        self.zoom = 1.0
+        self.min_zoom, self.max_zoom = 0.3, 2.5
+
+    def move(self, dx, dy):
+        self.x += dx;
+        self.y += dy
+        self.x = max(0, min(self.x, self.map_width - self.width))
+        self.y = max(0, min(self.y, self.map_height - self.height))
+
+    def zoom_at_mouse(self, mx, my, factor):
+        wx = (mx - self.width / 2) / self.zoom + self.x
+        wy = (my - self.height / 2) / self.zoom + self.y
+        new_z = max(self.min_zoom, min(self.max_zoom, self.zoom * factor))
+        if abs(new_z - self.zoom) < 0.001: return
+        self.x = wx - (mx - self.width / 2) / new_z
+        self.y = wy - (my - self.height / 2) / new_z
+        self.zoom = new_z
+        self.move(0, 0)
+
+    def world_to_screen(self, wx, wy):
+        return (wx - self.x) * self.zoom, (wy - self.y) * self.zoom
+
+    def screen_to_world(self, sx, sy):
+        return sx / self.zoom + self.x, sy / self.zoom + self.y
+
 
 class GameView:
     def __init__(self, session: GameSession):
@@ -14,24 +45,25 @@ class GameView:
         pygame.init()
         self.width, self.height = 900, 600
         self.screen = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption("Tower Defense OOP Project")
+        pygame.display.set_caption("Tower Defense - A* Pathfinding")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("Arial", 18)
         self.small_font = pygame.font.SysFont("Arial", 14)
         self.running = True
-        self.selected_tower_idx = None
 
-        self.tower_options = [
-            {"key": pygame.K_1, "class": LaserTurret, "name": "Laser (50)", "color": (0, 255, 255)},
-            {"key": pygame.K_2, "class": BulletTurret, "name": "Bullet (100)", "color": (255, 255, 0)},
-            {"key": pygame.K_3, "class": MortarTurret, "name": "Mortar (200)", "color": (255, 100, 0)},
-        ]
+        self.camera = Camera(self.width, self.height)
+        self.camera_speed = 400.0
+
+        if hasattr(session, 'base_position'):
+            self.camera.x = session.base_position.x - self.width // 2
+            self.camera.y = session.base_position.y - self.height // 2
 
     def run(self):
         self.session.setup_game()
         while self.running:
             dt = self.clock.tick(60) / 1000.0
             self.handle_events()
+            self.update_camera(dt)
             self.session.update(dt)
             self.render()
             pygame.display.flip()
@@ -42,7 +74,9 @@ class GameView:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-
+            elif event.type == pygame.MOUSEWHEEL:
+                mx, my = pygame.mouse.get_pos()
+                self.camera.zoom_at_mouse(mx, my, 1.1 if event.y > 0 else 0.9)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
                     self.controller.select_tower("laser")
@@ -56,128 +90,98 @@ class GameView:
                     self.controller.upgrade_selected()
                 elif event.key == pygame.K_p:
                     self.controller.pause_game()
+                elif event.key == pygame.K_r:
+                    self.camera.zoom = 1.0
                 elif event.key == pygame.K_ESCAPE:
                     self.running = False
-
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    pos = Coordinate(event.pos[0], event.pos[1])
-                    self.controller.handle_click(pos)
+                    wx, wy = self.camera.screen_to_world(event.pos[0], event.pos[1])
+                    self.controller.handle_click(Coordinate(wx, wy))
                 elif event.button == 3:
                     self.controller.deselect()
 
+    def update_camera(self, dt):
+        keys = pygame.key.get_pressed()
+        spd = self.camera_speed * dt
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]: self.camera.move(-spd, 0)
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]: self.camera.move(spd, 0)
+        if keys[pygame.K_w] or keys[pygame.K_UP]: self.camera.move(0, -spd)
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]: self.camera.move(0, spd)
+
     def render(self):
         self.screen.fill((20, 24, 28))
-        self.draw_path()
-        self.draw_enemies()
+
+        rect = pygame.Rect(-self.camera.x * self.camera.zoom, -self.camera.y * self.camera.zoom,
+                           4000 * self.camera.zoom, 4000 * self.camera.zoom)
+        pygame.draw.rect(self.screen, (50, 50, 50), rect, 3)
+
+        self.draw_base()
         self.draw_modules()
+        self.draw_enemies()
         self.draw_projectiles()
         self.draw_ui_overlay()
         self.draw_game_over_screen()
 
-    def draw_path(self):
-        if self.session.map.path:
-            points = [(int(p.x), int(p.y)) for p in self.session.map.path]
-
-            pygame.draw.lines(self.screen, (60, 60, 70), False, points, 40)
-
-            for pt in points:
-                pygame.draw.circle(self.screen, (60, 60, 70), pt, 20)
-                
-            pygame.draw.lines(self.screen, (40, 40, 50), False, points, 2)
+    def draw_base(self):
+        if hasattr(self.session, 'base_position'):
+            sx, sy = self.camera.world_to_screen(self.session.base_position.x, self.session.base_position.y)
+            pygame.draw.circle(self.screen, (255, 50, 50), (int(sx), int(sy)), 25)
+            pygame.draw.circle(self.screen, (255, 200, 200), (int(sx), int(sy)), 30, 3)
+            hp = self.session.base_health / self.session.max_base_health
+            pygame.draw.rect(self.screen, (0, 255, 0), (int(sx) - 20, int(sy) - 40, 40 * hp, 6))
 
     def draw_modules(self):
         for module in self.session.map.modules:
             color = (100, 100, 100)
-            is_selected = (module == self.controller.selected_module)
-            for opt in self.tower_options:
-                if isinstance(module, opt["class"]):
-                    color = opt["color"]
-                    break
+            is_sel = (module == self.controller.selected_module)
+            if isinstance(module, LaserTurret):
+                color = (0, 255, 255)
+            elif isinstance(module, BulletTurret):
+                color = (255, 255, 0)
+            elif isinstance(module, MortarTurret):
+                color = (255, 100, 0)
 
-            if is_selected:
-                pygame.draw.circle(self.screen, (255, 255, 255),
-                                   (int(module.position.x), int(module.position.y)),
-                                   int(module.range_radius) + 4, 2)
+            sx, sy = self.camera.world_to_screen(module.position.x, module.position.y)
 
-            pygame.draw.circle(self.screen, (*color[:3], 40),
-                               (int(module.position.x), int(module.position.y)),
-                               int(module.range_radius), 1)
+            if is_sel:
+                pygame.draw.circle(self.screen, (255, 255, 255), (int(sx), int(sy)),
+                                   int(module.range_radius * self.camera.zoom) + 5, 2)
 
-            pygame.draw.circle(self.screen, color,
-                               (int(module.position.x), int(module.position.y)), 14)
-
-            for i in range(module.level):
-                pygame.draw.circle(self.screen, (255, 215, 0),
-                                   (int(module.position.x) - 5 + i * 5, int(module.position.y) - 20), 3)
+            pygame.draw.circle(self.screen, (*color, 40), (int(sx), int(sy)),
+                               int(module.range_radius * self.camera.zoom), 1)
+            pygame.draw.circle(self.screen, color, (int(sx), int(sy)), 14 * self.camera.zoom)
 
     def draw_enemies(self):
         for enemy in self.session.map.enemies:
-            hp_ratio = enemy.health / enemy.max_health
-            pygame.draw.rect(self.screen, (50, 50, 50),
-                             (int(enemy.position.x) - 12, int(enemy.position.y) - 18, 24, 4))
-            pygame.draw.rect(self.screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
-                             (int(enemy.position.x) - 12, int(enemy.position.y) - 18, int(24 * hp_ratio), 4))
-            pygame.draw.circle(self.screen, (220, 50, 50),
-                               (int(enemy.position.x), int(enemy.position.y)), 10)
+            sx, sy = self.camera.world_to_screen(enemy.position.x, enemy.position.y)
+            if -50 < sx < self.width + 50 and -50 < sy < self.height + 50:
+                hp = enemy.health / enemy.max_health
+                pygame.draw.rect(self.screen, (50, 50, 50), (int(sx) - 12, int(sy) - 18, 24, 4))
+                pygame.draw.rect(self.screen, (0, 255, 0) if hp > 0.5 else (255, 50, 50),
+                                 (int(sx) - 12, int(sy) - 18, int(24 * hp), 4))
+                pygame.draw.circle(self.screen, (220, 50, 50), (int(sx), int(sy)), 10)
 
     def draw_projectiles(self):
         for proj in self.session.map.projectiles:
-            pygame.draw.circle(self.screen, (255, 255, 200),
-                               (int(proj.position.x), int(proj.position.y)), 3)
+            sx, sy = self.camera.world_to_screen(proj.position.x, proj.position.y)
+            pygame.draw.circle(self.screen, (255, 255, 200), (int(sx), int(sy)), 3)
 
     def draw_ui_overlay(self):
         state = self.controller.get_game_state()
-        y = 15
-        self.screen.blit(self.font.render(f"Credits: {state['credits']}", True, (255, 215, 0)), (15, y))
-        y += 30
-        self.screen.blit(
-            self.font.render(f"Base HP: {state['base_health']}/{state['max_base_health']}", True, (255, 255, 255)),
-            (15, y))
-        y += 30
-        self.screen.blit(
-            self.font.render(f"Wave: {state['current_wave']}/{state['total_waves']}", True, (100, 200, 255)), (15, y))
-        y += 30
-
-        if state['selected_tower']:
-            self.screen.blit(self.font.render(f"Building: {state['selected_tower']}", True, (0, 255, 255)), (15, y))
-            y += 25
-
-        if hasattr(self.controller, 'get_next_wave_time'):
-            time_left = self.controller.get_next_wave_time()
-            if time_left > 0:
-                self.screen.blit(
-                    self.small_font.render(f"Next wave: {time_left:.1f}s | [SPACE] force", True, (200, 200, 200)),
-                    (15, self.height - 55))
-            elif state['is_wave_active']:
-                self.screen.blit(self.small_font.render("Wave in progress...", True, (255, 100, 100)),
-                                 (15, self.height - 55))
-
-        hints = "[1] Laser  [2] Bullet  [3] Mortar  |  [U] Upgrade  |  [P] Pause  |  [ESC] Quit"
-        self.screen.blit(self.small_font.render(hints, True, (150, 150, 150)), (15, self.height - 30))
-
-        if self.controller.selected_module:
-            mod = self.controller.selected_module
-            cost = mod.get_upgrade_cost()
-            if cost:
-                txt = f"[U] Upgrade Lv.{mod.level + 1} | Cost: {cost}"
-                col = (100, 255, 100) if state['credits'] >= cost else (255, 100, 100)
-            else:
-                txt = "MAX LEVEL ⭐⭐⭐"
-                col = (255, 215, 0)
-            self.screen.blit(self.small_font.render(txt, True, col), (15, self.height - 80))
+        self.screen.blit(self.font.render(f"Credits: {state['credits']}", True, (255, 215, 0)), (15, 15))
+        t = self.controller.get_next_wave_time()
+        self.screen.blit(self.small_font.render(f"Next: {t:.1f}s", True, (200, 200, 200)), (15, self.height - 30))
 
     def draw_game_over_screen(self):
         if self.session.state == GameState.GAME_OVER:
-            self._draw_overlay("DEFEAT", (255, 50, 50))
+            self._overlay("DEFEAT", (255, 50, 50))
         elif self.session.state == GameState.VICTORY:
-            self._draw_overlay("VICTORY", (50, 255, 50))
+            self._overlay("VICTORY", (50, 255, 50))
 
-    def _draw_overlay(self, text, color):
+    def _overlay(self, text, col):
         s = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
         s.fill((0, 0, 0, 180))
         self.screen.blit(s, (0, 0))
-        big_font = pygame.font.SysFont("Arial", 48, bold=True)
-        txt = big_font.render(text, True, color)
-        rect = txt.get_rect(center=(self.width // 2, self.height // 2))
-        self.screen.blit(txt, rect)
+        txt = pygame.font.SysFont("Arial", 48, bold=True).render(text, True, col)
+        self.screen.blit(txt, txt.get_rect(center=(self.width // 2, self.height // 2)))
