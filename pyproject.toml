@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tower-defense"
 version = "0.1.0"
-description = "Tower Defense — курсовой проект по ООП (Python + pygame)"
+description = "Tower Defense — по ООП (Python + pygame)"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
