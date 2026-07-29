@@ -13,21 +13,31 @@
 
 ## Установка
 
-```bash
+PowerShell:
+
+```powershell
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+cmd.exe:
+
+```bat
+python -m venv .venv
+.venv\Scripts\activate.bat
 pip install -r requirements.txt
 ```
 
 Либо через setuptools (устанавливает проект как пакет):
 
-```bash
+```powershell
 pip install -e ".[dev]"
 ```
 
 ## Запуск
 
-```bash
+```powershell
 python main.py
 ```
 
@@ -37,13 +47,13 @@ python main.py
 
 ## Тесты
 
-```bash
+```powershell
 pytest tests/
 ```
 
 ## Сборка в исполняемый файл
 
-```bash
+```powershell
 pyinstaller main.spec
 ```
 
