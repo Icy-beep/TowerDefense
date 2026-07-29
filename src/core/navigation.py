@@ -1,5 +1,5 @@
 import math
-from src.entities.coordinate import Coordinate
+from src.core.coordinate import Coordinate
 
 
 class Node:
