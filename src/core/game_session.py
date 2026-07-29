@@ -86,7 +86,10 @@ class GameSession:
             self.state = GameState.VICTORY
 
     def place_turret(self, tower_type: str, position: Coordinate) -> bool:
-        """tower_type — строка ("laser"/"bullet"/"mortar"), а не класс."""
+        """tower_type — строка ("laser"/"bullet"/"mortar"), а не класс.
+        position привязывается к клетке сетки (Map.snap_to_grid) — башни
+        строятся по клеткам, а не в произвольной точке под курсором."""
+        position = self.map.snap_to_grid(position)
         if not self.map.can_place_module(position):
             return False
         turret = self.tower_factory.create(tower_type, position)

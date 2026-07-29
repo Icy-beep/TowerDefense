@@ -15,6 +15,7 @@ MAP_HEIGHT = 4000
 class MapRenderer:
     def render(self, screen, camera, session, controller, tower_options, width, height):
         self._draw_border(screen, camera)
+        self._draw_placement_grid(screen, camera, session, controller, width, height)
         self._draw_base(screen, camera, session)
         self._draw_modules(screen, camera, session, controller, tower_options)
         self._draw_enemies(screen, camera, session, width, height)
@@ -29,6 +30,34 @@ class MapRenderer:
             MAP_HEIGHT * camera.zoom
         )
         pygame.draw.rect(screen, (50, 50, 50), border_rect, 3)
+
+    def _draw_placement_grid(self, screen, camera, session, controller, width, height):
+        """Лёгкая сетка построек — видна только пока выбрана башня для
+        постройки, чтобы не захламлять экран в остальное время. Шаг сетки
+        берётся из session.map.nav_grid.cell_size — это та же сетка, к
+        которой привязывается позиция при постройке (Map.snap_to_grid)."""
+        if not getattr(controller, "selected_tower_type", None):
+            return
+
+        cell = session.map.nav_grid.cell_size
+        step = cell * camera.zoom
+        if step < 4:
+            return
+
+        start_col = int(camera.x // cell)
+        start_row = int(camera.y // cell)
+        end_col = int((camera.x + width / camera.zoom) // cell) + 1
+        end_row = int((camera.y + height / camera.zoom) // cell) + 1
+
+        color = (90, 90, 90)
+        for col in range(start_col, end_col + 1):
+            sx, _ = camera.world_to_screen(col * cell, 0)
+            if 0 <= sx <= width:
+                pygame.draw.line(screen, color, (sx, 0), (sx, height))
+        for row in range(start_row, end_row + 1):
+            _, sy = camera.world_to_screen(0, row * cell)
+            if 0 <= sy <= height:
+                pygame.draw.line(screen, color, (0, sy), (width, sy))
 
     def _draw_base(self, screen, camera, session):
         if not hasattr(session, 'base_position'):
@@ -88,7 +117,8 @@ class MapRenderer:
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
         wx, wy = camera.screen_to_world(mouse_x, mouse_y)
-        pos = Coordinate(wx, wy)
+        pos = session.map.snap_to_grid(Coordinate(wx, wy))
+        snap_x, snap_y = camera.world_to_screen(pos.x, pos.y)
 
         preview_tower = session.tower_factory.create(selected_type, pos)
         tower_range = preview_tower.range_radius if preview_tower else 100
@@ -102,8 +132,8 @@ class MapRenderer:
 
         preview_surf = pygame.Surface((screen_radius * 2, screen_radius * 2), pygame.SRCALPHA)
         pygame.draw.circle(preview_surf, alpha_color, (screen_radius, screen_radius), screen_radius, 2)
-        screen.blit(preview_surf, (mouse_x - screen_radius, mouse_y - screen_radius))
+        screen.blit(preview_surf, (snap_x - screen_radius, snap_y - screen_radius))
 
         marker_color = (0, 255, 0) if valid else (255, 0, 0)
-        pygame.draw.circle(screen, marker_color, (mouse_x, mouse_y), 6)
-        pygame.draw.circle(screen, (255, 255, 255), (mouse_x, mouse_y), 6, 2)
+        pygame.draw.circle(screen, marker_color, (int(snap_x), int(snap_y)), 6)
+        pygame.draw.circle(screen, (255, 255, 255), (int(snap_x), int(snap_y)), 6, 2)

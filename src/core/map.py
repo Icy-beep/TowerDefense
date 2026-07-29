@@ -30,6 +30,17 @@ class Map:
             return False
         return all(position.distance_to(m.position) >= min_distance for m in self.modules)
 
+    def snap_to_grid(self, position: Coordinate) -> Coordinate:
+        """Привязывает позицию к центру клетки NavigationGrid — той же
+        сетки, что уже используется для путей врагов и блокировки занятых
+        клеток (add_module). Башни ставятся не свободно, а по клеткам,
+        и координата, которую видит остальной код (нав-сетка, дальность
+        поиска пути), совпадает с той, где реально стоит башня."""
+        node = self.nav_grid.get_node(position.x, position.y)
+        if node is None:
+            return position
+        return self.nav_grid.get_world_pos(node)
+
     def spawn_enemy(self, enemy: HostileEntity):
         self.enemies.append(enemy)
 

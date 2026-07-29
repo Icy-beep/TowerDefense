@@ -25,7 +25,9 @@ def test_place_turret_deducts_resources(session):
     assert success is True
     assert session.resources.credits == credits_before - cost
     assert len(session.map.modules) == 1
-    assert session.map.modules[0].position == pos
+    # позиция привязывается к клетке сетки (Map.snap_to_grid), а не
+    # ставится ровно там, где кликнул игрок
+    assert session.map.modules[0].position == session.map.snap_to_grid(pos)
 
 
 def test_place_turret_rejected_when_not_enough_resources(session):
