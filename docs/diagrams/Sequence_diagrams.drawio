@@ -1,0 +1,814 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.6.1 Safari/537.36" version="29.5.2" pages="7">
+  <diagram name="1. Размещение башни" id="seq1">
+    <mxGraphModel dx="1426" dy="875" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1820" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="a_1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;labelBackgroundColor=none;verticalAlign=top;html=1;outlineConnect=0;fontFamily=Tahoma;fontSize=12;fontStyle=1;" value="Player" vertex="1">
+          <mxGeometry height="50" width="30" x="50" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="65" y="70" as="sourcePoint" />
+            <mxPoint x="65" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameView" vertex="1">
+          <mxGeometry height="40" width="160" x="220" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="60" as="sourcePoint" />
+            <mxPoint x="300" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameController" vertex="1">
+          <mxGeometry height="40" width="160" x="440" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="520" y="60" as="sourcePoint" />
+            <mxPoint x="520" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="OrbitalModeController" vertex="1">
+          <mxGeometry height="40" width="160" x="660" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_8" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="740" y="60" as="sourcePoint" />
+            <mxPoint x="740" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameSession" vertex="1">
+          <mxGeometry height="40" width="160" x="900" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_10" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="980" y="60" as="sourcePoint" />
+            <mxPoint x="980" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_11" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="TowerFactory" vertex="1">
+          <mxGeometry height="40" width="160" x="1140" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_12" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1220" y="60" as="sourcePoint" />
+            <mxPoint x="1220" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_13" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="ResourceBank" vertex="1">
+          <mxGeometry height="40" width="160" x="1360" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_14" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1440" y="60" as="sourcePoint" />
+            <mxPoint x="1440" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_15" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="Map" vertex="1">
+          <mxGeometry height="40" width="160" x="1580" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_16" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1660" y="60" as="sourcePoint" />
+            <mxPoint x="1660" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_17" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="click(pos)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="65" y="110" as="sourcePoint" />
+            <mxPoint x="300" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_18" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="handle_input(event)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="300" y="160" as="sourcePoint" />
+            <mxPoint x="520" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_19" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="handle_input(event)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="520" y="210" as="sourcePoint" />
+            <mxPoint x="740" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_20" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="can_place_module(pos)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="740" y="260" as="sourcePoint" />
+            <mxPoint x="1660" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_21" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="True">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="1660" y="305" as="sourcePoint" />
+            <mxPoint x="740" y="305" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_22" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="place_turret(tower_type, pos)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="740" y="360" as="sourcePoint" />
+            <mxPoint x="980" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_23" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="create(tower_type, pos)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="980" y="410" as="sourcePoint" />
+            <mxPoint x="1220" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_24" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="turret">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="1220" y="455" as="sourcePoint" />
+            <mxPoint x="980" y="455" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_25" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="spend(turret.cost)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="980" y="510" as="sourcePoint" />
+            <mxPoint x="1440" y="510" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_26" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="True">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="1440" y="555" as="sourcePoint" />
+            <mxPoint x="980" y="555" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_28" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="add_module(turret)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="980" y="651" as="sourcePoint" />
+            <mxPoint x="1660" y="651" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_29" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="True">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="980" y="706" as="sourcePoint" />
+            <mxPoint x="740" y="706" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_30" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="selected_tower_type = None">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="810" y="768" />
+            </Array>
+            <mxPoint x="740" y="751" as="sourcePoint" />
+            <mxPoint x="740" y="786" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_31" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="True">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="740" y="811" as="sourcePoint" />
+            <mxPoint x="520" y="811" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_32" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="True">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="520" y="856" as="sourcePoint" />
+            <mxPoint x="300" y="856" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="2. Атака башни по противнику" id="seq2">
+    <mxGraphModel dx="1426" dy="875" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="660" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="d2_1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;" value="GameSession" vertex="1">
+          <mxGeometry height="40" width="160" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="d2_2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="100" y="60" as="sourcePoint" />
+            <mxPoint x="100" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;" value="Map" vertex="1">
+          <mxGeometry height="40" width="160" x="280" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="d2_4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="360" y="60" as="sourcePoint" />
+            <mxPoint x="360" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;" value="DefenseModule" vertex="1">
+          <mxGeometry height="40" width="160" x="540" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="d2_6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="60" as="sourcePoint" />
+            <mxPoint x="620" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;" value="HostileEntity" vertex="1">
+          <mxGeometry height="40" width="160" x="800" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="d2_8" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="880" y="60" as="sourcePoint" />
+            <mxPoint x="880" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;" value="Projectile" vertex="1">
+          <mxGeometry height="40" width="160" x="1060" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="d2_10" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1140" y="60" as="sourcePoint" />
+            <mxPoint x="1140" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_11" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="update(dt)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="100" y="110" as="sourcePoint" />
+            <mxPoint x="360" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_12" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="update(dt, enemies)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="360" y="160" as="sourcePoint" />
+            <mxPoint x="620" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_13" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="find_target(enemies)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="227" />
+            </Array>
+            <mxPoint x="620" y="210" as="sourcePoint" />
+            <mxPoint x="620" y="245" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_15" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="fire(target)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="337" />
+            </Array>
+            <mxPoint x="620" y="320" as="sourcePoint" />
+            <mxPoint x="620" y="355" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_16" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="new Projectile(pos, target, damage, damage_type)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="400" as="sourcePoint" />
+            <mxPoint x="1140" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_17" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="projectile">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="450" as="sourcePoint" />
+            <mxPoint x="360" y="450" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d2_18" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="projectiles.append(projectile)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="430" y="517" />
+            </Array>
+            <mxPoint x="360" y="500" as="sourcePoint" />
+            <mxPoint x="360" y="535" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="3. Получение противником урона" id="seq3">
+    <mxGraphModel dx="1426" dy="875" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="880" pageHeight="640" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="d3_1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;" value="Map" vertex="1">
+          <mxGeometry height="40" width="160" x="40" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="d3_2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="120" y="60" as="sourcePoint" />
+            <mxPoint x="120" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d3_3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;" value="Projectile" vertex="1">
+          <mxGeometry height="40" width="160" x="340" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="d3_4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="60" as="sourcePoint" />
+            <mxPoint x="420" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d3_5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;" value="HostileEntity" vertex="1">
+          <mxGeometry height="40" width="160" x="640" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="d3_6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="720" y="60" as="sourcePoint" />
+            <mxPoint x="720" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d3_7" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="update(dt)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="120" y="110" as="sourcePoint" />
+            <mxPoint x="420" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d3_8" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="move_towards(target)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="490" y="177" />
+            </Array>
+            <mxPoint x="420" y="160" as="sourcePoint" />
+            <mxPoint x="420" y="195" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d3_10" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="take_damage(amount, damage_type)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="300" as="sourcePoint" />
+            <mxPoint x="720" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d3_11" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="apply_armor_reduction(damage_type)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="790" y="367" />
+            </Array>
+            <mxPoint x="720" y="350" as="sourcePoint" />
+            <mxPoint x="720" y="385" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d3_12" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="health -= reduced_amount">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="790" y="437" />
+            </Array>
+            <mxPoint x="720" y="420" as="sourcePoint" />
+            <mxPoint x="720" y="455" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d3_13" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="return False (снаряд израсходован)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="480" as="sourcePoint" />
+            <mxPoint x="120" y="480" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="4. Уничтожение противника" id="seq4">
+    <mxGraphModel dx="1426" dy="875" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="560" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="o_1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameSession" vertex="1">
+          <mxGeometry height="40" width="160" x="40" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="120" y="60" as="sourcePoint" />
+            <mxPoint x="120" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="Map" vertex="1">
+          <mxGeometry height="40" width="160" x="300" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="380" y="60" as="sourcePoint" />
+            <mxPoint x="380" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="HostileEntity" vertex="1">
+          <mxGeometry height="40" width="160" x="560" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="640" y="60" as="sourcePoint" />
+            <mxPoint x="640" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="ResourceBank" vertex="1">
+          <mxGeometry height="40" width="160" x="820" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_8" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="900" y="60" as="sourcePoint" />
+            <mxPoint x="900" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="WaveProtocol" vertex="1">
+          <mxGeometry height="40" width="160" x="1080" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_10" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1160" y="60" as="sourcePoint" />
+            <mxPoint x="1160" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_11" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="update(dt)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="120" y="110" as="sourcePoint" />
+            <mxPoint x="380" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_12" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="is_alive()">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="380" y="155" as="sourcePoint" />
+            <mxPoint x="640" y="155" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_13" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="False">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="640" y="200" as="sourcePoint" />
+            <mxPoint x="380" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_15" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="killed_enemies.append(enemy)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="308" />
+            </Array>
+            <mxPoint x="380" y="291" as="sourcePoint" />
+            <mxPoint x="380" y="326" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_16" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="(reached_base, killed_enemies)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="380" y="351" as="sourcePoint" />
+            <mxPoint x="120" y="351" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_18" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="add_reward(enemy.reward)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="120" y="422" as="sourcePoint" />
+            <mxPoint x="900" y="422" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="5. Достижение противником базы" id="seq5">
+    <mxGraphModel dx="1426" dy="875" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="620" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="o_1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="Map" vertex="1">
+          <mxGeometry height="40" width="160" x="40" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="120" y="60" as="sourcePoint" />
+            <mxPoint x="120" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="HostileEntity" vertex="1">
+          <mxGeometry height="40" width="160" x="300" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="380" y="60" as="sourcePoint" />
+            <mxPoint x="380" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameSession" vertex="1">
+          <mxGeometry height="40" width="160" x="560" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="640" y="60" as="sourcePoint" />
+            <mxPoint x="640" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameStateManager" vertex="1">
+          <mxGeometry height="40" width="160" x="820" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_8" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="900" y="60" as="sourcePoint" />
+            <mxPoint x="900" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_9" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="path_index &gt;= len(path) ?">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="120" y="110" as="sourcePoint" />
+            <mxPoint x="380" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_11" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="enemies_reached_base.append(enemy)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="190" y="208" />
+            </Array>
+            <mxPoint x="120" y="191" as="sourcePoint" />
+            <mxPoint x="120" y="226" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_12" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="(reached_base, killed_enemies)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="120" y="251" as="sourcePoint" />
+            <mxPoint x="640" y="251" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_14" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="base_health -= 10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="710" y="339" />
+            </Array>
+            <mxPoint x="640" y="322" as="sourcePoint" />
+            <mxPoint x="640" y="357" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_15" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="check_defeat(base_health)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="640" y="382" as="sourcePoint" />
+            <mxPoint x="900" y="382" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_16" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="True">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="900" y="427" as="sourcePoint" />
+            <mxPoint x="640" y="427" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_18" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="change_state(GAME_OVER)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="640" y="503" as="sourcePoint" />
+            <mxPoint x="900" y="503" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="6. Завершение волны" id="seq6">
+    <mxGraphModel dx="1426" dy="875" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1060" pageHeight="620" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="o_1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameSession" vertex="1">
+          <mxGeometry height="40" width="160" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="100" y="60" as="sourcePoint" />
+            <mxPoint x="100" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="WaveProtocol" vertex="1">
+          <mxGeometry height="40" width="160" x="300" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="380" y="60" as="sourcePoint" />
+            <mxPoint x="380" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="Map" vertex="1">
+          <mxGeometry height="40" width="160" x="580" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="660" y="60" as="sourcePoint" />
+            <mxPoint x="660" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_7" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="update(dt, map, spawn_factory)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="100" y="110" as="sourcePoint" />
+            <mxPoint x="380" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_8" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="enemies">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="380" y="160" as="sourcePoint" />
+            <mxPoint x="660" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_9" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="[]">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="660" y="205" as="sourcePoint" />
+            <mxPoint x="380" y="205" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_11" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="current_wave_idx += 1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="303" />
+            </Array>
+            <mxPoint x="380" y="286" as="sourcePoint" />
+            <mxPoint x="380" y="321" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_13" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="finished = True">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="408" />
+            </Array>
+            <mxPoint x="380" y="391" as="sourcePoint" />
+            <mxPoint x="380" y="426" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_15" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="cooldown_timer = cooldown_time">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="518" />
+            </Array>
+            <mxPoint x="380" y="501" as="sourcePoint" />
+            <mxPoint x="380" y="536" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="7. Завершение игры" id="seq7">
+    <mxGraphModel dx="1426" dy="875" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1780" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="o_1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameSession" vertex="1">
+          <mxGeometry height="40" width="160" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="100" y="60" as="sourcePoint" />
+            <mxPoint x="100" y="940" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameStateManager" vertex="1">
+          <mxGeometry height="40" width="160" x="280" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="360" y="60" as="sourcePoint" />
+            <mxPoint x="360" y="940" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="WaveProtocol" vertex="1">
+          <mxGeometry height="40" width="160" x="540" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="60" as="sourcePoint" />
+            <mxPoint x="620" y="940" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="Map" vertex="1">
+          <mxGeometry height="40" width="160" x="800" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_8" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="880" y="60" as="sourcePoint" />
+            <mxPoint x="880" y="940" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameView" vertex="1">
+          <mxGeometry height="40" width="160" x="1060" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_10" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1140" y="60" as="sourcePoint" />
+            <mxPoint x="1140" y="940" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="o_11" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Tahoma;fontSize=12;labelBackgroundColor=none;" value="GameOverScreen" vertex="1">
+          <mxGeometry height="40" width="160" x="1320" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l_12" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666666;rounded=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1400" y="60" as="sourcePoint" />
+            <mxPoint x="1400" y="940" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_13" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="check_defeat(base_health)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="100" y="110" as="sourcePoint" />
+            <mxPoint x="360" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_14" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="False">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="360" y="155" as="sourcePoint" />
+            <mxPoint x="100" y="155" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_15" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="check_victory(map, wave_protocol)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="100" y="210" as="sourcePoint" />
+            <mxPoint x="360" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_16" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="is_all_waves_complete()">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="360" y="260" as="sourcePoint" />
+            <mxPoint x="620" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_17" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="True">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="620" y="305" as="sourcePoint" />
+            <mxPoint x="360" y="305" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_18" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="enemies">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="360" y="360" as="sourcePoint" />
+            <mxPoint x="880" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_19" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="[]">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="880" y="405" as="sourcePoint" />
+            <mxPoint x="360" y="405" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_21" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="True">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="360" y="481" as="sourcePoint" />
+            <mxPoint x="100" y="481" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_22" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="change_state(VICTORY)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="100" y="536" as="sourcePoint" />
+            <mxPoint x="360" y="536" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_23" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="current_state = new_state">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="430" y="598" />
+            </Array>
+            <mxPoint x="360" y="581" as="sourcePoint" />
+            <mxPoint x="360" y="616" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_25" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="render(screen, session, w, h)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="1140" y="701" as="sourcePoint" />
+            <mxPoint x="1400" y="701" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_26" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="state">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="1400" y="751" as="sourcePoint" />
+            <mxPoint x="100" y="751" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_27" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;" value="GameState.VICTORY">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="100" y="796" as="sourcePoint" />
+            <mxPoint x="1400" y="796" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m_28" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontFamily=Tahoma;fontSize=11;labelBackgroundColor=default;rounded=0;curved=1;" value="draw_overlay(&quot;ПОБЕДА&quot;, green)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1470" y="868" />
+            </Array>
+            <mxPoint x="1400" y="851" as="sourcePoint" />
+            <mxPoint x="1400" y="886" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
