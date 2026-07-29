@@ -1,4 +1,4 @@
-from .coordinate import Coordinate
+from src.core.coordinate import Coordinate
 from .entity import Entity
 from .defense_module import DefenseModule
 from .projectile import Projectile

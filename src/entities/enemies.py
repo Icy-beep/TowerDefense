@@ -1,6 +1,6 @@
 from src.entities.hostile_entity import HostileEntity
-from src.enums.enums import ArmorType
-from src.entities.coordinate import Coordinate
+from src.enums import ArmorType
+from src.core.coordinate import Coordinate
 
 class DroneWalker(HostileEntity):
     """Быстрый, слабый, легкая броня"""

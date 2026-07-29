@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
 from .entity import Entity
-from .coordinate import Coordinate
-from src.enums.enums import DamageType, ModuleStatus
+from src.core.coordinate import Coordinate
+from src.enums import DamageType, ModuleStatus
 from src.entities.projectile import Projectile
 
 
@@ -23,6 +23,9 @@ class DefenseModule(Entity, ABC):
         self.cost = cost
         self.status = ModuleStatus.IDLE
         self.cooldown_timer = 0.0
+
+        self.max_health = 100.0
+        self.health = self.max_health
 
         self.level = 1
         self.max_level = 3
@@ -83,15 +86,15 @@ class DefenseModule(Entity, ABC):
 
         return True
 
-    def _apply_level_stats(self):
-        """Пересчитывает статы в зависимости от текущего уровня"""
-        dmg_mult = 1 + (self.level - 1) * 0.4
-        rng_mult = 1 + (self.level - 1) * 0.2
-        spd_mult = 1 + (self.level - 1) * 0.25
-
-        self.damage = self.base_damage * dmg_mult
-        self.range_radius = self.base_range * rng_mult
-        self.fire_rate = self.base_fire_rate * spd_mult
-
     def take_damage(self, amount: float, damage_type: DamageType):
-        print(f"Module at {self.position} took {amount} damage!")
+        """Наносит урон башне. Пока ни один противник в игре не атакует
+        башни напрямую, поэтому этот путь не задействован в текущем
+        геймплее — но контракт Entity.take_damage должен быть реализован
+        по-настоящему, а не заглушкой."""
+        self.health -= amount
+        if self.health <= 0:
+            self.health = 0
+            self.status = ModuleStatus.OFFLINE
+
+    def is_destroyed(self) -> bool:
+        return self.health <= 0

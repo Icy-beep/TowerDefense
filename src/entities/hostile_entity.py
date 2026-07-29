@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from .entity import Entity
-from .coordinate import Coordinate
+from src.core.coordinate import Coordinate
 from src.enums import DamageType, ArmorType
 from typing import List
 

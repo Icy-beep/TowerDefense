@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from .entity import Entity
-from .coordinate import Coordinate
+from src.core.coordinate import Coordinate
 from src.enums import DamageType
 
 @dataclass

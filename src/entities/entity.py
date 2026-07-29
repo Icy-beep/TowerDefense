@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from .coordinate import Coordinate
-from src.enums.enums import DamageType
+from src.core.coordinate import Coordinate
+from src.enums import DamageType
 
 
 @dataclass

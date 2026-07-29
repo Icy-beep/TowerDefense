@@ -1,8 +1,8 @@
 from src.entities.defense_module import DefenseModule
 from src.entities.projectile import Projectile
 from src.entities.hostile_entity import HostileEntity
-from src.enums.enums import DamageType
-from src.entities.coordinate import Coordinate
+from src.enums import DamageType
+from src.core.coordinate import Coordinate
 
 class LaserTurret(DefenseModule):
     """Быстрая башня, малый урон, энергетический тип"""
