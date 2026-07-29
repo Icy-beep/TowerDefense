@@ -48,7 +48,7 @@ class GameSession:
     def setup_game(self):
         self.state = GameState.PLAYING
         self.base_health = self.max_base_health
-        self.resources = ResourceBank(start_credits=300)
+        self.resources = ResourceBank(start_credits=1000)
 
         self.map = Map(width=4000, height=4000)
         self.base_position = Coordinate(2000, 2000)
