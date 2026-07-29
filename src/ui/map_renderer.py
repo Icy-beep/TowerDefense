@@ -17,6 +17,7 @@ class MapRenderer:
         self._draw_border(screen, camera)
         self._draw_placement_grid(screen, camera, session, controller, width, height)
         self._draw_base(screen, camera, session)
+        self._draw_spawn_points(screen, camera, session)
         self._draw_modules(screen, camera, session, controller, tower_options)
         self._draw_enemies(screen, camera, session, width, height)
         self._draw_projectiles(screen, camera, session)
@@ -58,6 +59,21 @@ class MapRenderer:
             _, sy = camera.world_to_screen(0, row * cell)
             if 0 <= sy <= height:
                 pygame.draw.line(screen, color, (0, sy), (width, sy))
+
+    def _draw_spawn_points(self, screen, camera, session):
+        """Точки спавна противников — оранжевые маркеры-треугольники,
+        чтобы игрок видел, откуда придут волны, ещё до их начала."""
+        spawn_points = getattr(session.map, "spawn_points", [])
+        for point in spawn_points:
+            sx, sy = camera.world_to_screen(point.x, point.y)
+            size = max(12, int(14 * camera.zoom))
+            triangle = [
+                (sx, sy - size),
+                (sx - size, sy + size),
+                (sx + size, sy + size),
+            ]
+            pygame.draw.polygon(screen, (255, 140, 0), triangle)
+            pygame.draw.polygon(screen, (255, 220, 150), triangle, 2)
 
     def _draw_base(self, screen, camera, session):
         if not hasattr(session, 'base_position'):
