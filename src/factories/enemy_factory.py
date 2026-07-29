@@ -22,7 +22,9 @@ class EnemyFactory:
         enemy_class = self._registry.get(type_name)
         if enemy_class is None:
             return None
-        return enemy_class(position)
+        enemy = enemy_class(position)
+        enemy.type_name = type_name
+        return enemy
 
     def available_types(self) -> list:
         return list(self._registry.keys())

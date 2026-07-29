@@ -19,9 +19,12 @@ _KEY_TO_TOWER_TYPE = {
 class OrbitalModeController(IGameModeController):
     """Свободная камера, строительство башен, управление волнами."""
 
+    ENEMY_SELECT_RADIUS = 16
+
     def __init__(self, session: "GameSession"):
         self.selected_tower_type = None
         self.selected_module = None
+        self.selected_enemy = None
         self.dragging_camera = False
         self._last_mouse_pos = None
         super().__init__(session)
@@ -35,6 +38,10 @@ class OrbitalModeController(IGameModeController):
     def update(self, delta_time: float):
         keys = pygame.key.get_pressed()
         self.camera.update(delta_time, keys)
+        if self.selected_enemy is not None and self.selected_enemy not in self.session.map.enemies:
+            # Враг умер/дошёл до базы — панель выбора не должна показывать
+            # застывшую информацию о цели, которой больше нет на поле.
+            self.selected_enemy = None
 
     def handle_input(self, event) -> bool:
         if event.type == pygame.MOUSEWHEEL:
@@ -103,9 +110,15 @@ class OrbitalModeController(IGameModeController):
         for module in self.session.map.modules:
             if pos.distance_to(module.position) < 20:
                 self.selected_module = module
+                self.selected_enemy = None
                 return "selected"
         if self.selected_tower_type:
             return "placed" if self.place_tower(pos) else "fail"
+        for enemy in self.session.map.enemies:
+            if pos.distance_to(enemy.position) < self.ENEMY_SELECT_RADIUS:
+                self.selected_enemy = enemy
+                self.selected_module = None
+                return "selected_enemy"
         return "none"
 
     def place_tower(self, position: Coordinate) -> bool:
@@ -128,6 +141,7 @@ class OrbitalModeController(IGameModeController):
     def deselect(self):
         self.selected_module = None
         self.selected_tower_type = None
+        self.selected_enemy = None
 
     def start_next_wave(self) -> bool:
         if self.session.wave_protocol.is_active:

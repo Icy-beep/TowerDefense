@@ -6,6 +6,20 @@
 будет менять, не трогая отрисовку самого игрового поля."""
 import pygame
 
+from src.enums import ArmorType
+
+ENEMY_DISPLAY_NAMES = {
+    "drone_walker": "Дрон-скороход",
+    "giant_roach": "Гигантский таракан",
+    "scout_drone": "Дрон-разведчик",
+}
+
+ARMOR_LABELS = {
+    ArmorType.LIGHT: "Лёгкая",
+    ArmorType.HEAVY: "Тяжёлая",
+    ArmorType.ENERGY_SHIELDED: "Энергощит",
+}
+
 
 class HudRenderer:
     def render(self, screen, camera, session, controller, tower_options, width, height, font, small_font):
@@ -78,6 +92,14 @@ class HudRenderer:
                 info_lines.append(f"Улучшить: {cost} cr {'ДА' if can_afford else 'НЕТ'}")
             else:
                 info_lines.append("Макс. уровень")
+        elif controller.selected_enemy:
+            enemy = controller.selected_enemy
+            name = ENEMY_DISPLAY_NAMES.get(getattr(enemy, "type_name", None), type(enemy).__name__)
+            armor_label = ARMOR_LABELS.get(enemy.armor, str(enemy.armor))
+            info_lines.append(f"Враг: {name}")
+            info_lines.append(f"HP: {int(enemy.health)} / {int(enemy.max_health)}")
+            info_lines.append(f"Броня: {armor_label} | Скорость: {int(enemy.speed)}")
+            info_lines.append(f"Награда за убийство: {enemy.reward} cr")
         else:
             info_lines.append("Ничего не выбрано")
         return info_lines

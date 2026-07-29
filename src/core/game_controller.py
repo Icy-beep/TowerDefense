@@ -47,6 +47,11 @@ class GameController:
         """Нужно GameView для отрисовки выделения/панели улучшения."""
         return getattr(self.active_mode, "selected_module", None)
 
+    @property
+    def selected_enemy(self):
+        """Нужно HudRenderer для панели описания выбранного врага."""
+        return getattr(self.active_mode, "selected_enemy", None)
+
     def update(self, delta_time: float):
         self.active_mode.update(delta_time)
 

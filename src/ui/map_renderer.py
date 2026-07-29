@@ -19,7 +19,7 @@ class MapRenderer:
         self._draw_base(screen, camera, session)
         self._draw_spawn_points(screen, camera, session)
         self._draw_modules(screen, camera, session, controller, tower_options)
-        self._draw_enemies(screen, camera, session, width, height)
+        self._draw_enemies(screen, camera, session, controller, width, height)
         self._draw_projectiles(screen, camera, session)
         self._draw_placement_preview(screen, camera, session, controller, tower_options)
 
@@ -109,10 +109,13 @@ class MapRenderer:
                 pygame.draw.circle(screen, (255, 215, 0),
                                    (int(sx) - 6 + i * 6, int(sy) - 20), 3)
 
-    def _draw_enemies(self, screen, camera, session, width, height):
+    def _draw_enemies(self, screen, camera, session, controller, width, height):
+        selected_enemy = getattr(controller, "selected_enemy", None)
         for enemy in session.map.enemies:
             sx, sy = camera.world_to_screen(enemy.position.x, enemy.position.y)
             if -50 < sx < width + 50 and -50 < sy < height + 50:
+                if enemy is selected_enemy:
+                    pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(sy)), 16, 2)
                 hp_ratio = enemy.health / enemy.max_health
                 pygame.draw.rect(screen, (50, 50, 50),
                                  (int(sx) - 12, int(sy) - 18, 24, 4))
