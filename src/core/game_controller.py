@@ -56,5 +56,9 @@ class GameController:
     def get_game_state(self) -> dict:
         return self.active_mode.get_game_state()
 
+    def get_next_wave_time(self) -> float:
+        """Нужно HudRenderer для обратного отсчёта до следующей волны."""
+        return self.active_mode.get_next_wave_time()
+
     def _is_valid_position(self, position: Coordinate) -> bool:
         return self.active_mode._is_valid_position(position)

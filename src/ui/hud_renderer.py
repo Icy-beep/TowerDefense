@@ -13,12 +13,12 @@ class HudRenderer:
         alpha = 170
         pad = 10
 
-        self._draw_status_panel(screen, state, font, pad, alpha)
+        self._draw_status_panel(screen, state, controller, font, pad, alpha)
         self._draw_controls_panel(screen, camera, small_font, pad, alpha, width, height)
         self._draw_selection_panel(screen, state, controller, tower_options, small_font, width, height)
 
-    def _draw_status_panel(self, screen, state, font, pad, alpha):
-        surf1 = pygame.Surface((250, 100), pygame.SRCALPHA)
+    def _draw_status_panel(self, screen, state, controller, font, pad, alpha):
+        surf1 = pygame.Surface((360, 125), pygame.SRCALPHA)
         surf1.fill((20, 25, 35, alpha))
         screen.blit(surf1, (pad, pad))
 
@@ -29,6 +29,19 @@ class HudRenderer:
         screen.blit(
             font.render(f"Волна: {state['current_wave']}/{state['total_waves']}", True, (100, 200, 255)),
             (pad + 10, pad + 70))
+
+        if state['is_wave_active']:
+            wave_line = "Волна идёт"
+            color = (255, 150, 150)
+        else:
+            seconds_left = controller.get_next_wave_time()
+            if seconds_left > 0:
+                wave_line = f"Следующая волна через {seconds_left:.1f} с (SPACE — сейчас)"
+                color = (200, 200, 100)
+            else:
+                wave_line = "Игра окончена" if state['current_wave'] > state['total_waves'] else "SPACE — начать волну"
+                color = (150, 255, 150)
+        screen.blit(font.render(wave_line, True, color), (pad + 10, pad + 100))
 
     def _draw_controls_panel(self, screen, camera, small_font, pad, alpha, width, height):
         surf2 = pygame.Surface((300, 120), pygame.SRCALPHA)
