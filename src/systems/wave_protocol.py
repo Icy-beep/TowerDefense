@@ -1,11 +1,15 @@
-from typing import List, Type, Callable
-from src.entities.hostile_entity import HostileEntity
+import random
+from typing import List, Callable
 from src.core.map import Map
 
 
 class WaveConfig:
-    def __init__(self, enemy_classes: List[Type[HostileEntity]], count: int, interval: float):
-        self.enemy_classes = enemy_classes
+    """Волна описывается именами типов врагов (строки), как и TowerFactory
+    работает со строками для башен — WaveProtocol не знает о
+    конкретных классах врагов, только о том, кого просит EnemyFactory."""
+
+    def __init__(self, enemy_types: List[str], count: int, interval: float):
+        self.enemy_types = enemy_types
         self.count = count
         self.interval = interval
 
@@ -38,7 +42,6 @@ class WaveProtocol:
             return False
 
     def force_start_next_wave(self):
-        """Мгновенный запуск волны"""
         if not self.is_active and not self.finished:
             self.cooldown_timer = 0
             self.start_next_wave()
@@ -52,12 +55,10 @@ class WaveProtocol:
             config = self.waves[self.current_wave_idx]
 
             if self.spawn_timer >= config.interval and self.enemies_spawned < config.count:
-                cls = config.enemy_classes[self.enemies_spawned % len(config.enemy_classes)]
-                import random
-                spawn_pos = random.choice(game_map.spawn_points) if hasattr(game_map, 'spawn_points') else \
-                game_map.path[0]
+                enemy_type = config.enemy_types[self.enemies_spawned % len(config.enemy_types)]
+                spawn_pos = random.choice(game_map.spawn_points) if game_map.spawn_points else None
                 if spawn_pos:
-                    enemy = spawn_factory(cls, spawn_pos)
+                    enemy = spawn_factory(enemy_type, spawn_pos)
                     game_map.spawn_enemy(enemy)
                     self.enemies_spawned += 1
                     self.spawn_timer = 0.0
@@ -66,7 +67,10 @@ class WaveProtocol:
                     not game_map.enemies):
                 self.is_active = False
                 self.current_wave_idx += 1
-                self.cooldown_timer = self.cooldown_time
+                if self.current_wave_idx >= len(self.waves):
+                    self.finished = True
+                else:
+                    self.cooldown_timer = self.cooldown_time
         else:
             if self.current_wave_idx < len(self.waves):
                 self.cooldown_timer -= delta_time
