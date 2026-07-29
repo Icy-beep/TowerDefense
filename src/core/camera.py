@@ -10,6 +10,7 @@ class Camera:
         self.zoom = 1.0
         self.min_zoom, self.max_zoom = 0.3, 2.5
         self.speed = 400.0
+        self.boost_multiplier = 2.5
 
     def move(self, dx, dy):
         self.x += dx
@@ -47,10 +48,12 @@ class Camera:
         self.center_on(position)
 
     def update(self, dt, keys):
-        """Непрерывное движение камеры по WASD/стрелкам"""
+        """Непрерывное движение камеры по WASD/стрелкам. Shift — ускорение."""
         import pygame
         dx = dy = 0.0
         speed = self.speed * dt
+        if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+            speed *= self.boost_multiplier
         if keys[pygame.K_w] or keys[pygame.K_UP]: dy = -speed
         if keys[pygame.K_s] or keys[pygame.K_DOWN]: dy = speed
         if keys[pygame.K_a] or keys[pygame.K_LEFT]: dx = -speed

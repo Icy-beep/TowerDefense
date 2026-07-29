@@ -44,14 +44,16 @@ class HudRenderer:
         screen.blit(font.render(wave_line, True, color), (pad + 10, pad + 100))
 
     def _draw_controls_panel(self, screen, camera, small_font, pad, alpha, width, height):
-        surf2 = pygame.Surface((300, 120), pygame.SRCALPHA)
+        surf2 = pygame.Surface((300, 140), pygame.SRCALPHA)
         surf2.fill((20, 25, 35, alpha))
-        screen.blit(surf2, (pad, height - 130))
+        screen.blit(surf2, (pad, height - 150))
 
         screen.blit(small_font.render(
             f"Позиция камеры: {int(camera.x)}, {int(camera.y)} | Зум: {int(camera.zoom * 100)}%", True,
-            (180, 180, 180)), (pad + 10, height - 120))
-        screen.blit(small_font.render("WASD: Ходить | SCROLL: Зум | R: Камеру на базу", True, (150, 150, 150)),
+            (180, 180, 180)), (pad + 10, height - 140))
+        screen.blit(small_font.render("WASD: Перемещение камеры (+SHIFT: ускорение) | SCROLL: Зум", True, (150, 150, 150)),
+                    (pad + 10, height - 120))
+        screen.blit(small_font.render("ЛКМ по пустому месту: тащить камеру | R: Камеру на базу", True, (150, 150, 150)),
                     (pad + 10, height - 100))
         screen.blit(small_font.render("1-3: Выбрать башню | SPACE: Начать волну", True, (150, 150, 150)),
                     (pad + 10, height - 80))

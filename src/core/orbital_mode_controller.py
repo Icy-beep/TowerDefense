@@ -22,6 +22,8 @@ class OrbitalModeController(IGameModeController):
     def __init__(self, session: "GameSession"):
         self.selected_tower_type = None
         self.selected_module = None
+        self.dragging_camera = False
+        self._last_mouse_pos = None
         super().__init__(session)
 
         if hasattr(session, "base_position"):
@@ -59,10 +61,32 @@ class OrbitalModeController(IGameModeController):
             wx, wy = self.camera.screen_to_world(*event.pos)
             pos = Coordinate(wx, wy)
             if event.button == 1:
-                self.handle_click(pos)
+                result = self.handle_click(pos)
+                if result == "none":
+                    # Клик не попал по башне и постройка не выбрана —
+                    # начинаем перетаскивание камеры вместо холостого клика.
+                    self.dragging_camera = True
+                    self._last_mouse_pos = event.pos
             elif event.button == 3:
                 self.deselect()
             return True
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                self.dragging_camera = False
+                self._last_mouse_pos = None
+            return True
+
+        if event.type == pygame.MOUSEMOTION:
+            if self.dragging_camera and self._last_mouse_pos is not None:
+                mx, my = event.pos
+                lx, ly = self._last_mouse_pos
+                # Тащим мышью вправо/вниз -> камера смещается влево/вверх,
+                # чтобы поле "ехало" за курсором, как при перетаскивании.
+                self.camera.move((lx - mx) / self.camera.zoom, (ly - my) / self.camera.zoom)
+                self._last_mouse_pos = event.pos
+                return True
+            return False
 
         return False
 
