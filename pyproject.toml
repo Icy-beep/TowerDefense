@@ -9,7 +9,10 @@ description = "Tower Defense — по ООП (Python + pygame)"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "pygame>=2.5",
+    # pygame-ce (community edition, форк оригинального pygame, тот же
+    # "import pygame") — на момент написания у обычного pygame ещё нет
+    # готовых wheel-колёс под Python 3.13+, только у pygame-ce.
+    "pygame-ce>=2.5",
 ]
 
 [project.optional-dependencies]
