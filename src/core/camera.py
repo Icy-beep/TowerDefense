@@ -1,5 +1,5 @@
 class Camera:
-    """Камера с поддержкой панорамирования и зума к курсору.
+    """Камера с поддержкой зума к курсору.
     Не зависит ни от game_view, ни от game_controller — общий, независимый модуль."""
 
     def __init__(self, screen_w, screen_h, map_w=4000, map_h=4000):
@@ -20,14 +20,14 @@ class Camera:
         self.y = max(0, min(self.y, self.map_h - vis_h))
 
     def zoom_at_mouse(self, mx, my, factor):
-        wx = (mx - self.screen_w / 2) / self.zoom + self.x
-        wy = (my - self.screen_h / 2) / self.zoom + self.y
+        """Зумит так, чтобы мировая точка под курсором осталась под курсором."""
         new_zoom = max(self.min_zoom, min(self.max_zoom, self.zoom * factor))
         if abs(new_zoom - self.zoom) < 0.001:
             return
-        self.x = wx - (mx - self.screen_w / 2) / new_zoom
-        self.y = wy - (my - self.screen_h / 2) / new_zoom
+        wx, wy = self.screen_to_world(mx, my)
         self.zoom = new_zoom
+        self.x = wx - mx / new_zoom
+        self.y = wy - my / new_zoom
         self.move(0, 0)
 
     def world_to_screen(self, wx, wy):
