@@ -1,5 +1,5 @@
 class ResourceBank:
-    def __init__(self, start_credits: int = 100):
+    def __init__(self, start_credits: int = 1000):
         self.credits = start_credits
         self.scrap = 0
 

@@ -9,9 +9,11 @@ import sys
 
 from src.core.game_session import GameSession
 from src.core.game_controller import GameController
+from src.enums import GameState
 from src.ui.map_renderer import MapRenderer
 from src.ui.hud_renderer import HudRenderer
 from src.ui.game_over_screen import GameOverScreen
+from src.ui.menu_screen import MenuScreen
 
 
 class GameView:
@@ -26,6 +28,7 @@ class GameView:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("Arial", 18)
         self.small_font = pygame.font.SysFont("Arial", 14)
+        self.title_font = pygame.font.SysFont("Arial", 40, bold=True)
         self.running = True
 
         self.tower_options = [
@@ -37,20 +40,21 @@ class GameView:
         self.map_renderer = MapRenderer()
         self.hud_renderer = HudRenderer()
         self.game_over_screen = GameOverScreen()
+        self.menu_screen = MenuScreen()
 
     @property
     def camera(self):
         return self.controller.camera
 
     def run(self):
-        self.session.setup_game()
-        self.controller = GameController(self.session)
-
+        # Игра стартует в GameState.MENU (см. GameSession.__init__) — сессия
+        # не настраивается (setup_game), пока игрок не нажмёт "Начать игру".
         while self.running:
             dt = self.clock.tick(60) / 1000.0
             self.handle_events()
-            self.controller.update(dt)
-            self.session.update(dt)
+            if self.session.state != GameState.MENU and self.controller:
+                self.controller.update(dt)
+                self.session.update(dt)
             self.render()
             pygame.display.flip()
         pygame.quit()
@@ -62,10 +66,28 @@ class GameView:
                 self.running = False
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.running = False
-            else:
+            elif self.session.state == GameState.MENU:
+                self._handle_menu_input(event)
+            elif self.controller:
                 self.controller.handle_input(event)
 
+    def _handle_menu_input(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            action = self.menu_screen.handle_click(event.pos, self.width, self.height)
+            if action == "start":
+                self._start_game()
+            elif action == "exit":
+                self.running = False
+
+    def _start_game(self):
+        self.session.setup_game()
+        self.controller = GameController(self.session)
+
     def render(self):
+        if self.session.state == GameState.MENU:
+            self.menu_screen.render(self.screen, self.width, self.height, self.font, self.title_font)
+            return
+
         self.screen.fill((20, 24, 28))
 
         self.map_renderer.render(

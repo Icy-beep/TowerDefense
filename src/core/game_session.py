@@ -1,3 +1,6 @@
+import random
+from typing import List, Optional
+
 from src.core.map import Map
 from src.core.game_state import GameStateManager
 from src.systems.resource_bank import ResourceBank
@@ -59,12 +62,26 @@ class GameSession:
 
         print(f"Карта инициализирована")
         print(f"База: {self.base_position}")
-        waves = [
-            WaveConfig(["drone_walker"], 5, 1.5),
-            WaveConfig(["drone_walker", "giant_roach"], 8, 1.2),
-        ]
+        waves = self._generate_random_waves()
         self.wave_protocol.set_waves(waves)
         self.wave_protocol.start_next_wave()
+
+    def _generate_random_waves(self, rng: Optional[random.Random] = None) -> List[WaveConfig]:
+        """Случайное число волн и случайный состав врагов в каждой —
+        каждый запуск игры выглядит иначе. rng можно передать явно
+        (например, random.Random(42)) для детерминированных тестов."""
+        rng = rng or random
+        available_types = self.enemy_factory.available_types()
+
+        wave_count = rng.randint(4, 7)
+        waves = []
+        for i in range(wave_count):
+            type_count = rng.randint(1, min(3, len(available_types)))
+            enemy_types = rng.sample(available_types, type_count)
+            count = rng.randint(4 + i, 7 + i * 2)
+            interval = rng.uniform(0.7, 1.5)
+            waves.append(WaveConfig(enemy_types, count, interval))
+        return waves
 
     def update(self, delta_time: float):
         if self.state != GameState.PLAYING:
