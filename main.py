@@ -11,7 +11,7 @@ def main():
     from src.core.game_session import GameSession
     session = GameSession()
 
-    from src.ui.game_view import GameView
+    from src.ui.game_window import GameView
     game_view = GameView(session)
 
     game_view.run()
