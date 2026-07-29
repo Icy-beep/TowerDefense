@@ -1,5 +1,5 @@
 import pytest
-from src.entities.coordinate import Coordinate
+from src.core.coordinate import Coordinate
 from src.entities.turrets import LaserTurret
 from src.entities.enemies import DroneWalker
 
