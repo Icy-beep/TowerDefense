@@ -1,0 +1,59 @@
+{
+  "hud.money": "Кредиты: {credits}",
+  "hud.base_health": "Целостность базы: {hp}/{max_hp}",
+  "hud.wave": "Волна: {current}/{total}",
+  "hud.wave_active": "Волна активна",
+  "hud.wave_next_in": "Следующая волна через {seconds:.1f} с (SPACE — сейчас)",
+  "hud.wave_game_over": "Игра окончена",
+  "hud.wave_start_prompt": "SPACE — начать волну",
+
+  "hud.camera_info": "Позиция камеры: {x}, {y} | Зум: {zoom}%",
+  "hud.controls_move": "WASD: Перемещение камеры (+SHIFT: ускорение) | SCROLL: Зум",
+  "hud.controls_drag": "ЛКМ по пустому месту: тащить камеру | R: Камеру на базу",
+  "hud.controls_build": "1-3: Выбрать башню | SPACE: Начать волну",
+  "hud.controls_select": "ЛКМ: Поставить/Выбрать | ПКМ: Отменить выбор",
+  "hud.controls_misc": "U: Улучшить башню | P: Пауза | ESC: Закрыть игру",
+  "hud.controls_alt": "ALT (удерживать): показать радиусы всех башен",
+
+  "hud.build_label": "Строить: {name}",
+  "hud.build_hint": "ЛКМ: Поставить | ПКМ: Отмена",
+  "hud.tower_level": "Уровень башни {level} / {max_level}",
+  "hud.upgrade_cost": "Улучшить: {cost} cr {status}",
+  "hud.upgrade_yes": "ДА",
+  "hud.upgrade_no": "НЕТ",
+  "hud.max_level": "Макс. уровень",
+
+  "hud.enemy_label": "Враг: {name}",
+  "hud.enemy_faction": "Фракция: {faction}",
+  "hud.enemy_hp": "HP: {hp} / {max_hp}",
+  "hud.enemy_stats": "Броня: {armor} | Скорость: {speed}",
+  "hud.enemy_reward": "Награда за убийство: {reward} cr",
+  "hud.nothing_selected": "Ничего не выбрано",
+
+  "enemy.drone_walker": "Лёгкий дрон",
+  "enemy.giant_roach": "Гигантский таракан",
+  "enemy.scout_drone": "Дрон-разведчик",
+  "enemy.heavy_assault_drone": "Тяжёлый штурмовой дрон",
+  "enemy.bio_titan": "Био-титан",
+
+  "armor.light": "Лёгкая",
+  "armor.heavy": "Тяжёлая",
+  "armor.energy_shielded": "Энергощит",
+  "armor.organic": "Органическая",
+
+  "faction.corporation": "Корпорация",
+  "faction.fauna": "Фауна планеты",
+
+  "menu.title": "Tower Defense",
+  "menu.start": "Начать игру",
+  "menu.exit": "Выйти",
+
+  "game_over.defeat": "ПОРАЖЕНИЕ",
+  "game_over.victory": "ПОБЕДА",
+
+  "mission.title": "Задания",
+  "mission.survive_waves": "Продержаться до волны {target}: {current}/{target}",
+  "mission.protect_towers": "Не потерять ни одной башни (потеряно: {lost})",
+  "mission.status_completed": "Выполнено",
+  "mission.status_failed": "Провалено"
+}

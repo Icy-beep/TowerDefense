@@ -1,110 +1,164 @@
-"""HudRenderer — HUD-панели поверх игрового поля: деньги/здоровье базы/
-номер волны, подсказки по управлению, информация о текущем выборе
-(строим башню / выделена башня / ничего не выбрано).
-
-Выделено из game_view.py отдельно от MapRenderer: разметку HUD можно
-будет менять, не трогая отрисовку самого игрового поля."""
+"""HUD-панели поверх игрового поля."""
 import pygame
 
-from src.enums import ArmorType
+from src.enums import ArmorType, Faction
+from src.localization.loc import loc
 
-ENEMY_DISPLAY_NAMES = {
-    "drone_walker": "Дрон-скороход",
-    "giant_roach": "Гигантский таракан",
-    "scout_drone": "Дрон-разведчик",
+ENEMY_DISPLAY_KEYS = {
+    "drone_walker": "enemy.drone_walker",
+    "giant_roach": "enemy.giant_roach",
+    "scout_drone": "enemy.scout_drone",
+    "heavy_assault_drone": "enemy.heavy_assault_drone",
+    "bio_titan": "enemy.bio_titan",
 }
 
-ARMOR_LABELS = {
-    ArmorType.LIGHT: "Лёгкая",
-    ArmorType.HEAVY: "Тяжёлая",
-    ArmorType.ENERGY_SHIELDED: "Энергощит",
+ARMOR_LABEL_KEYS = {
+    ArmorType.LIGHT: "armor.light",
+    ArmorType.HEAVY: "armor.heavy",
+    ArmorType.ENERGY_SHIELDED: "armor.energy_shielded",
+    ArmorType.ORGANIC: "armor.organic",
+}
+
+FACTION_LABEL_KEYS = {
+    Faction.CORPORATION: "faction.corporation",
+    Faction.FAUNA: "faction.fauna",
 }
 
 
 class HudRenderer:
+    """Рисует HUD-панели поверх игрового поля."""
+
     def render(self, screen, camera, session, controller, tower_options, width, height, font, small_font):
+        """Рисует все панели HUD."""
         state = controller.get_game_state()
         alpha = 170
         pad = 10
 
         self._draw_status_panel(screen, state, controller, font, pad, alpha)
+        self._draw_missions_panel(screen, session, small_font, pad, alpha, width)
         self._draw_controls_panel(screen, camera, small_font, pad, alpha, width, height)
         self._draw_selection_panel(screen, state, controller, tower_options, small_font, width, height)
 
     def _draw_status_panel(self, screen, state, controller, font, pad, alpha):
+        """Рисует панель с деньгами, здоровьем базы и номером волны."""
         surf1 = pygame.Surface((360, 125), pygame.SRCALPHA)
         surf1.fill((20, 25, 35, alpha))
         screen.blit(surf1, (pad, pad))
 
-        screen.blit(font.render(f"Деньги: {state['credits']}", True, (255, 215, 0)), (pad + 10, pad + 10))
+        screen.blit(font.render(loc.get("hud.money", credits=state['credits']), True, (255, 215, 0)),
+                    (pad + 10, pad + 10))
         screen.blit(
-            font.render(f"Целостность базы: {state['base_health']}/{state['max_base_health']}", True, (255, 100, 100)),
+            font.render(loc.get("hud.base_health", hp=state['base_health'], max_hp=state['max_base_health']),
+                        True, (255, 100, 100)),
             (pad + 10, pad + 40))
         screen.blit(
-            font.render(f"Волна: {state['current_wave']}/{state['total_waves']}", True, (100, 200, 255)),
+            font.render(loc.get("hud.wave", current=state['current_wave'], total=state['total_waves']),
+                        True, (100, 200, 255)),
             (pad + 10, pad + 70))
 
         if state['is_wave_active']:
-            wave_line = "Волна идёт"
+            wave_line = loc.get("hud.wave_active")
             color = (255, 150, 150)
         else:
             seconds_left = controller.get_next_wave_time()
             if seconds_left > 0:
-                wave_line = f"Следующая волна через {seconds_left:.1f} с (SPACE — сейчас)"
+                wave_line = loc.get("hud.wave_next_in", seconds=seconds_left)
                 color = (200, 200, 100)
             else:
-                wave_line = "Игра окончена" if state['current_wave'] > state['total_waves'] else "SPACE — начать волну"
+                wave_line = (loc.get("hud.wave_game_over") if state['current_wave'] > state['total_waves']
+                             else loc.get("hud.wave_start_prompt"))
                 color = (150, 255, 150)
         screen.blit(font.render(wave_line, True, color), (pad + 10, pad + 100))
 
+    def _draw_missions_panel(self, screen, session, small_font, pad, alpha, width):
+        """Рисует панель заданий в правом верхнем углу."""
+        objectives = getattr(session, "objectives", [])
+        if not objectives:
+            return
+
+        line_height = 22
+        w = 340
+        h = len(objectives) * line_height + 35
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        surf.fill((20, 25, 35, alpha))
+        x = width - w - pad
+        screen.blit(surf, (x, pad))
+
+        screen.blit(small_font.render(loc.get("mission.title"), True, (200, 200, 255)),
+                    (x + 10, pad + 8))
+
+        for i, objective in enumerate(objectives):
+            text = objective.describe(session)
+            if objective.completed:
+                color = (100, 255, 100)
+                text += f" — {loc.get('mission.status_completed')}"
+            elif objective.failed:
+                color = (255, 100, 100)
+                text += f" — {loc.get('mission.status_failed')}"
+            else:
+                color = (230, 230, 230)
+            screen.blit(small_font.render(text, True, color), (x + 10, pad + 32 + i * line_height))
+
     def _draw_controls_panel(self, screen, camera, small_font, pad, alpha, width, height):
-        surf2 = pygame.Surface((300, 140), pygame.SRCALPHA)
+        """Рисует панель с подсказками по управлению."""
+        surf2 = pygame.Surface((300, 160), pygame.SRCALPHA)
         surf2.fill((20, 25, 35, alpha))
-        screen.blit(surf2, (pad, height - 150))
+        screen.blit(surf2, (pad, height - 170))
 
         screen.blit(small_font.render(
-            f"Позиция камеры: {int(camera.x)}, {int(camera.y)} | Зум: {int(camera.zoom * 100)}%", True,
-            (180, 180, 180)), (pad + 10, height - 140))
-        screen.blit(small_font.render("WASD: Перемещение камеры (+SHIFT: ускорение) | SCROLL: Зум", True, (150, 150, 150)),
+            loc.get("hud.camera_info", x=int(camera.x), y=int(camera.y), zoom=int(camera.zoom * 100)),
+            True, (180, 180, 180)), (pad + 10, height - 160))
+        screen.blit(small_font.render(loc.get("hud.controls_move"), True, (150, 150, 150)),
+                    (pad + 10, height - 140))
+        screen.blit(small_font.render(loc.get("hud.controls_drag"), True, (150, 150, 150)),
                     (pad + 10, height - 120))
-        screen.blit(small_font.render("ЛКМ по пустому месту: тащить камеру | R: Камеру на базу", True, (150, 150, 150)),
+        screen.blit(small_font.render(loc.get("hud.controls_build"), True, (150, 150, 150)),
                     (pad + 10, height - 100))
-        screen.blit(small_font.render("1-3: Выбрать башню | SPACE: Начать волну", True, (150, 150, 150)),
+        screen.blit(small_font.render(loc.get("hud.controls_select"), True, (150, 150, 150)),
                     (pad + 10, height - 80))
-        screen.blit(small_font.render("ЛКМ: Поставить/Выбрать | ПКМ: Отменить выбор", True, (150, 150, 150)),
+        screen.blit(small_font.render(loc.get("hud.controls_misc"), True, (150, 150, 150)),
                     (pad + 10, height - 60))
-        screen.blit(small_font.render("U: Улучшить башню | P: Пауза | ESC: Закрыть игру", True, (150, 150, 150)),
+        screen.blit(small_font.render(loc.get("hud.controls_alt"), True, (150, 150, 150)),
                     (pad + 10, height - 40))
 
     def _build_selection_info(self, state, controller, tower_options):
+        """Собирает строки текста для панели выбора."""
         info_lines = []
         if state['selected_tower']:
             opt = next((o for o in tower_options if o["type"] == state['selected_tower']), None)
             label = opt["name"] if opt else state['selected_tower']
-            info_lines.append(f"Строить: {label}")
-            info_lines.append("ЛКМ: Поставить | ПКМ: Отмена")
+            info_lines.append(loc.get("hud.build_label", name=label))
+            info_lines.append(loc.get("hud.build_hint"))
         elif controller.selected_module:
             mod = controller.selected_module
-            info_lines.append(f"Уровень башни{mod.level} / {mod.max_level}")
+            info_lines.append(loc.get("hud.tower_level", level=mod.level, max_level=mod.max_level))
             if mod.can_upgrade():
                 cost = mod.get_upgrade_cost()
                 can_afford = state['credits'] >= cost
-                info_lines.append(f"Улучшить: {cost} cr {'ДА' if can_afford else 'НЕТ'}")
+                status = loc.get("hud.upgrade_yes") if can_afford else loc.get("hud.upgrade_no")
+                info_lines.append(loc.get("hud.upgrade_cost", cost=cost, status=status))
             else:
-                info_lines.append("Макс. уровень")
+                info_lines.append(loc.get("hud.max_level"))
         elif controller.selected_enemy:
             enemy = controller.selected_enemy
-            name = ENEMY_DISPLAY_NAMES.get(getattr(enemy, "type_name", None), type(enemy).__name__)
-            armor_label = ARMOR_LABELS.get(enemy.armor, str(enemy.armor))
-            info_lines.append(f"Враг: {name}")
-            info_lines.append(f"HP: {int(enemy.health)} / {int(enemy.max_health)}")
-            info_lines.append(f"Броня: {armor_label} | Скорость: {int(enemy.speed)}")
-            info_lines.append(f"Награда за убийство: {enemy.reward} cr")
+            name_key = ENEMY_DISPLAY_KEYS.get(getattr(enemy, "type_name", None))
+            name = loc.get(name_key) if name_key else type(enemy).__name__
+            armor_key = ARMOR_LABEL_KEYS.get(enemy.armor)
+            armor_label = loc.get(armor_key) if armor_key else str(enemy.armor)
+            faction_key = FACTION_LABEL_KEYS.get(getattr(enemy, "faction", None))
+            faction_label = loc.get(faction_key) if faction_key else None
+            info_lines.append(loc.get("hud.enemy_label", name=name))
+            if faction_label:
+                info_lines.append(loc.get("hud.enemy_faction", faction=faction_label))
+            info_lines.append(loc.get("hud.enemy_hp", hp=int(enemy.health), max_hp=int(enemy.max_health)))
+            info_lines.append(loc.get("hud.enemy_stats", armor=armor_label, speed=int(enemy.speed)))
+            info_lines.append(loc.get("hud.enemy_reward", reward=enemy.reward))
         else:
-            info_lines.append("Ничего не выбрано")
+            info_lines.append(loc.get("hud.nothing_selected"))
         return info_lines
 
     def _draw_selection_panel(self, screen, state, controller, tower_options, small_font, width, height):
+        """Рисует панель с информацией о текущем выборе."""
         info_lines = self._build_selection_info(state, controller, tower_options)
 
         w3 = max(len(line) * 8 for line in info_lines) + 40
