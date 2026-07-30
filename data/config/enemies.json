@@ -1,0 +1,37 @@
+{
+  "drone_walker": {
+    "max_health": 60,
+    "speed": 50,
+    "armor": "Light",
+    "reward": 15,
+    "faction": "Corporation"
+  },
+  "giant_roach": {
+    "max_health": 250,
+    "speed": 25,
+    "armor": "Heavy",
+    "reward": 40,
+    "faction": "Fauna"
+  },
+  "scout_drone": {
+    "max_health": 100,
+    "speed": 70,
+    "armor": "EnergyShielded",
+    "reward": 60,
+    "faction": "Corporation"
+  },
+  "heavy_assault_drone": {
+    "max_health": 180,
+    "speed": 35,
+    "armor": "Heavy",
+    "reward": 45,
+    "faction": "Corporation"
+  },
+  "bio_titan": {
+    "max_health": 400,
+    "speed": 20,
+    "armor": "Organic",
+    "reward": 70,
+    "faction": "Fauna"
+  }
+}

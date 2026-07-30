@@ -1,30 +1,44 @@
-"""
-EnemyFactory — фабрика врагов, тот же принцип, что и TowerFactory.
-"""
+"""Фабрика врагов."""
 from typing import Dict, Optional, Type
 
 from src.entities.hostile_entity import HostileEntity
 from src.core.coordinate import Coordinate
-from src.entities.enemies import DroneWalker, GiantRoach, ScoutDrone
+from src.entities.enemies import DroneWalker, GiantRoach, ScoutDrone, HeavyAssaultDrone, BioTitan
+from src.enums import ArmorType, Faction
+from src.config.config_loader import ConfigLoader
 
 
 class EnemyFactory:
-    def __init__(self):
+    """Создаёт врагов по имени типа."""
+
+    def __init__(self, config_loader: Optional[ConfigLoader] = None):
+        """Создаёт фабрику и регистрирует стандартные типы врагов."""
         self._registry: Dict[str, Type[HostileEntity]] = {}
+        self._config_loader = config_loader or ConfigLoader()
         self.register("drone_walker", DroneWalker)
         self.register("giant_roach", GiantRoach)
         self.register("scout_drone", ScoutDrone)
+        self.register("heavy_assault_drone", HeavyAssaultDrone)
+        self.register("bio_titan", BioTitan)
 
     def register(self, type_name: str, enemy_class: Type[HostileEntity]) -> None:
+        """Регистрирует новый тип врага."""
         self._registry[type_name] = enemy_class
 
     def create(self, type_name: str, position: Coordinate) -> Optional[HostileEntity]:
+        """Создаёт врага заданного типа в указанной позиции."""
         enemy_class = self._registry.get(type_name)
         if enemy_class is None:
             return None
-        enemy = enemy_class(position)
+        config = self._config_loader.get_enemy_config(type_name)
+        if "armor" in config:
+            config["armor"] = ArmorType(config["armor"])
+        if "faction" in config:
+            config["faction"] = Faction(config["faction"])
+        enemy = enemy_class(position, **config)
         enemy.type_name = type_name
         return enemy
 
     def available_types(self) -> list:
+        """Возвращает список зарегистрированных типов врагов."""
         return list(self._registry.keys())

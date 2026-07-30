@@ -1,40 +1,41 @@
-"""TowerFactory — фабрика башен.
-
-Это единственное место, которое
-знает о конкретных классах башен. Контроллер и View работают только со
-строками ("laser", "bullet", "mortar") — это и есть точка расширения под
-TowerConfig/towers.json: чтобы добавить новую башню, будет
-достаточно зарегистрировать её здесь, ничего не трогая в UI/контроллере.
-"""
+"""Фабрика башен."""
 from typing import Dict, Optional, Type
 
 from src.entities.defense_module import DefenseModule
 from src.core.coordinate import Coordinate
 from src.entities.turrets import LaserTurret, BulletTurret, MortarTurret
+from src.config.config_loader import ConfigLoader
 
 
 class TowerFactory:
-    def __init__(self):
+    """Создаёт башни по имени типа."""
+
+    def __init__(self, config_loader: Optional[ConfigLoader] = None):
+        """Создаёт фабрику и регистрирует стандартные типы башен."""
         self._registry: Dict[str, Type[DefenseModule]] = {}
+        self._config_loader = config_loader or ConfigLoader()
         self.register("laser", LaserTurret)
         self.register("bullet", BulletTurret)
         self.register("mortar", MortarTurret)
 
     def register(self, type_name: str, tower_class: Type[DefenseModule]) -> None:
+        """Регистрирует новый тип башни."""
         self._registry[type_name] = tower_class
 
     def create(self, type_name: str, position: Coordinate) -> Optional[DefenseModule]:
+        """Создаёт башню заданного типа в указанной позиции."""
         tower_class = self._registry.get(type_name)
         if tower_class is None:
             return None
-        tower = tower_class(position)
+        config = self._config_loader.get_tower_config(type_name)
+        tower = tower_class(position, **config)
         tower.type_name = type_name
         return tower
 
     def get_class(self, type_name: str) -> Optional[Type[DefenseModule]]:
-        """Только для View (нужно узнать range/цвет для превью) —
-        не для создания объектов, для этого есть create()."""
+        """Возвращает класс башни по имени типа."""
         return self._registry.get(type_name)
 
     def available_types(self) -> list:
+        """Возвращает список зарегистрированных типов башен."""
         return list(self._registry.keys())

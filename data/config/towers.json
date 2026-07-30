@@ -1,0 +1,23 @@
+{
+  "laser": {
+    "range_radius": 400,
+    "damage": 15,
+    "cost": 50,
+    "attack_speed": 2.0,
+    "upgrade_costs": [80, 120]
+  },
+  "bullet": {
+    "range_radius": 350,
+    "damage": 20,
+    "cost": 100,
+    "attack_speed": 5.0,
+    "upgrade_costs": [150, 200]
+  },
+  "mortar": {
+    "range_radius": 600,
+    "damage": 80,
+    "cost": 200,
+    "attack_speed": 0.5,
+    "upgrade_costs": [250, 300]
+  }
+}
