@@ -3,6 +3,7 @@ import pygame
 
 from src.core.coordinate import Coordinate
 from src.entities.projectile import HitscanBeam, MortarShell, ShrapnelPellet
+from src.enums import Faction
 
 MAP_WIDTH = 4000
 MAP_HEIGHT = 4000
@@ -15,6 +16,12 @@ ENEMY_COLORS = {
     "bio_titan": (40, 140, 40),
 }
 DEFAULT_ENEMY_COLOR = (220, 50, 50)
+
+FACTION_SPAWN_COLORS = {
+    Faction.CORPORATION: (80, 160, 255),
+    Faction.FAUNA: (120, 200, 60),
+}
+DEFAULT_SPAWN_COLOR = (255, 140, 0)
 
 
 class MapRenderer:
@@ -70,18 +77,28 @@ class MapRenderer:
                 pygame.draw.line(screen, color, (0, sy), (width, sy))
 
     def _draw_spawn_points(self, screen, camera, session):
-        """Рисует точки спавна врагов."""
-        spawn_points = getattr(session.map, "spawn_points", [])
-        for point in spawn_points:
-            sx, sy = camera.world_to_screen(point.x, point.y)
-            size = max(12, int(14 * camera.zoom))
-            triangle = [
-                (sx, sy - size),
-                (sx - size, sy + size),
-                (sx + size, sy + size),
-            ]
-            pygame.draw.polygon(screen, (255, 140, 0), triangle)
-            pygame.draw.polygon(screen, (255, 220, 150), triangle, 2)
+        """Рисует точки спавна врагов, разными цветами по фракциям."""
+        by_faction = getattr(session.map, "spawn_points_by_faction", {}) or {}
+        if by_faction:
+            for faction, points in by_faction.items():
+                color = FACTION_SPAWN_COLORS.get(faction, DEFAULT_SPAWN_COLOR)
+                for point in points:
+                    self._draw_spawn_marker(screen, camera, point, color)
+        else:
+            for point in getattr(session.map, "spawn_points", []):
+                self._draw_spawn_marker(screen, camera, point, DEFAULT_SPAWN_COLOR)
+
+    def _draw_spawn_marker(self, screen, camera, point, color):
+        """Рисует один маркер точки спавна."""
+        sx, sy = camera.world_to_screen(point.x, point.y)
+        size = max(12, int(14 * camera.zoom))
+        triangle = [
+            (sx, sy - size),
+            (sx - size, sy + size),
+            (sx + size, sy + size),
+        ]
+        pygame.draw.polygon(screen, color, triangle)
+        pygame.draw.polygon(screen, (255, 255, 255), triangle, 2)
 
     def _draw_base(self, screen, camera, session):
         """Рисует базу и полоску её здоровья."""
@@ -142,7 +159,7 @@ class MapRenderer:
                 if enemy is selected_enemy:
                     pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(sy)), 16, 2)
 
-                if getattr(enemy, "is_scouting", False):
+                if getattr(enemy, "is_patrolling", False):
                     pygame.draw.circle(screen, (255, 220, 0), (int(sx), int(sy)), 14, 2)
 
                 if getattr(enemy, "is_group_leader", False):

@@ -7,7 +7,7 @@ from src.systems.resource_bank import ResourceBank
 from src.systems.wave_protocol import WaveProtocol, WaveConfig
 from src.factories.tower_factory import TowerFactory
 from src.factories.enemy_factory import EnemyFactory
-from src.enums import GameState
+from src.enums import Faction, GameState
 from src.entities.hostile_entity import HostileEntity
 from src.core.coordinate import Coordinate
 from src.systems.mission import Objective, SurviveWavesObjective, ProtectTowersObjective
@@ -63,6 +63,10 @@ class GameSession:
             Coordinate(200, 3800),
             Coordinate(3800, 3800)
         ]
+        self.map.spawn_points_by_faction = {
+            Faction.CORPORATION: [Coordinate(200, 200), Coordinate(3800, 3800)],
+            Faction.FAUNA: [Coordinate(3800, 200), Coordinate(200, 3800)],
+        }
 
         print(f"Карта инициализирована")
         print(f"База: {self.base_position}")
@@ -86,7 +90,7 @@ class GameSession:
         for i in range(wave_count):
             type_count = rng.randint(1, min(3, len(available_types)))
             enemy_types = rng.sample(available_types, type_count)
-            count = rng.randint(4 + i, 7 + i * 2)
+            count = rng.randint(18 + i, 22 + i * 2)
             interval = rng.uniform(0.7, 1.5)
             waves.append(WaveConfig(enemy_types, count, interval))
         return waves
@@ -128,8 +132,15 @@ class GameSession:
             return True
         return False
 
-    def _spawn_enemy_factory(self, enemy_type: str, pos: Coordinate) -> HostileEntity:
-        """Создаёт врага заданного типа и прокладывает ему путь к базе."""
+    def _spawn_enemy_factory(self, enemy_type: str) -> Optional[HostileEntity]:
+        """Создаёт врага заданного типа в точке спавна его фракции и прокладывает путь к базе."""
+        faction = self.enemy_factory.faction_for(enemy_type)
+        spawn_points = self.map.spawn_points_for(faction)
+        if not spawn_points:
+            print(f"Ошибка: нет точек спавна для фракции {faction}!")
+            return None
+        pos = random.choice(spawn_points)
+
         enemy = self.enemy_factory.create(enemy_type, pos)
         if enemy is None:
             raise ValueError(f"Неизвестный тип врага в WaveConfig: '{enemy_type}'")

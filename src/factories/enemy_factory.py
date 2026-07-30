@@ -42,3 +42,10 @@ class EnemyFactory:
     def available_types(self) -> list:
         """Возвращает список зарегистрированных типов врагов."""
         return list(self._registry.keys())
+
+    def faction_for(self, type_name: str) -> Faction:
+        """Возвращает фракцию врага заданного типа, не создавая его."""
+        config = self._config_loader.get_enemy_config(type_name)
+        if "faction" in config:
+            return Faction(config["faction"])
+        return Faction.FAUNA

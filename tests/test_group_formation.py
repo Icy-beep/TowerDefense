@@ -2,14 +2,17 @@
 
 Раньше волна из одной фракции всегда шла к базе поодиночке. Теперь
 GroupFormationSystem время от времени случайно собирает эскорт вокруг
-врага-лидера определённого типа (по умолчанию ScoutDrone) из ближайших
-врагов ТОЙ ЖЕ фракции; пока лидер жив и не дошёл до базы, эскорт движется
-не по своему маршруту, а рядом с лидером (см. Map.update())."""
+врага-лидера определённого типа (по умолчанию HeavyAssaultDrone) из
+ближайших врагов ТОЙ ЖЕ фракции; пока лидер жив и не дошёл до базы,
+эскорт движется не по своему маршруту, а рядом с лидером (см.
+Map.update()). ScoutDrone теперь входит в SOLO_TYPES и никогда не
+участвует в группах — ни как лидер, ни как ведомый: его единственная
+задача — разведка и бегство от башен."""
 import pytest
 
 from src.core.coordinate import Coordinate
 from src.core.map import Map
-from src.entities.enemies import DroneWalker, GiantRoach, ScoutDrone
+from src.entities.enemies import DroneWalker, GiantRoach, HeavyAssaultDrone, ScoutDrone
 from src.systems.group_formation import GroupFormationSystem
 
 
@@ -51,73 +54,94 @@ def test_only_configured_leader_type_can_start_a_group():
     assert nearby.group_id is None
 
 
-def test_scout_recruits_nearby_enemy_of_same_faction():
+def test_heavy_assault_drone_recruits_nearby_enemy_of_same_faction():
     system = GroupFormationSystem(rng=_AlwaysFormRng())
-    scout = _tagged(ScoutDrone(Coordinate(0, 0)), "scout_drone")
+    leader = _tagged(HeavyAssaultDrone(Coordinate(0, 0)), "heavy_assault_drone")
     ally = _tagged(DroneWalker(Coordinate(50, 0)), "drone_walker")  # тоже Corporation
 
-    system.update(1.0, [scout, ally])
+    system.update(1.0, [leader, ally])
 
-    assert scout.is_group_leader is True
-    assert ally.group_leader is scout
-    assert ally.group_id == scout.group_id
+    assert leader.is_group_leader is True
+    assert ally.group_leader is leader
+    assert ally.group_id == leader.group_id
 
 
-def test_scout_does_not_recruit_enemy_of_different_faction():
+def test_heavy_assault_drone_does_not_recruit_enemy_of_different_faction():
     system = GroupFormationSystem(rng=_AlwaysFormRng())
-    scout = _tagged(ScoutDrone(Coordinate(0, 0)), "scout_drone")  # Corporation
+    leader = _tagged(HeavyAssaultDrone(Coordinate(0, 0)), "heavy_assault_drone")  # Corporation
     roach = _tagged(GiantRoach(Coordinate(50, 0)), "giant_roach")  # Fauna
 
-    system.update(1.0, [scout, roach])
+    system.update(1.0, [leader, roach])
 
     assert roach.group_leader is None, "фракции разные — вербовки быть не должно"
 
 
-def test_scout_does_not_recruit_enemy_outside_group_radius():
+def test_heavy_assault_drone_does_not_recruit_enemy_outside_group_radius():
     system = GroupFormationSystem(rng=_AlwaysFormRng())
-    scout = _tagged(ScoutDrone(Coordinate(0, 0)), "scout_drone")
+    leader = _tagged(HeavyAssaultDrone(Coordinate(0, 0)), "heavy_assault_drone")
     far_ally = _tagged(DroneWalker(Coordinate(GroupFormationSystem.GROUP_RADIUS + 50, 0)), "drone_walker")
 
-    system.update(1.0, [scout, far_ally])
+    system.update(1.0, [leader, far_ally])
 
     assert far_ally.group_leader is None
 
 
 def test_form_chance_gates_recruitment():
     system = GroupFormationSystem(rng=_NeverFormRng())
-    scout = _tagged(ScoutDrone(Coordinate(0, 0)), "scout_drone")
+    leader = _tagged(HeavyAssaultDrone(Coordinate(0, 0)), "heavy_assault_drone")
     ally = _tagged(DroneWalker(Coordinate(10, 0)), "drone_walker")
 
-    system.update(1.0, [scout, ally])
+    system.update(1.0, [leader, ally])
 
     assert ally.group_leader is None
 
 
 def test_escort_size_is_capped():
     system = GroupFormationSystem(rng=_AlwaysFormRng())
-    scout = _tagged(ScoutDrone(Coordinate(0, 0)), "scout_drone")
+    leader = _tagged(HeavyAssaultDrone(Coordinate(0, 0)), "heavy_assault_drone")
     allies = [_tagged(DroneWalker(Coordinate(10 * i, 0)), "drone_walker") for i in range(1, 6)]
 
     for _ in range(10):
-        system.update(1.0, [scout] + allies)
+        system.update(1.0, [leader] + allies)
 
-    escorted = sum(1 for a in allies if a.group_leader is scout)
+    escorted = sum(1 for a in allies if a.group_leader is leader)
     assert escorted == GroupFormationSystem.MAX_ESCORT_SIZE
 
 
 def test_already_grouped_enemy_is_not_recruited_by_another_leader():
     system = GroupFormationSystem(rng=_AlwaysFormRng())
-    scout_a = _tagged(ScoutDrone(Coordinate(0, 0)), "scout_drone")
-    scout_b = _tagged(ScoutDrone(Coordinate(1000, 0)), "scout_drone")
+    leader_a = _tagged(HeavyAssaultDrone(Coordinate(0, 0)), "heavy_assault_drone")
+    leader_b = _tagged(HeavyAssaultDrone(Coordinate(1000, 0)), "heavy_assault_drone")
     ally = _tagged(DroneWalker(Coordinate(10, 0)), "drone_walker")
 
-    system.update(1.0, [scout_a, ally])
-    assert ally.group_leader is scout_a
+    system.update(1.0, [leader_a, ally])
+    assert ally.group_leader is leader_a
 
     ally.position = Coordinate(1010, 0)  # физически рядом со вторым лидером
-    system.update(1.0, [scout_b, ally])
+    system.update(1.0, [leader_b, ally])
 
-    assert ally.group_leader is scout_a, "уже состоящий в группе враг не должен переманиваться"
+    assert ally.group_leader is leader_a, "уже состоящий в группе враг не должен переманиваться"
+
+
+def test_scout_drone_never_becomes_a_leader():
+    system = GroupFormationSystem(rng=_AlwaysFormRng())
+    scout = _tagged(ScoutDrone(Coordinate(0, 0)), "scout_drone")
+    ally = _tagged(DroneWalker(Coordinate(10, 0)), "drone_walker")
+
+    system.update(1.0, [scout, ally])
+
+    assert scout.is_group_leader is False
+    assert ally.group_leader is None
+
+
+def test_scout_drone_is_never_recruited_as_a_follower():
+    system = GroupFormationSystem(rng=_AlwaysFormRng())
+    leader = _tagged(HeavyAssaultDrone(Coordinate(0, 0)), "heavy_assault_drone")
+    scout = _tagged(ScoutDrone(Coordinate(10, 0)), "scout_drone")
+
+    system.update(1.0, [leader, scout])
+
+    assert scout.group_leader is None, "разведчик — SOLO_TYPES, не должен входить в группы"
 
 
 # --------------------------------------------------------------- Map.update()

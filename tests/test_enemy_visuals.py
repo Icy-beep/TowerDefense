@@ -1,7 +1,7 @@
 """Визуальное различие типов врагов на карте (MapRenderer). Раньше все
 враги рисовались одинаковым красным кружком — из-за этого поведение
-ScoutDrone (стоит на месте во время разведки) было неотличимо от
-любого другого врага, который просто пока не подошёл."""
+патрулирующих периметр врагов было неотличимо от любого другого врага,
+который просто пока не подошёл."""
 import types
 from src.ui.map_renderer import MapRenderer, ENEMY_COLORS, DEFAULT_ENEMY_COLOR
 from src.factories.enemy_factory import EnemyFactory
@@ -29,18 +29,18 @@ def test_unknown_enemy_type_falls_back_to_default_color():
 
 def test_render_enemies_smoke_scouting_and_selected(monkeypatch):
     """Прогоняет реальный render() через все состояния (обычный враг,
-    разведчик во время recon, разведчик после recon, выбранный враг) —
+    патрулирующий периметр враг, враг вне патруля, выбранный враг) —
     не падает и не требует реального SDL-окна (стаб pygame)."""
     session = GameSession()
     session.setup_game()
 
-    scouting = session.enemy_factory.create("scout_drone", Coordinate(500, 500))
-    scouting.scout_timer = 5.0
-    done_scouting = session.enemy_factory.create("scout_drone", Coordinate(600, 500))
-    done_scouting.scout_timer = 0.0
+    patrolling = session.enemy_factory.create("scout_drone", Coordinate(500, 500))
+    patrolling.is_patrolling = True
+    not_patrolling = session.enemy_factory.create("scout_drone", Coordinate(600, 500))
+    not_patrolling.is_patrolling = False
     roach = session.enemy_factory.create("giant_roach", Coordinate(700, 500))
 
-    session.map.enemies.extend([scouting, done_scouting, roach])
+    session.map.enemies.extend([patrolling, not_patrolling, roach])
 
     controller = types.SimpleNamespace(selected_enemy=roach)
     camera = types.SimpleNamespace(

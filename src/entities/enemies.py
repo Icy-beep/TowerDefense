@@ -1,4 +1,3 @@
-import random
 from typing import Optional
 from src.entities.hostile_entity import HostileEntity
 from src.enums import ArmorType, Faction
@@ -47,47 +46,24 @@ class GiantRoach(HostileEntity):
         pass
 
 class ScoutDrone(HostileEntity):
-    """Дрон-разведчик корпорации, изредка замирающий для разведки."""
-
-    SCOUT_CHANCE_PER_SECOND = 0.05
-    MIN_SCOUT_TIME = 1.5
-    MAX_SCOUT_TIME = 3.0
+    """Дрон-разведчик корпорации: только разведка, убегает от башен, не участвует в группах."""
 
     VISION_RADIUS = 260.0
 
     def __init__(self, position: Coordinate, max_health: float = 100, speed: float = 70,
                  armor: ArmorType = ArmorType.ENERGY_SHIELDED, reward: int = 60,
-                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None,
-                 rng: Optional[random.Random] = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
         """Создаёт дрона-разведчика."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
                           vision_radius=vision_radius)
-        self._rng = rng or random
-        self.scout_timer = 0.0
-
-    @property
-    def is_scouting(self) -> bool:
-        """Проверяет, ведёт ли дрон разведку на месте."""
-        return self.scout_timer > 0
 
     def act(self, delta_time: float, in_danger: bool = False):
-        """Со случайным шансом останавливается на разведку, если не под обстрелом."""
-        if self.scout_timer > 0:
-            if in_danger:
-                self.scout_timer = 0.0
-            else:
-                self.scout_timer -= delta_time
-            return
+        """Не выполняет особых действий — вся логика бегства находится в Map.update()."""
+        pass
 
-        if in_danger:
-            return
-
-        if self._rng.random() < self.SCOUT_CHANCE_PER_SECOND * delta_time:
-            self.scout_timer = self._rng.uniform(self.MIN_SCOUT_TIME, self.MAX_SCOUT_TIME)
-
-    def is_moving(self) -> bool:
-        """Проверяет, движется ли дрон сейчас."""
-        return self.scout_timer <= 0
+    def avoids_danger(self) -> bool:
+        """Разведчик всегда убегает от простреливаемых зон вместо боя."""
+        return True
 
 class BioTitan(HostileEntity):
     """Огромный и живучий органический титан фауны планеты."""

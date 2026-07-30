@@ -35,6 +35,14 @@ class HostileEntity(Entity, ABC):
 
         self.target_tower = None
 
+        self.is_patrolling: bool = False
+        self.patrol_angle: Optional[float] = None
+        self.patrol_direction: int = 1
+
+    def avoids_danger(self) -> bool:
+        """Проверяет, должен ли враг убегать от простреливаемых башнями зон вместо боя."""
+        return False
+
     def set_path(self, path: List[Coordinate]):
         """Назначает врагу маршрут."""
         self.path = path
@@ -62,6 +70,10 @@ class HostileEntity(Entity, ABC):
     def attack_tower(self, tower, delta_time: float):
         """Наносит урон башне."""
         tower.take_damage(self.ATTACK_DAMAGE_PER_SECOND * delta_time, DamageType.KINETIC)
+
+    def attack_enemy(self, other: "HostileEntity", delta_time: float):
+        """Наносит урон врагу вражеской фракции."""
+        other.take_damage(self.ATTACK_DAMAGE_PER_SECOND * delta_time, DamageType.KINETIC)
 
     def has_reached_end_of_path(self) -> bool:
         """Проверяет, дошёл ли враг до конца своего маршрута."""

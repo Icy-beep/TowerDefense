@@ -1,4 +1,3 @@
-import random
 from typing import List, Callable
 from src.core.map import Map
 
@@ -62,9 +61,8 @@ class WaveProtocol:
 
             if self.spawn_timer >= config.interval and self.enemies_spawned < config.count:
                 enemy_type = config.enemy_types[self.enemies_spawned % len(config.enemy_types)]
-                spawn_pos = random.choice(game_map.spawn_points) if game_map.spawn_points else None
-                if spawn_pos:
-                    enemy = spawn_factory(enemy_type, spawn_pos)
+                enemy = spawn_factory(enemy_type)
+                if enemy is not None:
                     game_map.spawn_enemy(enemy)
                     self.enemies_spawned += 1
                     self.spawn_timer = 0.0

@@ -13,14 +13,17 @@ class FakeMapNoSurvivors:
 
     def __init__(self):
         self.enemies = []
-        self.spawn_points = [Coordinate(0, 0)]
 
     def spawn_enemy(self, enemy):
         pass
 
 
-def fake_spawn_factory(cls, pos):
-    return cls(pos)
+def fake_spawn_factory(cls):
+    """Позицию точки спавна WaveProtocol больше не выбирает сам — это
+    теперь дело spawn_factory (в реальной игре — GameSession.
+    _spawn_enemy_factory, знающий про фракцию врага и точки спавна её
+    фракции). Здесь для теста позиция не важна."""
+    return cls(Coordinate(0, 0))
 
 
 def test_wave_spawns_correct_number_and_type_of_enemies():
@@ -88,7 +91,6 @@ def test_is_all_waves_complete_false_while_enemies_remain_on_field():
     class MapWithSurvivor:
         def __init__(self):
             self.enemies = [object()]  # один противник навсегда остаётся на поле
-            self.spawn_points = [Coordinate(0, 0)]
 
         def spawn_enemy(self, e):
             pass

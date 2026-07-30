@@ -32,11 +32,16 @@ class Map:
         self.group_formation = group_formation
 
         self.spawn_points = []
+        self.spawn_points_by_faction: Dict[Faction, List[Coordinate]] = {}
         self.towers_lost_count = 0
 
     def add_module(self, module: DefenseModule):
         """Добавляет башню на карту."""
         self.modules.append(module)
+
+    def spawn_points_for(self, faction: Faction) -> List[Coordinate]:
+        """Возвращает точки спавна фракции, а если для неё отдельных не задано — общий список."""
+        return self.spawn_points_by_faction.get(faction) or self.spawn_points
 
     def can_place_module(self, position: Coordinate, min_distance: float = 30.0) -> bool:
         """Проверяет, можно ли поставить башню в этой точке."""
@@ -129,6 +134,96 @@ class Map:
             enemy.target_tower = min(candidates, key=lambda t: enemy.position.distance_to(t.position)) \
                 if candidates else None
 
+    PATROL_ANGULAR_SPEED = 0.5
+    PATROL_RADIUS_PADDING = 150.0
+    GAP_ANGULAR_WINDOW = math.radians(25)
+
+    def _bearing_from_base(self, position: Coordinate) -> float:
+        """Угол точки относительно базы, в радианах."""
+        return math.atan2(position.y - self.base_position.y, position.x - self.base_position.x)
+
+    def _is_gap_at_angle(self, angle: float, known_towers: List[DefenseModule]) -> bool:
+        """Правда ли, что в этом направлении от базы нет известной башни поблизости."""
+        for tower in known_towers:
+            tower_angle = self._bearing_from_base(tower.position)
+            diff = abs((tower_angle - angle + math.pi) % (2 * math.pi) - math.pi)
+            if diff <= self.GAP_ANGULAR_WINDOW:
+                return False
+        return True
+
+    def _advance_patrol(self, enemy: HostileEntity, delta_time: float, known_towers: List[DefenseModule]):
+        """Двигает врага по кругу вокруг базы на радиусе патрулирования."""
+        patrol_radius = self.PATROL_RADIUS_PADDING + max((t.range_radius for t in known_towers), default=0.0)
+        if enemy.patrol_angle is None:
+            enemy.patrol_angle = self._bearing_from_base(enemy.position)
+            enemy.patrol_direction = 1 if id(enemy) % 2 == 0 else -1
+        enemy.patrol_angle += enemy.patrol_direction * self.PATROL_ANGULAR_SPEED * delta_time
+        target = Coordinate(
+            self.base_position.x + math.cos(enemy.patrol_angle) * patrol_radius,
+            self.base_position.y + math.sin(enemy.patrol_angle) * patrol_radius,
+        )
+        enemy.move_towards_point(target, delta_time)
+
+    def _advance_towards_base(self, enemy: HostileEntity, delta_time: float):
+        """Движение к базе: патрулирует периметр, если известная башня перекрывает
+        текущее направление, иначе идёт по обычному маршруту."""
+        if self.base_position is None:
+            enemy.move_along_path(delta_time)
+            return
+
+        intel = self.faction_intel.setdefault(enemy.faction, FactionIntel())
+        known_towers = [t for t in intel.known_towers() if not t.is_destroyed()]
+        bearing = self._bearing_from_base(enemy.position)
+        gap_here = self._is_gap_at_angle(bearing, known_towers)
+
+        if enemy.is_patrolling:
+            if gap_here:
+                enemy.is_patrolling = False
+                new_path = self.path_to_base(enemy.position, enemy.faction)
+                if new_path:
+                    enemy.set_path(new_path)
+                enemy.move_along_path(delta_time)
+            else:
+                self._advance_patrol(enemy, delta_time, known_towers)
+            return
+
+        if known_towers and not gap_here:
+            enemy.is_patrolling = True
+            self._advance_patrol(enemy, delta_time, known_towers)
+            return
+
+        enemy.move_along_path(delta_time)
+
+    def _nearest_covering_tower(self, position: Coordinate) -> Optional[DefenseModule]:
+        """Возвращает ближайшую башню, простреливающую точку, или None."""
+        covering = [m for m in self.modules if position.distance_to(m.position) <= m.range_radius]
+        if not covering:
+            return None
+        return min(covering, key=lambda m: position.distance_to(m.position))
+
+    def _flee_point_from(self, position: Coordinate, tower: DefenseModule) -> Coordinate:
+        """Точка вдали от башни, противоположная её направлению от врага."""
+        dx = position.x - tower.position.x
+        dy = position.y - tower.position.y
+        dist = math.hypot(dx, dy)
+        if dist < 1e-6:
+            dx, dy, dist = 1.0, 0.0, 1.0
+        flee_distance = tower.range_radius + 50.0
+        return Coordinate(tower.position.x + dx / dist * flee_distance, tower.position.y + dy / dist * flee_distance)
+
+    def _find_enemy_combat_target(self, enemy: HostileEntity) -> Optional[HostileEntity]:
+        """Находит ближайшего живого врага чужой фракции в радиусе обзора."""
+        candidates = [
+            other for other in self.enemies
+            if other is not enemy
+            and other.is_alive()
+            and other.faction != enemy.faction
+            and enemy.position.distance_to(other.position) <= enemy.vision_radius
+        ]
+        if not candidates:
+            return None
+        return min(candidates, key=lambda other: enemy.position.distance_to(other.position))
+
     def _update_vision(self, enemies: List[HostileEntity]) -> set:
         """Открывает фракциям башни, попавшие в радиус обзора их врагов."""
         changed_factions = set()
@@ -164,7 +259,10 @@ class Map:
             target_tower = enemy.group_target_tower()
             hunting_tower = target_tower is not None and not target_tower.is_destroyed()
 
-            if not hunting_tower and enemy.path_index >= len(enemy.path):
+            combat_target = self._find_enemy_combat_target(enemy)
+            in_combat = combat_target is not None
+
+            if not hunting_tower and not in_combat and enemy.path_index >= len(enemy.path):
                 enemies_reached_base.append(enemy)
                 continue
 
@@ -172,12 +270,26 @@ class Map:
             enemy.act(delta_time, in_danger)
 
             if enemy.is_moving():
-                if hunting_tower:
+                if in_combat:
+                    distance = enemy.position.distance_to(combat_target.position)
+                    if distance <= enemy.ATTACK_RANGE:
+                        enemy.attack_enemy(combat_target, delta_time)
+                    else:
+                        enemy.move_towards_point(combat_target.position, delta_time)
+                elif hunting_tower:
                     distance = enemy.position.distance_to(target_tower.position)
                     if distance <= enemy.ATTACK_RANGE:
                         enemy.attack_tower(target_tower, delta_time)
                     else:
                         enemy.move_towards_point(target_tower.position, delta_time)
+                elif in_danger and enemy.avoids_danger():
+                    threatening_tower = self._nearest_covering_tower(enemy.position)
+                    if threatening_tower is not None:
+                        enemy.is_patrolling = False
+                        flee_point = self._flee_point_from(enemy.position, threatening_tower)
+                        enemy.move_towards_point(flee_point, delta_time)
+                    else:
+                        self._advance_towards_base(enemy, delta_time)
                 else:
                     leader = enemy.group_leader
                     if leader is not None and leader.is_alive() and not leader.has_reached_end_of_path():
@@ -187,7 +299,7 @@ class Map:
                     else:
                         if leader is not None:
                             enemy.leave_group()
-                        enemy.move_along_path(delta_time)
+                        self._advance_towards_base(enemy, delta_time)
 
             surviving_enemies.append(enemy)
 
