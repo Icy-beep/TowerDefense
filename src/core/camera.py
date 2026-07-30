@@ -1,3 +1,6 @@
+import pygame
+
+
 class Camera:
     """Камера с зумом к курсору и перемещением по карте."""
 
@@ -52,7 +55,6 @@ class Camera:
 
     def update(self, dt, keys):
         """Двигает камеру по нажатым клавишам WASD/стрелок с ускорением по Shift."""
-        import pygame
         dx = dy = 0.0
         speed = self.speed * dt
         if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:

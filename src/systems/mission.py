@@ -1,6 +1,7 @@
 """Задания — необязательный слой поверх основного волнового цикла."""
 from abc import ABC, abstractmethod
 
+from src.enums import GameState
 from src.localization.loc import loc
 
 
@@ -37,8 +38,6 @@ class SurviveWavesObjective(Objective):
 
     def update(self, session):
         """Проверяет поражение или достижение целевой волны."""
-        from src.enums import GameState
-
         if session.state == GameState.GAME_OVER:
             self.failed = True
             return
