@@ -1,9 +1,4 @@
-"""GameView — окно приложения (UI-слой). Инициализирует pygame, держит
-игровой цикл и переводит pygame-события в Controller. Сама отрисовка
-вынесена в MapRenderer/HudRenderer/GameOverScreen (см. соседние модули) —
-GameView их только создаёт и вызывает по очереди, не содержит игровой
-логики и не обращается к Model напрямую для принятия решений — только
-для чтения состояния, нужного для рендера."""
+"""Окно приложения и игровой цикл."""
 import pygame
 import sys
 
@@ -17,7 +12,10 @@ from src.ui.menu_screen import MenuScreen
 
 
 class GameView:
+    """Окно игры: инициализация pygame, игровой цикл и ввод."""
+
     def __init__(self, session: GameSession):
+        """Создаёт окно и рендереры для заданной игровой сессии."""
         self.session = session
         self.controller: GameController | None = None
 
@@ -44,11 +42,11 @@ class GameView:
 
     @property
     def camera(self):
+        """Камера активного контроллера."""
         return self.controller.camera
 
     def run(self):
-        # Игра стартует в GameState.MENU (см. GameSession.__init__) — сессия
-        # не настраивается (setup_game), пока игрок не нажмёт "Начать игру".
+        """Запускает основной игровой цикл."""
         while self.running:
             dt = self.clock.tick(60) / 1000.0
             self.handle_events()
@@ -61,6 +59,7 @@ class GameView:
         sys.exit()
 
     def handle_events(self):
+        """Обрабатывает очередь событий pygame."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -72,6 +71,7 @@ class GameView:
                 self.controller.handle_input(event)
 
     def _handle_menu_input(self, event):
+        """Обрабатывает клики по кнопкам главного меню."""
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             action = self.menu_screen.handle_click(event.pos, self.width, self.height)
             if action == "start":
@@ -80,10 +80,12 @@ class GameView:
                 self.running = False
 
     def _start_game(self):
+        """Настраивает новую игру и создаёт контроллер."""
         self.session.setup_game()
         self.controller = GameController(self.session)
 
     def render(self):
+        """Рисует текущий кадр игры."""
         if self.session.state == GameState.MENU:
             self.menu_screen.render(self.screen, self.width, self.height, self.font, self.title_font)
             return

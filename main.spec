@@ -5,7 +5,10 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    # data/config/*.json и data/locale/*.json читаются ConfigLoader/Loc в
+    # рантайме (относительно их расположения) — без этой строки собранный
+    # .exe не найдёт конфиги/текст и откатится на дефолты/"[key]".
+    datas=[('data/config', 'data/config'), ('data/locale', 'data/locale')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

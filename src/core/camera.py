@@ -1,8 +1,8 @@
 class Camera:
-    """Камера с поддержкой зума к курсору.
-    Не зависит ни от game_view, ни от game_controller — общий, независимый модуль."""
+    """Камера с зумом к курсору и перемещением по карте."""
 
     def __init__(self, screen_w, screen_h, map_w=4000, map_h=4000):
+        """Создаёт камеру для экрана и карты заданного размера."""
         self.x = 0.0
         self.y = 0.0
         self.screen_w, self.screen_h = screen_w, screen_h
@@ -13,6 +13,7 @@ class Camera:
         self.boost_multiplier = 2.5
 
     def move(self, dx, dy):
+        """Смещает камеру, не выпуская её за границы карты."""
         self.x += dx
         self.y += dy
         vis_w = self.screen_w / self.zoom
@@ -32,23 +33,25 @@ class Camera:
         self.move(0, 0)
 
     def world_to_screen(self, wx, wy):
+        """Переводит мировые координаты в экранные."""
         return (wx - self.x) * self.zoom, (wy - self.y) * self.zoom
 
     def screen_to_world(self, sx, sy):
+        """Переводит экранные координаты в мировые."""
         return sx / self.zoom + self.x, sy / self.zoom + self.y
 
     def center_on(self, position):
-        """position — объект с полями .x и .y (Coordinate)"""
+        """Центрирует камеру на заданной точке."""
         self.x = position.x - self.screen_w / (2 * self.zoom)
         self.y = position.y - self.screen_h / (2 * self.zoom)
         self.move(0, 0)
 
     def follow(self, position):
-        """Жёсткое следование за целью — для будущего Operator-режима"""
+        """Мгновенно следует за целью."""
         self.center_on(position)
 
     def update(self, dt, keys):
-        """Непрерывное движение камеры по WASD/стрелкам. Shift — ускорение."""
+        """Двигает камеру по нажатым клавишам WASD/стрелок с ускорением по Shift."""
         import pygame
         dx = dy = 0.0
         speed = self.speed * dt

@@ -1,0 +1,66 @@
+# 1) внешние JSON-конфиги для башен и врагов
+git add data/config/enemies.json data/config/towers.json tests/test_config_loader.py
+git add -p src/config/config_loader.py src/factories/enemy_factory.py src/factories/tower_factory.py
+git commit -m "feat: внешние JSON-конфиги для башен и врагов"
+
+# 2) локализация текста интерфейса
+git add data/locale/ru.json tests/test_localization.py
+git add -p src/localization/loc.py src/ui/hud_renderer.py src/ui/menu_screen.py src/ui/game_over_screen.py
+git commit -m "feat: локализация текста интерфейса"
+
+# 3) снаряды с реальной коллизией + фикс тоннелирования
+git add tests/test_projectiles.py
+git add -p src/entities/projectile.py src/entities/turrets.py src/core/map.py
+git commit -m "feat: снаряды с реальной коллизией, устранено тоннелирование сквозь быстрых врагов"
+
+# 4) реплан пути врагов при постройке новой башни
+git add tests/test_path_replanning.py
+git add -p src/core/navigation.py src/core/map.py src/core/game_session.py
+git commit -m "feat: реплан пути врагов при постройке новой башни"
+
+# 5) групповое поведение — эскорты вокруг лидера по фракциям
+git add src/systems/group_formation.py tests/test_group_formation.py tests/test_enemy_factions_and_scout_ai.py
+git add -p src/entities/hostile_entity.py src/entities/enemies.py src/core/map.py
+git commit -m "feat: групповое поведение врагов — эскорты вокруг лидера по фракциям"
+
+# 6) туман войны — разведка вместо всеведения
+git add src/systems/faction_intel.py tests/test_fog_of_war.py
+git add -p src/core/map.py src/entities/hostile_entity.py
+git commit -m "feat: туман войны — фракции узнают о башнях только через разведку юнитов"
+
+# 7) мягкий обход известных башен + разрушаемые башни
+git add tests/test_tower_destruction.py
+git add -p src/core/map.py src/entities/hostile_entity.py src/entities/defense_module.py src/ui/map_renderer.py
+git commit -m "feat: мягкий обход известных башен + разрушаемые башни"
+
+# 8) фикс фризов при старте волны
+git add -p src/core/navigation.py src/core/map.py
+git commit -m "fix: устранены фризы при старте волны (медленный поиск пути)"
+
+# 9) новые типы врагов + броня ORGANIC
+git add tests/test_new_enemy_types.py
+git add -p src/entities/enemies.py src/entities/hostile_entity.py src/factories/enemy_factory.py data/config/enemies.json src/localization/loc.py src/ui/hud_renderer.py src/ui/map_renderer.py
+git commit -m "feat: новые типы врагов (тяжёлый дрон, био-титан) и броня ORGANIC"
+
+# 10) задания поверх волн
+git add src/systems/mission.py tests/test_missions.py
+git add -p src/core/game_session.py src/core/map.py src/ui/hud_renderer.py src/localization/loc.py
+git commit -m "feat: задания поверх волн (выжить до волны / не потерять башни)"
+
+# 11) радиус атаки башни только при выборе или зажатом ALT
+git add tests/test_tower_range_visibility.py
+git add -p src/ui/map_renderer.py src/ui/hud_renderer.py src/localization/loc.py
+git commit -m "feat: радиус атаки башни виден только при выборе или зажатом ALT"
+
+# 12) фауна тоже формирует группы и агрессивно сносит башни
+git add tests/test_fauna_aggression.py
+git add -p src/systems/group_formation.py src/core/map.py
+git commit -m "feat: фауна тоже формирует группы и агрессивно сносит башни на пути"
+
+# 13) прочие тесты, не попавшие явно ни в одну фичу (апгрейд/пауза)
+git add tests/test_pause_and_upgrade_control.py tests/test_tower_upgrade.py tests/test_enemy_visuals.py
+git commit -m "test: тесты на апгрейд/паузу и визуальное различие врагов"
+
+# 14) всё, что осталось — докстринги, комментарии, доки, мелкие правки
+git add -A
+git commit -m "chore: убраны комментарии, добавлены короткие docstring по всему коду"

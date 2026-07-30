@@ -4,18 +4,20 @@ from src.core.map import Map
 
 
 class WaveConfig:
-    """Волна описывается именами типов врагов (строки), как и TowerFactory
-    работает со строками для башен — WaveProtocol не знает о
-    конкретных классах врагов, только о том, кого просит EnemyFactory."""
+    """Описание одной волны врагов."""
 
     def __init__(self, enemy_types: List[str], count: int, interval: float):
+        """Создаёт описание волны: типы врагов, число врагов и интервал спавна."""
         self.enemy_types = enemy_types
         self.count = count
         self.interval = interval
 
 
 class WaveProtocol:
+    """Управляет последовательностью волн врагов."""
+
     def __init__(self):
+        """Создаёт протокол без волн."""
         self.current_wave_idx = 0
         self.waves: List[WaveConfig] = []
         self.spawn_timer = 0.0
@@ -27,9 +29,11 @@ class WaveProtocol:
         self.spawn_points = []
 
     def set_waves(self, waves: List[WaveConfig]):
+        """Задаёт список волн."""
         self.waves = waves
 
     def start_next_wave(self):
+        """Запускает следующую волну."""
         if self.finished or self.is_active:
             return False
         if self.current_wave_idx < len(self.waves):
@@ -42,11 +46,13 @@ class WaveProtocol:
             return False
 
     def force_start_next_wave(self):
+        """Запускает следующую волну немедленно, минуя таймер ожидания."""
         if not self.is_active and not self.finished:
             self.cooldown_timer = 0
             self.start_next_wave()
 
     def update(self, delta_time: float, game_map: Map, spawn_factory: Callable):
+        """Обновляет протокол на один кадр: спавнит врагов и переключает волны."""
         if self.finished:
             return
 
@@ -79,9 +85,11 @@ class WaveProtocol:
                     self.start_next_wave()
 
     def get_time_until_next_wave(self) -> float:
+        """Возвращает время до старта следующей волны."""
         if self.finished or self.is_active:
             return 0.0
         return max(0.0, self.cooldown_timer)
 
     def is_all_waves_complete(self) -> bool:
+        """Проверяет, что все волны отражены."""
         return self.finished

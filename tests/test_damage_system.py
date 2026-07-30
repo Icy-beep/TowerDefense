@@ -4,7 +4,7 @@
 - корректность начисления награды за уничтожение противника
 """
 from src.core.coordinate import Coordinate
-from src.entities.enemies import DroneWalker, GiantRoach  # DroneWalker: LIGHT/60hp/reward15; GiantRoach: HEAVY/250hp
+from src.entities.enemies import DroneWalker, GiantRoach, BioTitan  # DroneWalker: LIGHT/60hp/reward15; GiantRoach: HEAVY/250hp; BioTitan: ORGANIC/400hp
 from src.enums import DamageType
 from src.core.map import Map
 
@@ -30,6 +30,34 @@ def test_heavy_armor_does_not_reduce_energy_damage():
     enemy.take_damage(100, DamageType.ENERGY)
 
     assert enemy.health == 150, "HEAVY снижает только KINETIC — ENERGY проходит полностью"
+
+
+def test_organic_armor_halves_explosive_damage():
+    """Раньше EXPLOSIVE (мортира) не имел ни одного контр-типа брони —
+    лучший ответ на всё без исключения. ORGANIC (BioTitan) теперь режет
+    его вдвое, как HEAVY режет KINETIC."""
+    enemy = BioTitan(Coordinate(0, 0))  # ORGANIC armor, 400 hp
+
+    enemy.take_damage(100, DamageType.EXPLOSIVE)
+
+    assert enemy.health == 350, "ORGANIC против EXPLOSIVE должен снижать урон на 50%"
+
+
+def test_organic_armor_does_not_reduce_kinetic_or_energy_damage():
+    enemy = BioTitan(Coordinate(0, 0))
+
+    enemy.take_damage(100, DamageType.KINETIC)
+    enemy.take_damage(100, DamageType.ENERGY)
+
+    assert enemy.health == 200, "ORGANIC снижает только EXPLOSIVE — остальное проходит полностью"
+
+
+def test_heavy_armor_does_not_reduce_explosive_damage():
+    enemy = GiantRoach(Coordinate(0, 0))  # HEAVY armor
+
+    enemy.take_damage(100, DamageType.EXPLOSIVE)
+
+    assert enemy.health == 150, "HEAVY не защищает от EXPLOSIVE — это работа ORGANIC"
 
 
 def test_enemy_dies_when_health_reaches_zero_or_below():
