@@ -139,7 +139,8 @@ class GameSession:
         if not spawn_points:
             print(f"Ошибка: нет точек спавна для фракции {faction}!")
             return None
-        pos = random.choice(spawn_points)
+        spawn_point = random.choice(spawn_points)
+        pos = Coordinate(spawn_point.x, spawn_point.y)  # копия — враг не должен владеть точкой спавна
 
         enemy = self.enemy_factory.create(enemy_type, pos)
         if enemy is None:

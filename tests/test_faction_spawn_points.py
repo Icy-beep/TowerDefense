@@ -89,6 +89,29 @@ def test_spawned_enemy_appears_at_a_point_belonging_to_its_faction():
         assert (fauna_enemy.position.x, fauna_enemy.position.y) in fauna_points
 
 
+def test_spawned_enemy_does_not_alias_the_spawn_point_coordinate():
+    """Регрессия: враг раньше получал ту же самую ссылку на Coordinate,
+    что лежит в spawn_points_by_faction. Движение врага (self.position.x
+    += ...) мутирует объект на месте, поэтому без копии сама точка спавна
+    незаметно "уезжала" вслед за врагом (и маркер на карте, и будущие
+    точки спавна для всей фракции)."""
+    session = GameSession()
+    session.setup_game()
+
+    enemy = session._spawn_enemy_factory("drone_walker")
+    spawn_points = session.map.spawn_points_for(enemy.faction)
+
+    assert not any(enemy.position is p for p in spawn_points), \
+        "враг не должен владеть тем же объектом Coordinate, что и точка спавна"
+
+    original = [Coordinate(p.x, p.y) for p in spawn_points]
+
+    for _ in range(50):
+        enemy.move_towards_point(Coordinate(2000, 2000), 1.0)
+
+    assert spawn_points == original, "точки спавна фракции не должны сдвигаться при движении врага"
+
+
 def test_spawn_factory_returns_none_when_faction_has_no_spawn_points_at_all():
     session = GameSession()
     session.setup_game()
