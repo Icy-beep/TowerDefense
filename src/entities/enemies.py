@@ -1,27 +1,104 @@
+import random
+from typing import Optional
 from src.entities.hostile_entity import HostileEntity
-from src.enums import ArmorType
+from src.enums import ArmorType, Faction
 from src.core.coordinate import Coordinate
 
 class DroneWalker(HostileEntity):
-    """Быстрый, слабый, легкая броня"""
-    def __init__(self, position: Coordinate):
-        super().__init__(position, max_health=60, speed=50, armor=ArmorType.LIGHT, reward=15)
+    """Быстрый и слабый механический дрон корпорации."""
 
-    def act(self, delta_time: float):
+    def __init__(self, position: Coordinate, max_health: float = 60, speed: float = 50,
+                 armor: ArmorType = ArmorType.LIGHT, reward: int = 15,
+                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
+        """Создаёт лёгкого дрона."""
+        super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
+                          vision_radius=vision_radius)
+
+    def act(self, delta_time: float, in_danger: bool = False):
+        """Не выполняет особых действий."""
+        pass
+
+class HeavyAssaultDrone(HostileEntity):
+    """Тяжёлый штурмовой дрон корпорации."""
+
+    def __init__(self, position: Coordinate, max_health: float = 180, speed: float = 35,
+                 armor: ArmorType = ArmorType.HEAVY, reward: int = 45,
+                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
+        """Создаёт тяжёлого штурмового дрона."""
+        super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
+                          vision_radius=vision_radius)
+
+    def act(self, delta_time: float, in_danger: bool = False):
+        """Не выполняет особых действий."""
         pass
 
 class GiantRoach(HostileEntity):
-    """Медленный, живой, тяжелая броня"""
-    def __init__(self, position: Coordinate):
-        super().__init__(position, max_health=250, speed=25, armor=ArmorType.HEAVY, reward=40)
+    """Медленный и живучий гигантский таракан фауны планеты."""
 
-    def act(self, delta_time: float):
+    def __init__(self, position: Coordinate, max_health: float = 250, speed: float = 25,
+                 armor: ArmorType = ArmorType.HEAVY, reward: int = 40,
+                 faction: Faction = Faction.FAUNA, vision_radius: Optional[float] = None):
+        """Создаёт гигантского таракана."""
+        super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
+                          vision_radius=vision_radius)
+
+    def act(self, delta_time: float, in_danger: bool = False):
+        """Не выполняет особых действий."""
         pass
 
 class ScoutDrone(HostileEntity):
-    """Разведчик, средняя броня, высокая награда"""
-    def __init__(self, position: Coordinate):
-        super().__init__(position, max_health=100, speed=70, armor=ArmorType.ENERGY_SHIELDED, reward=60)
+    """Дрон-разведчик корпорации, изредка замирающий для разведки."""
 
-    def act(self, delta_time: float):
+    SCOUT_CHANCE_PER_SECOND = 0.05
+    MIN_SCOUT_TIME = 1.5
+    MAX_SCOUT_TIME = 3.0
+
+    VISION_RADIUS = 260.0
+
+    def __init__(self, position: Coordinate, max_health: float = 100, speed: float = 70,
+                 armor: ArmorType = ArmorType.ENERGY_SHIELDED, reward: int = 60,
+                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None,
+                 rng: Optional[random.Random] = None):
+        """Создаёт дрона-разведчика."""
+        super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
+                          vision_radius=vision_radius)
+        self._rng = rng or random
+        self.scout_timer = 0.0
+
+    @property
+    def is_scouting(self) -> bool:
+        """Проверяет, ведёт ли дрон разведку на месте."""
+        return self.scout_timer > 0
+
+    def act(self, delta_time: float, in_danger: bool = False):
+        """Со случайным шансом останавливается на разведку, если не под обстрелом."""
+        if self.scout_timer > 0:
+            if in_danger:
+                self.scout_timer = 0.0
+            else:
+                self.scout_timer -= delta_time
+            return
+
+        if in_danger:
+            return
+
+        if self._rng.random() < self.SCOUT_CHANCE_PER_SECOND * delta_time:
+            self.scout_timer = self._rng.uniform(self.MIN_SCOUT_TIME, self.MAX_SCOUT_TIME)
+
+    def is_moving(self) -> bool:
+        """Проверяет, движется ли дрон сейчас."""
+        return self.scout_timer <= 0
+
+class BioTitan(HostileEntity):
+    """Огромный и живучий органический титан фауны планеты."""
+
+    def __init__(self, position: Coordinate, max_health: float = 400, speed: float = 20,
+                 armor: ArmorType = ArmorType.ORGANIC, reward: int = 70,
+                 faction: Faction = Faction.FAUNA, vision_radius: Optional[float] = None):
+        """Создаёт био-титана."""
+        super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
+                          vision_radius=vision_radius)
+
+    def act(self, delta_time: float, in_danger: bool = False):
+        """Не выполняет особых действий."""
         pass
