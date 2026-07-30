@@ -10,20 +10,14 @@ from src.factories.enemy_factory import EnemyFactory
 from src.enums import GameState
 from src.entities.hostile_entity import HostileEntity
 from src.core.coordinate import Coordinate
+from src.systems.mission import Objective, SurviveWavesObjective, ProtectTowersObjective
 
 
 class GameSession:
-    """Модель. Ничего не знает ни о pygame, ни о контроллере, ни о режимах
-    ввода — только правила игры. Camera/OrbitalModeController и всё, что
-    связано с вводом и отрисовкой, находится строго в контроллере (ui-слой),
-    который создаёт View, а не сессия.
-
-    Фабрики (TowerFactory/EnemyFactory) тоже живут здесь, а не в
-    контроллере: "создать башню/врага определённого типа" — это правило
-    игры (нужны деньги, нужно валидное место, враг должен получить путь),
-    а не забота UI-слоя."""
+    """Модель игры: правила, состояние, фабрики башен и врагов."""
 
     def __init__(self):
+        """Создаёт пустую игровую сессию в главном меню."""
         self.map = None
         self.resources = ResourceBank()
         self.wave_protocol = WaveProtocol()
@@ -32,20 +26,30 @@ class GameSession:
         self.state_manager = GameStateManager(GameState.MENU)
         self.base_health = 100
         self.max_base_health = 100
+        self.objectives: List[Objective] = []
+
+    @property
+    def base_position(self) -> Optional[Coordinate]:
+        """Позиция базы."""
+        return self.map.base_position if self.map else None
+
+    @base_position.setter
+    def base_position(self, position: Coordinate):
+        """Задаёт позицию базы."""
+        self.map.base_position = position
 
     @property
     def state(self) -> GameState:
-        """Мост к GameStateManager.current_state — сохраняет прежний
-        публичный API (session.state читают GameView/OrbitalModeController),
-        но единственным источником истины по переходам состояния
-        является GameStateManager, а не разбросанные присваивания."""
+        """Текущее состояние игры."""
         return self.state_manager.current_state
 
     @state.setter
     def state(self, new_state: GameState):
+        """Меняет состояние игры."""
         self.state_manager.change_state(new_state)
 
     def setup_game(self):
+        """Готовит новую игру: карту, базу, ресурсы, волны и задания."""
         self.state = GameState.PLAYING
         self.base_health = self.max_base_health
         self.resources = ResourceBank(start_credits=1000)
@@ -66,10 +70,14 @@ class GameSession:
         self.wave_protocol.set_waves(waves)
         self.wave_protocol.start_next_wave()
 
+        milestone = max(1, len(waves) // 2)
+        self.objectives = [
+            SurviveWavesObjective(target_wave_count=milestone),
+            ProtectTowersObjective(),
+        ]
+
     def _generate_random_waves(self, rng: Optional[random.Random] = None) -> List[WaveConfig]:
-        """Случайное число волн и случайный состав врагов в каждой —
-        каждый запуск игры выглядит иначе. rng можно передать явно
-        (например, random.Random(42)) для детерминированных тестов."""
+        """Генерирует случайный набор волн врагов."""
         rng = rng or random
         available_types = self.enemy_factory.available_types()
 
@@ -84,6 +92,7 @@ class GameSession:
         return waves
 
     def update(self, delta_time: float):
+        """Обновляет игру на один кадр: волны, карту, здоровье базы, состояние, задания."""
         if self.state != GameState.PLAYING:
             return
 
@@ -97,15 +106,16 @@ class GameSession:
 
         if self.state_manager.check_defeat(self.base_health):
             self.state = GameState.GAME_OVER
-            return
 
-        if self.state_manager.check_victory(self.map, self.wave_protocol):
+        if self.state == GameState.PLAYING and self.state_manager.check_victory(self.map, self.wave_protocol):
             self.state = GameState.VICTORY
 
+        for objective in self.objectives:
+            if objective.is_active():
+                objective.update(self)
+
     def place_turret(self, tower_type: str, position: Coordinate) -> bool:
-        """tower_type — строка ("laser"/"bullet"/"mortar"), а не класс.
-        position привязывается к клетке сетки (Map.snap_to_grid) — башни
-        строятся по клеткам, а не в произвольной точке под курсором."""
+        """Строит башню заданного типа в указанной точке."""
         position = self.map.snap_to_grid(position)
         if not self.map.can_place_module(position):
             return False
@@ -114,15 +124,17 @@ class GameSession:
             return False
         if self.resources.spend(turret.cost):
             self.map.add_module(turret)
+            self.map.replan_enemy_paths()
             return True
         return False
 
     def _spawn_enemy_factory(self, enemy_type: str, pos: Coordinate) -> HostileEntity:
+        """Создаёт врага заданного типа и прокладывает ему путь к базе."""
         enemy = self.enemy_factory.create(enemy_type, pos)
         if enemy is None:
             raise ValueError(f"Неизвестный тип врага в WaveConfig: '{enemy_type}'")
 
-        path = self.map.nav_grid.find_path(pos, self.base_position)
+        path = self.map.path_to_base(pos, enemy.faction)
         if path:
             enemy.set_path(path)
         else:
