@@ -7,9 +7,10 @@ from src.entities.projectile import Projectile
 
 
 class DefenseModule(Entity, ABC):
-    """Абстрактный класс для всех защитных модулей (башен)"""
+    """Базовый класс для всех башен."""
 
     def __init__(self, position: Coordinate, range_radius: float, damage: float, cost: int, attack_speed: float = 1.0):
+        """Создаёт башню с базовыми характеристиками."""
         super().__init__(position)
 
         self.base_range = range_radius
@@ -32,6 +33,7 @@ class DefenseModule(Entity, ABC):
         self.upgrade_costs: List[int] = []
 
     def update(self, delta_time: float, enemies: List['HostileEntity']) -> Optional[Projectile]:
+        """Обновляет башню на один кадр и стреляет по цели, если готова."""
         if self.status in (ModuleStatus.OVERHEATED, ModuleStatus.OFFLINE):
             return None
 
@@ -47,6 +49,7 @@ class DefenseModule(Entity, ABC):
         return None
 
     def find_target(self, enemies: List['HostileEntity']) -> Optional['HostileEntity']:
+        """Находит ближайшего врага в радиусе действия."""
         valid_targets = [
             e for e in enemies
             if self.position.distance_to(e.position) <= self.range_radius
@@ -57,20 +60,21 @@ class DefenseModule(Entity, ABC):
 
     @abstractmethod
     def fire(self, target: 'HostileEntity') -> Optional[Projectile]:
-        """Создает снаряд по цели"""
+        """Создаёт снаряд по цели."""
         pass
 
     def get_upgrade_cost(self) -> Optional[int]:
-        """Возвращает стоимость следующего уровня или None, если макс."""
+        """Возвращает стоимость следующего уровня или None, если максимум."""
         if self.level >= self.max_level:
             return None
         return self.upgrade_costs[self.level - 1]
 
     def can_upgrade(self) -> bool:
+        """Проверяет, можно ли улучшить башню."""
         return self.level < self.max_level
 
     def upgrade(self) -> bool:
-        """Применяет апгрейд: повышает уровень и пересчитывает статы"""
+        """Повышает уровень башни и пересчитывает характеристики."""
         if not self.can_upgrade():
             return False
 
@@ -87,14 +91,12 @@ class DefenseModule(Entity, ABC):
         return True
 
     def take_damage(self, amount: float, damage_type: DamageType):
-        """Наносит урон башне. Пока ни один противник в игре не атакует
-        башни напрямую, поэтому этот путь не задействован в текущем
-        геймплее — но контракт Entity.take_damage должен быть реализован
-        по-настоящему, а не заглушкой."""
+        """Наносит урон башне."""
         self.health -= amount
         if self.health <= 0:
             self.health = 0
             self.status = ModuleStatus.OFFLINE
 
     def is_destroyed(self) -> bool:
+        """Проверяет, уничтожена ли башня."""
         return self.health <= 0
