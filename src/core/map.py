@@ -121,6 +121,9 @@ class Map:
         for enemy in enemies:
             if not enemy.is_alive() or not enemy.is_group_leader:
                 continue
+            if enemy.is_healing:
+                enemy.target_tower = None
+                continue
             if enemy.target_tower is not None and not enemy.target_tower.is_destroyed():
                 continue
 
@@ -211,6 +214,62 @@ class Map:
         flee_distance = tower.range_radius + 50.0
         return Coordinate(tower.position.x + dx / dist * flee_distance, tower.position.y + dy / dist * flee_distance)
 
+    WOUNDED_HEALTH_RATIO = 0.3
+    HEAL_ARRIVAL_RADIUS = 40.0
+    HEAL_RADIUS = 150.0
+    HEAL_RATE_PER_SECOND = 0.15
+    LOW_ENEMY_COUNT_NO_RETREAT = 4
+
+    def _is_wounded(self, enemy: HostileEntity) -> bool:
+        """Проверяет, ранен ли враг настолько, что ему пора отступать лечиться."""
+        return enemy.health < enemy.max_health * self.WOUNDED_HEALTH_RATIO
+
+    def _group_needs_healing(self, enemy: HostileEntity) -> bool:
+        """Проверяет, ранен ли сам враг или кто-то из его группы (тогда отступает вся группа)."""
+        if enemy.group_id is None:
+            return self._is_wounded(enemy)
+        members = [e for e in self.enemies if e.group_id == enemy.group_id and e.is_alive()]
+        return any(self._is_wounded(member) for member in members)
+
+    def _group_fully_healed(self, enemy: HostileEntity) -> bool:
+        """Проверяет, что сам враг (и все члены его группы) полностью излечились."""
+        if enemy.group_id is None:
+            return enemy.health >= enemy.max_health
+        members = [e for e in self.enemies if e.group_id == enemy.group_id and e.is_alive()]
+        return all(member.health >= member.max_health for member in members)
+
+    def _advance_retreat(self, enemy: HostileEntity, delta_time: float):
+        """Двигает врага к ближайшей точке спавна его фракции, чтобы там подлечиться."""
+        spawn_points = self.spawn_points_for(enemy.faction)
+        if not spawn_points:
+            enemy.is_healing = False
+            return
+        nearest = min(spawn_points, key=lambda p: enemy.position.distance_to(p))
+        if enemy.position.distance_to(nearest) > self.HEAL_ARRIVAL_RADIUS:
+            enemy.move_towards_point(nearest, delta_time)
+
+    def _is_near_own_spawn(self, enemy: HostileEntity) -> bool:
+        """Проверяет, находится ли враг рядом с одной из точек спавна своей фракции."""
+        spawn_points = self.spawn_points_for(enemy.faction)
+        return any(enemy.position.distance_to(p) <= self.HEAL_RADIUS for p in spawn_points)
+
+    def _apply_dodge(self, enemy: HostileEntity, delta_time: float, pre_move_position: Coordinate):
+        """Добавляет боковое покачивание к движению врага, уклоняющегося от обстрела."""
+        dx = enemy.position.x - pre_move_position.x
+        dy = enemy.position.y - pre_move_position.y
+        dist = math.hypot(dx, dy)
+        if dist < 1e-6:
+            return
+        perp_x, perp_y = -dy / dist, dx / dist
+
+        enemy.dodge_timer += delta_time
+        wiggle = enemy.DODGE_AMPLITUDE * math.sin(enemy.dodge_timer * enemy.DODGE_FREQUENCY)
+        delta_wiggle = wiggle - enemy._dodge_offset
+        enemy._dodge_offset = wiggle
+
+        enemy.position.x += perp_x * delta_wiggle
+        enemy.position.y += perp_y * delta_wiggle
+
     def _find_enemy_combat_target(self, enemy: HostileEntity) -> Optional[HostileEntity]:
         """Находит ближайшего живого врага чужой фракции в радиусе обзора."""
         candidates = [
@@ -251,10 +310,16 @@ class Map:
         killed_enemies = []
         surviving_enemies = []
 
+        alive_enemies_count = sum(1 for e in self.enemies if e.is_alive())
+        allow_retreat = alive_enemies_count > self.LOW_ENEMY_COUNT_NO_RETREAT
+
         for enemy in self.enemies:
             if not enemy.is_alive():
                 killed_enemies.append(enemy)
                 continue
+
+            if not allow_retreat:
+                enemy.is_healing = False
 
             target_tower = enemy.group_target_tower()
             hunting_tower = target_tower is not None and not target_tower.is_destroyed()
@@ -262,15 +327,34 @@ class Map:
             combat_target = self._find_enemy_combat_target(enemy)
             in_combat = combat_target is not None
 
-            if not hunting_tower and not in_combat and enemy.path_index >= len(enemy.path):
+            retreating_now = (allow_retreat and enemy.group_leader is None
+                               and (enemy.is_healing or self._group_needs_healing(enemy)))
+
+            if not hunting_tower and not in_combat and not retreating_now and enemy.path_index >= len(enemy.path):
                 enemies_reached_base.append(enemy)
                 continue
 
             in_danger = self.is_position_covered(enemy.position)
             enemy.act(delta_time, in_danger)
 
+            if self._is_near_own_spawn(enemy):
+                enemy.health = min(enemy.max_health,
+                                    enemy.health + enemy.max_health * self.HEAL_RATE_PER_SECOND * delta_time)
+
             if enemy.is_moving():
-                if in_combat:
+                pre_move_position = Coordinate(enemy.position.x, enemy.position.y)
+
+                if retreating_now:
+                    enemy.is_healing = True
+                    if self._group_fully_healed(enemy):
+                        enemy.is_healing = False
+                        new_path = self.path_to_base(enemy.position, enemy.faction)
+                        if new_path:
+                            enemy.set_path(new_path)
+                        self._advance_towards_base(enemy, delta_time)
+                    else:
+                        self._advance_retreat(enemy, delta_time)
+                elif in_combat:
                     distance = enemy.position.distance_to(combat_target.position)
                     if distance <= enemy.ATTACK_RANGE:
                         enemy.attack_enemy(combat_target, delta_time)
@@ -300,6 +384,9 @@ class Map:
                         if leader is not None:
                             enemy.leave_group()
                         self._advance_towards_base(enemy, delta_time)
+
+                if in_danger and enemy.dodges_projectiles():
+                    self._apply_dodge(enemy, delta_time, pre_move_position)
 
             surviving_enemies.append(enemy)
 

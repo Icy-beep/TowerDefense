@@ -39,9 +39,21 @@ class HostileEntity(Entity, ABC):
         self.patrol_angle: Optional[float] = None
         self.patrol_direction: int = 1
 
+        self.is_healing: bool = False
+
+        self.dodge_timer: float = 0.0
+        self._dodge_offset: float = 0.0
+
     def avoids_danger(self) -> bool:
         """Проверяет, должен ли враг убегать от простреливаемых башнями зон вместо боя."""
         return False
+
+    DODGE_AMPLITUDE = 24.0
+    DODGE_FREQUENCY = 5.0
+
+    def dodges_projectiles(self) -> bool:
+        """Проверяет, должен ли враг уклоняться из стороны в сторону под обстрелом башен."""
+        return self.armor == ArmorType.LIGHT
 
     def set_path(self, path: List[Coordinate]):
         """Назначает врагу маршрут."""
