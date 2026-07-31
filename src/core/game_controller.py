@@ -8,10 +8,11 @@ from src.core.coordinate import Coordinate
 class GameController:
     """Точка входа для View, хранит активный режим игры."""
 
-    def __init__(self, session: GameSession):
-        """Создаёт контроллер с орбитальным режимом(rts) по умолчанию."""
+    def __init__(self, session: GameSession, screen_w: int = 900, screen_h: int = 600):
+        """Создаёт контроллер с орбитальным режимом(rts) по умолчанию, под
+        текущий размер окна."""
         self.session = session
-        self.active_mode: IGameModeController = OrbitalModeController(session)
+        self.active_mode: IGameModeController = OrbitalModeController(session, screen_w, screen_h)
 
     def set_mode(self, mode: IGameModeController):
         """Переключает активный режим игры."""

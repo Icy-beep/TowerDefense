@@ -21,21 +21,21 @@ class OrbitalModeController(IGameModeController):
 
     ENEMY_SELECT_RADIUS = 16
 
-    def __init__(self, session: "GameSession"):
+    def __init__(self, session: "GameSession", screen_w: int = 900, screen_h: int = 600):
         """Создаёт контроллер орбитального режима для сессии."""
         self.selected_tower_type = None
         self.selected_module = None
         self.selected_enemy = None
         self.dragging_camera = False
         self._last_mouse_pos = None
-        super().__init__(session)
+        super().__init__(session, screen_w, screen_h)
 
         if session.base_position is not None:
             self.camera.center_on(session.base_position)
 
     def _create_camera(self):
-        """Создаёт камеру для орбитального режима."""
-        return Camera(900, 600, map_w=4000, map_h=4000)
+        """Создаёт камеру для орбитального режима под текущий размер окна."""
+        return Camera(self.screen_w, self.screen_h, map_w=4000, map_h=4000)
 
     def update(self, delta_time: float):
         """Обновляет камеру и снимает выделение с исчезнувшего врага."""

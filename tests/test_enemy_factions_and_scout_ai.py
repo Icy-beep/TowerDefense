@@ -180,6 +180,78 @@ def test_scout_does_not_oscillate_at_the_edge_of_tower_range():
     assert distances[-1] > tower.range_radius + Map.FLEE_EXIT_MARGIN
 
 
+def test_scout_flees_a_cluster_of_towers_instead_of_ping_ponging_between_them():
+    """Раньше бегство считалось только от ближайшей башни по прямой - в
+    кластере из нескольких башен это могло увести разведчика напрямую в
+    радиус соседней, и он мог кружить между ними, пока не погибнет. Теперь
+    направление бегства учитывает сразу все угрожающие башни и должно
+    в итоге вывести разведчика за пределы радиуса (+ запас) обеих."""
+    game_map = Map(width=4000, height=4000)
+    tower_a = LaserTurret(Coordinate(950, 1000))  # range_radius=120
+    tower_b = LaserTurret(Coordinate(1050, 1000))  # соседняя башня рядом
+    game_map.modules.append(tower_a)
+    game_map.modules.append(tower_b)
+
+    scout = ScoutDrone(Coordinate(1000, 1000))  # ровно между башнями, внутри обеих
+    # Путь в ту же сторону, куда логично убегать (перпендикулярно линии
+    # башен) - иначе без base_position "движение к базе" после бегства
+    # наивно потащит разведчика обратно по прямой прямо в кластер башен,
+    # что проверяло бы уже другой сценарий, а не механику самого бегства.
+    scout.set_path([Coordinate(1000, 3000)])
+    game_map.spawn_enemy(scout)
+
+    for _ in range(200):
+        game_map.update(0.05)
+
+    assert scout.position.distance_to(tower_a.position) > tower_a.range_radius + Map.FLEE_EXIT_MARGIN
+    assert scout.position.distance_to(tower_b.position) > tower_b.range_radius + Map.FLEE_EXIT_MARGIN
+
+
+def test_flee_target_pushes_away_from_all_covering_towers_combined():
+    game_map = Map(width=4000, height=4000)
+    tower_a = LaserTurret(Coordinate(900, 1000))
+    tower_b = LaserTurret(Coordinate(1100, 1000))  # башни по разные стороны от врага
+
+    target = game_map._flee_target_from_towers(Coordinate(1000, 1000), [tower_a, tower_b])
+
+    # силы от симметрично расположенных башен вдоль X должны погаситься по X
+    # и вытолкнуть врага перпендикулярно (по Y), а не оставить на месте
+    assert target.y != pytest.approx(1000.0)
+
+
+def test_scout_does_not_repeatedly_walk_back_into_the_same_tower_on_its_way_to_base():
+    """Раньше после бегства разведчик возобновлял старый маршрут, который
+    мог по-прежнему срезать через радиус той же башни (мягкое избегание при
+    построении пути это допускает, если так короче) - он заходил в радиус,
+    получал выстрел, убегал, и снова возвращался тем же путём. Теперь путь
+    строится заново от безопасной точки сразу после бегства, с жёстким
+    запретом простреливаемых клеток для разведчика."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 200)
+    tower = LaserTurret(Coordinate(2000, 1000))  # range_radius=120, прямо на линии до базы
+    game_map.modules.append(tower)
+
+    scout = ScoutDrone(Coordinate(2000, 1800))
+    scout.set_path([Coordinate(2000, 200)])  # "наивный" путь напрямик - башня ещё не видна
+    game_map.spawn_enemy(scout)
+
+    flee_transitions = 0
+    was_fleeing = False
+    for _ in range(600):
+        game_map.update(0.05)
+        if scout.is_fleeing and not was_fleeing:
+            flee_transitions += 1
+        was_fleeing = scout.is_fleeing
+
+    # Полностью нулевого касания не гарантировать - клетки навигационной
+    # сетки квадратные, а радиус башни круглый, так что путь у самой
+    # границы иногда может на мгновение задеть окружность между двумя
+    # соседними, формально безопасными узлами. Важно, что это единичные
+    # касания при обходе, а не бесконечное хождение туда-обратно.
+    assert flee_transitions <= 4, \
+        f"разведчик не должен заходить в радиус одной и той же башни снова и снова (было {flee_transitions} раз)"
+
+
 def test_scout_is_fleeing_flag_tracks_flee_state():
     game_map = Map(width=4000, height=4000)
     tower = LaserTurret(Coordinate(1000, 1000))

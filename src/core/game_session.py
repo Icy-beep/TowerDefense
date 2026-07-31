@@ -66,10 +66,6 @@ class GameSession:
             Coordinate(3800, 3800)
         ]
         self.map.spawn_points_by_faction = {
-            # Corporation больше не спавнится и не лечится через фиксированные
-            # точки - высаживается кораблями (ShipLandingStrategy), а раненых
-            # лечит MedicDrone внутри группы. Пустой список (а не отсутствие
-            # ключа) явно отключает и спавн, и фолбэк на общий self.spawn_points.
             Faction.CORPORATION: [],
             Faction.FAUNA: [Coordinate(3800, 200), Coordinate(200, 3800)],
         }
@@ -149,16 +145,16 @@ class GameSession:
                 return None
             position = random.choice(spawn_points)
 
-        pos = Coordinate(position.x, position.y)  # копия - враг не должен владеть переданной точкой
+        pos = Coordinate(position.x, position.y)
 
         enemy = self.enemy_factory.create(enemy_type, pos)
         if enemy is None:
             raise ValueError(f"Неизвестный тип врага: '{enemy_type}'")
 
-        path = self.map.path_to_base(pos, enemy.faction)
+        path = self.map.path_to_base(pos, enemy.faction, avoid_danger=enemy.avoids_danger())
         if path:
             enemy.set_path(path)
-        else:
+        elif not enemy.avoids_danger():
             print(f"Ошибка пути! Враг застрянет.")
 
         return enemy

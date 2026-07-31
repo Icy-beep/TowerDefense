@@ -40,9 +40,7 @@ class Map:
         self.modules.append(module)
 
     def spawn_points_for(self, faction: Faction) -> List[Coordinate]:
-        """Возвращает точки спавна фракции. Если для фракции явно задан
-        (пусть даже пустой) список - используется он; общий список -
-        только фолбэк для фракций без какой-либо настройки вовсе."""
+        """Возвращает точки спавна фракции."""
         if faction in self.spawn_points_by_faction:
             return self.spawn_points_by_faction[faction]
         return self.spawn_points
@@ -70,13 +68,14 @@ class Map:
 
     TOWER_AVOIDANCE_COST = 25.0
 
-    def path_to_base(self, start_pos: Coordinate, faction: Faction) -> List[Coordinate]:
+    def path_to_base(self, start_pos: Coordinate, faction: Faction, avoid_danger: bool = False) -> List[Coordinate]:
         """Строит путь до базы, обходя известные фракции башни."""
         if self.base_position is None:
             return []
         intel = self.faction_intel.setdefault(faction, FactionIntel())
         blocked_nodes = set()
         avoidance_cost: Dict[tuple, float] = {}
+        covered_nodes = set()
         for tower in intel.known_towers():
             if tower.is_destroyed():
                 continue
@@ -92,6 +91,11 @@ class Map:
                         continue
                     key = (node.x + dx, node.y + dy)
                     avoidance_cost[key] = avoidance_cost.get(key, 0.0) + self.TOWER_AVOIDANCE_COST
+                    covered_nodes.add(key)
+
+        if avoid_danger:
+            hard_blocked = blocked_nodes | covered_nodes
+            return self.nav_grid.find_path(start_pos, self.base_position, extra_blocked=hard_blocked)
 
         path = self.nav_grid.find_path(start_pos, self.base_position,
                                         extra_blocked=blocked_nodes, extra_cost=avoidance_cost)
@@ -106,7 +110,7 @@ class Map:
                 continue
             if factions is not None and enemy.faction not in factions:
                 continue
-            new_path = self.path_to_base(enemy.position, enemy.faction)
+            new_path = self.path_to_base(enemy.position, enemy.faction, avoid_danger=enemy.avoids_danger())
             if new_path:
                 enemy.set_path(new_path)
 
@@ -172,10 +176,14 @@ class Map:
         enemy.move_towards_point(target, delta_time)
 
     def _advance_towards_base(self, enemy: HostileEntity, delta_time: float):
-        """Движение к базе: патрулирует периметр, если известная башня перекрывает
-        текущее направление, иначе идёт по обычному маршруту."""
+        """Движение к базе: патрулирует периметр, если известная башня
+        перекрывает направление, иначе идёт по маршруту."""
         if self.base_position is None:
             enemy.move_along_path(delta_time)
+            return
+
+        if enemy.avoids_danger():
+            self._advance_honestly_or_give_up(enemy, delta_time)
             return
 
         intel = self.faction_intel.setdefault(enemy.faction, FactionIntel())
@@ -201,31 +209,83 @@ class Map:
 
         enemy.move_along_path(delta_time)
 
+    GIVE_UP_RETREAT_STEP = 400.0
+
+    def _advance_honestly_or_give_up(self, enemy: HostileEntity, delta_time: float):
+        """Ведёт избегающего опасности врага в обход известных башен;
+        если маршрута нет - отступает вместо прорыва."""
+        enemy.is_patrolling = False
+        if not enemy.path or enemy.path_index >= len(enemy.path):
+            safe_path = self.path_to_base(enemy.position, enemy.faction, avoid_danger=True)
+            if not safe_path:
+                self._advance_giving_up(enemy, delta_time)
+                return
+            enemy.set_path(safe_path)
+        enemy.move_along_path(delta_time)
+
+    def _advance_giving_up(self, enemy: HostileEntity, delta_time: float):
+        """Отступает к точке спавна фракции или прочь от базы, если
+        точек спавна нет."""
+        spawn_points = self.spawn_points_for(enemy.faction)
+        if spawn_points:
+            nearest = min(spawn_points, key=lambda p: enemy.position.distance_to(p))
+            if enemy.position.distance_to(nearest) > self.HEAL_ARRIVAL_RADIUS:
+                enemy.move_towards_point(nearest, delta_time)
+            return
+
+        if self.base_position is None:
+            return
+        dx = enemy.position.x - self.base_position.x
+        dy = enemy.position.y - self.base_position.y
+        dist = math.hypot(dx, dy)
+        if dist < 1e-6:
+            dx, dy, dist = 1.0, 0.0, 1.0
+        target = Coordinate(
+            max(0.0, min(self.width, enemy.position.x + dx / dist * self.GIVE_UP_RETREAT_STEP)),
+            max(0.0, min(self.height, enemy.position.y + dy / dist * self.GIVE_UP_RETREAT_STEP)),
+        )
+        enemy.move_towards_point(target, delta_time)
+
     def _nearest_covering_tower(self, position: Coordinate, margin: float = 0.0) -> Optional[DefenseModule]:
         """Возвращает ближайшую башню, простреливающую точку (с необязательным
-        запасом margin к радиусу - используется для гистерезиса бегства), или None."""
-        covering = [m for m in self.modules if position.distance_to(m.position) <= m.range_radius + margin]
+        запасом margin к радиусу), или None."""
+        covering = self._covering_towers(position, margin)
         if not covering:
             return None
         return min(covering, key=lambda m: position.distance_to(m.position))
 
-    # Запас поверх радиуса башни, при котором убегающий враг считается всё
-    # ещё "в опасности" - без него враг на самой границе обстрела дрожит на
-    # месте (то входит в радиус по _nearest_covering_tower, то выходит).
+    def _covering_towers(self, position: Coordinate, margin: float = 0.0) -> List[DefenseModule]:
+        """Возвращает все башни, простреливающие точку (с запасом margin)."""
+        return [m for m in self.modules if position.distance_to(m.position) <= m.range_radius + margin]
+
     FLEE_EXIT_MARGIN = 60.0
     FLEE_TARGET_DISTANCE = 80.0
 
-    def _flee_point_from(self, position: Coordinate, tower: DefenseModule) -> Coordinate:
-        """Точка вдали от башни, противоположная её направлению от врага.
-        Цель бегства всегда дальше FLEE_EXIT_MARGIN, иначе враг зависает
-        ровно на границе гистерезиса и не может считаться "убежавшим"."""
-        dx = position.x - tower.position.x
-        dy = position.y - tower.position.y
-        dist = math.hypot(dx, dy)
-        if dist < 1e-6:
-            dx, dy, dist = 1.0, 0.0, 1.0
-        flee_distance = tower.range_radius + self.FLEE_TARGET_DISTANCE
-        return Coordinate(tower.position.x + dx / dist * flee_distance, tower.position.y + dy / dist * flee_distance)
+    def _flee_target_from_towers(self, position: Coordinate, towers: List[DefenseModule]) -> Coordinate:
+        """Точка бегства - шаг прочь от всех угрожающих башен сразу."""
+        push_x = push_y = 0.0
+        for tower in towers:
+            dx = position.x - tower.position.x
+            dy = position.y - tower.position.y
+            dist = math.hypot(dx, dy)
+            if dist < 1e-6:
+                dx, dy, dist = 1.0, 0.0, 1.0
+            depth = max(1.0, tower.range_radius + self.FLEE_EXIT_MARGIN - dist)
+            push_x += dx / dist * depth
+            push_y += dy / dist * depth
+
+        length = math.hypot(push_x, push_y)
+        if length < 1e-6:
+            nearest = min(towers, key=lambda t: position.distance_to(t.position))
+            dx = position.x - nearest.position.x
+            dy = position.y - nearest.position.y
+            push_x, push_y = -dy, dx
+            length = math.hypot(push_x, push_y) or 1.0
+
+        return Coordinate(
+            position.x + push_x / length * self.FLEE_TARGET_DISTANCE,
+            position.y + push_y / length * self.FLEE_TARGET_DISTANCE,
+        )
 
     WOUNDED_HEALTH_RATIO = 0.3
     HEAL_ARRIVAL_RADIUS = 40.0
@@ -327,11 +387,8 @@ class Map:
         enemy.position.y += perp_y * delta_wiggle
 
     def _in_flee_danger(self, enemy: HostileEntity, in_danger: bool, was_fleeing: bool) -> bool:
-        """Определяет, должен ли враг считаться "в опасности" для целей
-        бегства, с гистерезисом: если враг уже убегал в прошлом кадре -
-        опасность отступает только за пределами FLEE_EXIT_MARGIN, иначе
-        враг дрожит на месте ровно на границе радиуса башни (то входит в
-        is_position_covered, то выходит из него от кадра к кадру)."""
+        """Опасность для бегства с гистерезисом - убегающий враг считается
+        в опасности, пока не выйдет за пределы FLEE_EXIT_MARGIN."""
         if in_danger:
             return True
         if was_fleeing:
@@ -342,11 +399,8 @@ class Map:
 
     def _shield_offset(self, offset: Coordinate, tower_position: Coordinate,
                         leader_position: Coordinate) -> Coordinate:
-        """Смещает угол слота построения эскорта в сторону башни, обстреливающей
-        лидера, сохраняя расстояние до лидера - так боевой эскорт подставляется
-        под огонь и прикрывает лидера собой, а не отсиживается за его спиной.
-        Угол сдвигается не полностью, а на SHIELD_BIAS от исходного - иначе все
-        эскорты со своим лидером сходятся в одну точку и налезают друг на друга."""
+        """Смещает слот построения эскорта в сторону башни, обстреливающей
+        лидера, сохраняя расстояние до него."""
         radius = math.hypot(offset.x, offset.y)
         if radius < 1e-6:
             return offset
@@ -417,7 +471,8 @@ class Map:
             retreating_now = (allow_retreat and uses_retreat_healing and enemy.group_leader is None
                                and (enemy.is_healing or self._group_needs_healing(enemy)))
 
-            if not hunting_tower and not in_combat and not retreating_now and enemy.path_index >= len(enemy.path):
+            if (not hunting_tower and not in_combat and not retreating_now
+                    and enemy.path and enemy.path_index >= len(enemy.path)):
                 enemies_reached_base.append(enemy)
                 continue
 
@@ -459,11 +514,11 @@ class Map:
                     else:
                         enemy.move_towards_point(target_tower.position, delta_time)
                 elif enemy.avoids_danger() and self._in_flee_danger(enemy, in_danger, was_fleeing):
-                    threatening_tower = self._nearest_covering_tower(enemy.position, margin=self.FLEE_EXIT_MARGIN)
-                    if threatening_tower is not None:
+                    threatening_towers = self._covering_towers(enemy.position, margin=self.FLEE_EXIT_MARGIN)
+                    if threatening_towers:
                         enemy.is_fleeing = True
                         enemy.is_patrolling = False
-                        flee_point = self._flee_point_from(enemy.position, threatening_tower)
+                        flee_point = self._flee_target_from_towers(enemy.position, threatening_towers)
                         enemy.move_towards_point(flee_point, delta_time)
                     else:
                         self._advance_towards_base(enemy, delta_time)
@@ -483,6 +538,14 @@ class Map:
                         if enemy.heals_allies():
                             self._advance_healer_seeking(enemy, delta_time)
                         else:
+                            if was_fleeing:
+                                new_path = self.path_to_base(enemy.position, enemy.faction,
+                                                              avoid_danger=enemy.avoids_danger())
+                                if new_path:
+                                    enemy.set_path(new_path)
+                                elif enemy.avoids_danger():
+                                    enemy.path = []
+                                    enemy.path_index = 0
                             self._advance_towards_base(enemy, delta_time)
 
                 if in_danger and enemy.dodges_projectiles():

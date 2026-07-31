@@ -14,6 +14,9 @@ from src.ui.menu_screen import MenuScreen
 class GameView:
     """Окно игры: инициализация pygame, игровой цикл и ввод."""
 
+    MIN_WIDTH = 640
+    MIN_HEIGHT = 480
+
     def __init__(self, session: GameSession):
         """Создаёт окно и рендереры для заданной игровой сессии."""
         self.session = session
@@ -21,7 +24,7 @@ class GameView:
 
         pygame.init()
         self.width, self.height = 900, 600
-        self.screen = pygame.display.set_mode((self.width, self.height))
+        self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
         pygame.display.set_caption("Tower Defense - Camera & Zoom")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("Arial", 18)
@@ -63,12 +66,22 @@ class GameView:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            elif event.type == pygame.VIDEORESIZE:
+                self._handle_resize(event.w, event.h)
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.running = False
             elif self.session.state == GameState.MENU:
                 self._handle_menu_input(event)
             elif self.controller:
                 self.controller.handle_input(event)
+
+    def _handle_resize(self, width, height):
+        """Пересоздаёт поверхность экрана под новый размер окна и подстраивает камеру."""
+        self.width = max(self.MIN_WIDTH, width)
+        self.height = max(self.MIN_HEIGHT, height)
+        self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+        if self.controller:
+            self.controller.camera.resize(self.width, self.height)
 
     def _handle_menu_input(self, event):
         """Обрабатывает клики по кнопкам главного меню."""
@@ -82,7 +95,7 @@ class GameView:
     def _start_game(self):
         """Настраивает новую игру и создаёт контроллер."""
         self.session.setup_game()
-        self.controller = GameController(self.session)
+        self.controller = GameController(self.session, self.width, self.height)
 
     def render(self):
         """Рисует текущий кадр игры."""

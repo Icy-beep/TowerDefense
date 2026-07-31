@@ -29,13 +29,23 @@ def _enemy(x, y, health=1000):
 
 # ---------------------------------------------------------------- HitscanBeam
 
-def test_hitscan_beam_damages_target_immediately():
+def test_hitscan_beam_damages_target_immediately_on_creation():
+    target = _enemy(100, 0)
+    HitscanBeam(Coordinate(0, 0), target, damage=25, damage_type=DamageType.ENERGY)
+
+    assert target.health == 975, "лазер наносит урон сразу при создании, не дожидаясь update()"
+
+
+def test_hitscan_beam_stays_visible_for_a_short_time_then_disappears():
+    """Луч не должен пропадать в тот же кадр, в котором был создан - иначе
+    выстрел лазерной башни никогда не успевает попасть в рендер."""
     target = _enemy(100, 0)
     beam = HitscanBeam(Coordinate(0, 0), target, damage=25, damage_type=DamageType.ENERGY)
 
-    alive = beam.update(0.016, [target])
+    assert beam.update(0.01, [target]) is True, "луч должен оставаться на экране хотя бы пару кадров"
+    assert target.health == 975, "повторные update() не должны наносить урон ещё раз"
 
-    assert target.health == 975
+    alive = beam.update(HitscanBeam.BEAM_LIFETIME, [target])
     assert alive is False
 
 
@@ -258,6 +268,26 @@ def test_map_update_passes_enemies_and_bullet_can_hit_nontarget():
         game_map.update(0.1)
 
     assert decoy.health < decoy.max_health or far_target.health < far_target.max_health
+
+
+def test_map_update_keeps_laser_beam_visible_for_a_couple_of_frames():
+    """Раньше HitscanBeam.update() наносил урон и в тот же вызов возвращал
+    False - луч добавлялся в map.projectiles и тут же убирался внутри
+    одного Map.update(), так что рендер никогда его не видел (лазер был
+    невидим на экране). Теперь луч должен пережить хотя бы один полный
+    Map.update() и попасть в список снарядов на следующем кадре."""
+    game_map = Map(width=4000, height=4000)
+    turret = LaserTurret(Coordinate(0, 0))
+    turret.cooldown_timer = 0
+    game_map.modules.append(turret)
+
+    target = _enemy(50, 0)
+    game_map.enemies.append(target)
+
+    game_map.update(0.01)  # башня стреляет лазером
+
+    beams = [p for p in game_map.projectiles if isinstance(p, HitscanBeam)]
+    assert beams, "луч должен оставаться в map.projectiles хотя бы один кадр после выстрела"
 
 
 def test_map_update_collects_mortar_shrapnel_into_projectile_list():

@@ -63,20 +63,24 @@ class Projectile(ABC):
 
 
 class HitscanBeam(Projectile):
-    """Мгновенный лазерный луч."""
+    """Мгновенный лазерный луч: урон наносится сразу, луч виден ещё BEAM_LIFETIME секунд."""
+
+    BEAM_LIFETIME = 0.08
 
     def __init__(self, position: Coordinate, target: "HostileEntity", damage: float, damage_type: DamageType):
-        """Создаёт луч от башни до цели."""
+        """Создаёт луч от башни до цели и сразу наносит урон."""
         super().__init__(Coordinate(position.x, position.y), damage, damage_type)
         self.origin = Coordinate(position.x, position.y)
         self.end = Coordinate(target.position.x, target.position.y)
         self._target = target
-
-    def update(self, delta_time: float, enemies: List["HostileEntity"]) -> bool:
-        """Наносит урон цели и завершает существование луча."""
+        self._time_left = self.BEAM_LIFETIME
         if self._target.is_alive():
             self._target.take_damage(self.damage, self.damage_type)
-        return False
+
+    def update(self, delta_time: float, enemies: List["HostileEntity"]) -> bool:
+        """Отсчитывает время жизни луча на экране (урон уже нанесён при создании)."""
+        self._time_left -= delta_time
+        return self._time_left > 0
 
 
 class _LinearProjectile(Projectile):

@@ -12,7 +12,7 @@ import pytest
 
 from src.core.coordinate import Coordinate
 from src.core.map import Map
-from src.entities.enemies import DroneWalker
+from src.entities.enemies import DroneWalker, ScoutDrone
 from src.entities.turrets import LaserTurret
 from src.enums import Faction
 
@@ -123,3 +123,68 @@ def test_map_update_patrols_enemy_around_defended_base():
     assert enemy.is_patrolling is True
     assert enemy in game_map.enemies
     assert enemy.position.y != pytest.approx(2000.0)
+
+
+# --------------------------- avoids_danger()=True враги: без кругового патруля
+
+def test_avoiding_enemy_never_patrols_even_when_known_tower_blocks_bearing():
+    """Круговой патруль на одном радиусе плохо справляется с кластером из
+    нескольких перекрывающихся башен - враг мог застревать на стыке двух
+    зон. Разведчик (и любой другой avoids_danger()=True враг) вместо этого
+    идёт строго по честному A*-маршруту в обход, без патруля вовсе."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+    tower = LaserTurret(Coordinate(2200, 2000))  # bearing 0 от базы - перекрыт
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.CORPORATION].reveal(tower)
+
+    scout = ScoutDrone(Coordinate(2500, 2000))  # тот же bearing 0
+    scout.set_path([Coordinate(2000, 2000)])
+
+    game_map._advance_towards_base(scout, 0.1)
+
+    assert scout.is_patrolling is False, "разведчик не должен переключаться в круговой патруль"
+
+
+def test_avoiding_enemy_follows_honest_route_around_known_tower():
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 3500)
+    tower = LaserTurret(Coordinate(2000, 2000), range_radius=300)
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.CORPORATION].reveal(tower)
+
+    scout = ScoutDrone(Coordinate(2000, 500))
+    scout.set_path([Coordinate(2000, 3500)])  # "наивный" путь напрямик, будто башня не видна
+    game_map.spawn_enemy(scout)
+
+    for _ in range(700):
+        game_map.update(0.1)
+        if scout.position.distance_to(game_map.base_position) < 50:
+            break
+
+    assert scout.position.distance_to(game_map.base_position) < 50, \
+        "разведчик должен был обойти башню по честному маршруту и дойти до базы"
+
+
+def test_avoiding_enemy_gives_up_and_retreats_when_no_safe_route_exists():
+    """Если известная башня накрывает вообще всё пространство между врагом
+    и базой, разведчик не должен биться о границу её радиуса - он должен
+    отступить, а не пытаться прорваться."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+    tower = LaserTurret(Coordinate(2000, 2000), range_radius=6000)  # накрывает всё
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.CORPORATION].reveal(tower)
+
+    scout = ScoutDrone(Coordinate(500, 500))
+    scout.set_path([Coordinate(2000, 2000)])
+    game_map.spawn_enemy(scout)
+
+    initial_distance = scout.position.distance_to(game_map.base_position)
+    for _ in range(20):
+        game_map.update(0.1)
+
+    # Corporation после высадки не имеет фиксированных точек спавна -
+    # отступление идёт по прямой прочь от базы, а не к точке спавна.
+    assert scout.position.distance_to(game_map.base_position) > initial_distance, \
+        "без честного маршрута враг должен отступать прочь от базы, а не топтаться на месте"

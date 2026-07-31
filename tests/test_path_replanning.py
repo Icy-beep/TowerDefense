@@ -15,6 +15,9 @@ import pytest
 
 from src.core.game_session import GameSession
 from src.core.coordinate import Coordinate
+from src.core.map import Map
+from src.entities.turrets import LaserTurret
+from src.enums import Faction
 
 
 @pytest.fixture
@@ -96,3 +99,59 @@ def test_replan_keeps_old_path_if_no_new_path_found(session, monkeypatch):
     session.place_turret("laser", Coordinate(2000, 900))
 
     assert enemy.path == original_path
+
+
+# --------------------------------------------------- avoid_danger (жёсткий обход)
+
+def test_path_to_base_avoid_danger_never_enters_a_known_towers_range():
+    """Мягкое избегание (без avoid_danger) может срезать через радиус
+    известной башни, если так дешевле по сумме расстояния и штрафа - это
+    нормально для боевых фракций. Но для врагов, которые вообще избегают
+    простреливаемых зон (ScoutDrone), путь не должен заходить в радиус
+    башни ни при каких раскладах, иначе они снова и снова возвращаются
+    под обстрел по тому же самому маршруту."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 3500)
+    tower = LaserTurret(Coordinate(2000, 2000), range_radius=300)
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.CORPORATION].reveal(tower)
+
+    path = game_map.path_to_base(Coordinate(2000, 500), Faction.CORPORATION, avoid_danger=True)
+
+    assert path, "путь должен существовать - карта достаточно большая для обхода"
+    assert all(point.distance_to(tower.position) > tower.range_radius for point in path), \
+        "с avoid_danger=True маршрут не должен заходить в радиус известной башни вообще"
+
+
+def test_path_to_base_avoid_danger_returns_empty_when_fully_boxed_in():
+    """Если строгий запрет оставляет карту без пути вовсе (враг полностью
+    окружён простреливаемой территорией), path_to_base не подменяет это
+    компромиссным маршрутом через опасную зону - решение, что делать
+    дальше (отступать), принимает вызывающий код
+    (Map._advance_honestly_or_give_up), а не сам путь тайком срезает
+    через огонь."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+    # Огромная башня накрывает вообще всё - строгий запрет неизбежно
+    # оставит карту без пути.
+    tower = LaserTurret(Coordinate(2000, 2000), range_radius=6000)
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.CORPORATION].reveal(tower)
+
+    path = game_map.path_to_base(Coordinate(500, 500), Faction.CORPORATION, avoid_danger=True)
+
+    assert path == [], "с полной блокировкой честного пути быть не должно - вызывающий код должен отступить"
+
+
+def test_path_to_base_default_does_not_hard_block_tower_coverage():
+    """Без avoid_danger поведение должно остаться прежним - боевые фракции
+    по-прежнему вольны срезать через мягко штрафуемую зону."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+    tower = LaserTurret(Coordinate(1000, 500), range_radius=5000)  # накрывает всю карту
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.FAUNA].reveal(tower)
+
+    path = game_map.path_to_base(Coordinate(0, 0), Faction.FAUNA, avoid_danger=False)
+
+    assert path, "с мягким избеганием путь должен находиться даже если вся карта под одной башней"
