@@ -112,6 +112,42 @@ def test_bullet_turret_fire_returns_bullet_projectile():
     assert isinstance(turret.fire(target), BulletProjectile)
 
 
+def test_bullet_projectile_zero_spread_keeps_exact_direction():
+    target = _enemy(100, 0)
+    bullet = BulletProjectile(Coordinate(0, 0), target, damage=10, damage_type=DamageType.KINETIC,
+                               speed=50, spread_degrees=0.0)
+
+    assert bullet.direction == pytest.approx((1.0, 0.0))
+
+
+def test_bullet_projectile_applies_random_spread_within_bounds():
+    import random
+    target = _enemy(1000, 0)
+    rng = random.Random(42)
+    bullet = BulletProjectile(Coordinate(0, 0), target, damage=10, damage_type=DamageType.KINETIC,
+                               speed=1000, spread_degrees=20.0, rng=rng)
+
+    angle = math.atan2(bullet.direction[1], bullet.direction[0])
+    assert 0 < abs(angle) <= math.radians(20.0 / 2) + 1e-6
+
+
+def test_bullet_turret_fire_applies_spread_degrees_constant():
+    """Повторные выстрелы по одной и той же неподвижной цели должны давать
+    слегка разные направления (разброс), но никогда не выходить за
+    пределы ±SPREAD_DEGREES/2."""
+    turret = BulletTurret(Coordinate(0, 0))
+    target = _enemy(1000, 0)
+
+    angles = set()
+    for _ in range(30):
+        bullet = turret.fire(target)
+        angle = math.atan2(bullet.direction[1], bullet.direction[0])
+        assert abs(angle) <= math.radians(BulletTurret.SPREAD_DEGREES / 2) + 1e-6
+        angles.add(round(angle, 6))
+
+    assert len(angles) > 1, "повторные выстрелы должны давать разные направления из-за разброса"
+
+
 # ---------------------------------------------------------------- MortarShell
 
 def test_mortar_shell_interpolates_position_toward_target():

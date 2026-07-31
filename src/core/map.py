@@ -201,21 +201,30 @@ class Map:
 
         enemy.move_along_path(delta_time)
 
-    def _nearest_covering_tower(self, position: Coordinate) -> Optional[DefenseModule]:
-        """Возвращает ближайшую башню, простреливающую точку, или None."""
-        covering = [m for m in self.modules if position.distance_to(m.position) <= m.range_radius]
+    def _nearest_covering_tower(self, position: Coordinate, margin: float = 0.0) -> Optional[DefenseModule]:
+        """Возвращает ближайшую башню, простреливающую точку (с необязательным
+        запасом margin к радиусу - используется для гистерезиса бегства), или None."""
+        covering = [m for m in self.modules if position.distance_to(m.position) <= m.range_radius + margin]
         if not covering:
             return None
         return min(covering, key=lambda m: position.distance_to(m.position))
 
+    # Запас поверх радиуса башни, при котором убегающий враг считается всё
+    # ещё "в опасности" - без него враг на самой границе обстрела дрожит на
+    # месте (то входит в радиус по _nearest_covering_tower, то выходит).
+    FLEE_EXIT_MARGIN = 60.0
+    FLEE_TARGET_DISTANCE = 80.0
+
     def _flee_point_from(self, position: Coordinate, tower: DefenseModule) -> Coordinate:
-        """Точка вдали от башни, противоположная её направлению от врага."""
+        """Точка вдали от башни, противоположная её направлению от врага.
+        Цель бегства всегда дальше FLEE_EXIT_MARGIN, иначе враг зависает
+        ровно на границе гистерезиса и не может считаться "убежавшим"."""
         dx = position.x - tower.position.x
         dy = position.y - tower.position.y
         dist = math.hypot(dx, dy)
         if dist < 1e-6:
             dx, dy, dist = 1.0, 0.0, 1.0
-        flee_distance = tower.range_radius + 50.0
+        flee_distance = tower.range_radius + self.FLEE_TARGET_DISTANCE
         return Coordinate(tower.position.x + dx / dist * flee_distance, tower.position.y + dy / dist * flee_distance)
 
     WOUNDED_HEALTH_RATIO = 0.3
@@ -317,6 +326,36 @@ class Map:
         enemy.position.x += perp_x * delta_wiggle
         enemy.position.y += perp_y * delta_wiggle
 
+    def _in_flee_danger(self, enemy: HostileEntity, in_danger: bool, was_fleeing: bool) -> bool:
+        """Определяет, должен ли враг считаться "в опасности" для целей
+        бегства, с гистерезисом: если враг уже убегал в прошлом кадре -
+        опасность отступает только за пределами FLEE_EXIT_MARGIN, иначе
+        враг дрожит на месте ровно на границе радиуса башни (то входит в
+        is_position_covered, то выходит из него от кадра к кадру)."""
+        if in_danger:
+            return True
+        if was_fleeing:
+            return self._nearest_covering_tower(enemy.position, margin=self.FLEE_EXIT_MARGIN) is not None
+        return False
+
+    SHIELD_BIAS = 0.8
+
+    def _shield_offset(self, offset: Coordinate, tower_position: Coordinate,
+                        leader_position: Coordinate) -> Coordinate:
+        """Смещает угол слота построения эскорта в сторону башни, обстреливающей
+        лидера, сохраняя расстояние до лидера - так боевой эскорт подставляется
+        под огонь и прикрывает лидера собой, а не отсиживается за его спиной.
+        Угол сдвигается не полностью, а на SHIELD_BIAS от исходного - иначе все
+        эскорты со своим лидером сходятся в одну точку и налезают друг на друга."""
+        radius = math.hypot(offset.x, offset.y)
+        if radius < 1e-6:
+            return offset
+        original_angle = math.atan2(offset.y, offset.x)
+        tower_angle = math.atan2(tower_position.y - leader_position.y, tower_position.x - leader_position.x)
+        diff = (tower_angle - original_angle + math.pi) % (2 * math.pi) - math.pi
+        blended_angle = original_angle + diff * self.SHIELD_BIAS
+        return Coordinate(math.cos(blended_angle) * radius, math.sin(blended_angle) * radius)
+
     def _find_enemy_combat_target(self, enemy: HostileEntity) -> Optional[HostileEntity]:
         """Находит ближайшего живого врага чужой фракции в радиусе обзора."""
         candidates = [
@@ -394,6 +433,8 @@ class Map:
 
             if enemy.is_moving():
                 pre_move_position = Coordinate(enemy.position.x, enemy.position.y)
+                was_fleeing = enemy.is_fleeing
+                enemy.is_fleeing = False
 
                 if retreating_now:
                     enemy.is_healing = True
@@ -417,9 +458,10 @@ class Map:
                         enemy.attack_tower(target_tower, delta_time)
                     else:
                         enemy.move_towards_point(target_tower.position, delta_time)
-                elif in_danger and enemy.avoids_danger():
-                    threatening_tower = self._nearest_covering_tower(enemy.position)
+                elif enemy.avoids_danger() and self._in_flee_danger(enemy, in_danger, was_fleeing):
+                    threatening_tower = self._nearest_covering_tower(enemy.position, margin=self.FLEE_EXIT_MARGIN)
                     if threatening_tower is not None:
+                        enemy.is_fleeing = True
                         enemy.is_patrolling = False
                         flee_point = self._flee_point_from(enemy.position, threatening_tower)
                         enemy.move_towards_point(flee_point, delta_time)
@@ -428,8 +470,12 @@ class Map:
                 else:
                     leader = enemy.group_leader
                     if leader is not None and leader.is_alive() and not leader.has_reached_end_of_path():
-                        formation_target = Coordinate(leader.position.x + enemy.formation_offset.x,
-                                                        leader.position.y + enemy.formation_offset.y)
+                        offset = enemy.formation_offset
+                        if enemy.is_combatant() and self.is_position_covered(leader.position):
+                            threatening_tower = self._nearest_covering_tower(leader.position)
+                            if threatening_tower is not None:
+                                offset = self._shield_offset(offset, threatening_tower.position, leader.position)
+                        formation_target = Coordinate(leader.position.x + offset.x, leader.position.y + offset.y)
                         enemy.move_towards_point(formation_target, delta_time)
                     else:
                         if leader is not None:

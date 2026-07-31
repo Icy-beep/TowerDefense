@@ -27,6 +27,8 @@ class LaserTurret(DefenseModule):
 class BulletTurret(DefenseModule):
     """Средняя башня с кинетическим уроном."""
 
+    SPREAD_DEGREES = 6.0
+
     def __init__(self, position: Coordinate, range_radius: float = 150, damage: float = 30,
                  cost: int = 100, attack_speed: float = 1.0, upgrade_costs: Optional[List[int]] = None):
         """Создаёт пулемётную башню."""
@@ -35,7 +37,7 @@ class BulletTurret(DefenseModule):
         self.upgrade_costs = list(upgrade_costs) if upgrade_costs is not None else [150, 200]
 
     def fire(self, target: HostileEntity) -> Projectile:
-        """Выпускает пулю по цели."""
+        """Выпускает пулю по цели с небольшим случайным разбросом."""
         return BulletProjectile(
             position=Coordinate(self.position.x, self.position.y),
             target=target,
@@ -43,6 +45,7 @@ class BulletTurret(DefenseModule):
             damage_type=self.damage_type,
             speed=420.0,
             max_distance=self.range_radius + 200.0,
+            spread_degrees=self.SPREAD_DEGREES,
         )
 
 class MortarTurret(DefenseModule):

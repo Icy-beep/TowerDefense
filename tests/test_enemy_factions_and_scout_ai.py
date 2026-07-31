@@ -127,3 +127,72 @@ def test_map_update_calls_act_with_danger_flag_and_moves_default_enemy():
 
     assert enemy.act_calls == [False]
     assert enemy.position.x == pytest.approx(100.0)  # speed=100, dt=1.0
+
+
+# ----------------------------------------------- гистерезис бегства (граница радиуса)
+
+def test_nearest_covering_tower_respects_optional_margin():
+    game_map = Map(width=4000, height=4000)
+    tower = LaserTurret(Coordinate(1000, 1000))  # range_radius=120
+
+    just_outside = Coordinate(1000 + 130, 1000)
+    assert game_map._nearest_covering_tower(just_outside) is None, \
+        "без запаса точка за пределами обычного радиуса не считается накрытой"
+
+    game_map.modules.append(tower)
+    assert game_map._nearest_covering_tower(just_outside) is None
+    assert game_map._nearest_covering_tower(just_outside, margin=Map.FLEE_EXIT_MARGIN) is tower
+
+
+def test_in_flee_danger_only_uses_hysteresis_margin_while_already_fleeing():
+    game_map = Map(width=4000, height=4000)
+    tower = LaserTurret(Coordinate(1000, 1000))
+    game_map.modules.append(tower)
+    scout = ScoutDrone(Coordinate(1000 + 130, 1000))  # за обычным радиусом, но в пределах запаса
+
+    assert game_map._in_flee_danger(scout, in_danger=False, was_fleeing=False) is False, \
+        "если враг не убегал и формально не накрыт - в опасности не считается"
+    assert game_map._in_flee_danger(scout, in_danger=False, was_fleeing=True) is True, \
+        "если враг уже убегал - опасность отступает только за пределами запаса"
+    assert game_map._in_flee_danger(scout, in_danger=True, was_fleeing=False) is True, \
+        "прямое накрытие всегда считается опасностью, независимо от гистерезиса"
+
+
+def test_scout_does_not_oscillate_at_the_edge_of_tower_range():
+    """Разведчик на самой границе радиуса башни не должен метаться туда-обратно
+    между бегством и патрулированием: раз начав убегать, он должен монотонно
+    удаляться от башни, а не топтаться ровно на границе."""
+    game_map = Map(width=4000, height=4000)
+    tower = LaserTurret(Coordinate(1000, 1000))  # range_radius=120
+    game_map.modules.append(tower)
+
+    scout = ScoutDrone(Coordinate(1000 + 119, 1000))  # чуть внутри радиуса
+    scout.set_path([Coordinate(2000, 1000)])
+    game_map.spawn_enemy(scout)
+
+    distances = []
+    for _ in range(20):
+        game_map.update(0.1)
+        distances.append(scout.position.distance_to(tower.position))
+
+    assert all(b >= a - 1e-6 for a, b in zip(distances, distances[1:])), \
+        "разведчик не должен метаться туда-обратно у границы обстрела"
+    assert distances[-1] > tower.range_radius + Map.FLEE_EXIT_MARGIN
+
+
+def test_scout_is_fleeing_flag_tracks_flee_state():
+    game_map = Map(width=4000, height=4000)
+    tower = LaserTurret(Coordinate(1000, 1000))
+    game_map.modules.append(tower)
+
+    scout = ScoutDrone(Coordinate(1000 + 50, 1000))  # глубоко внутри радиуса
+    scout.set_path([Coordinate(2000, 1000)])
+    game_map.spawn_enemy(scout)
+
+    assert scout.is_fleeing is False
+    game_map.update(0.1)
+    assert scout.is_fleeing is True
+
+    scout.position = Coordinate(5000, 5000)  # телепортируем далеко от всех башен
+    game_map.update(0.1)
+    assert scout.is_fleeing is False

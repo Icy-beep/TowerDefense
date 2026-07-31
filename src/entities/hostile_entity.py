@@ -40,6 +40,7 @@ class HostileEntity(Entity, ABC):
         self.patrol_direction: int = 1
 
         self.is_healing: bool = False
+        self.is_fleeing: bool = False
 
         self.dodge_timer: float = 0.0
         self._dodge_offset: float = 0.0

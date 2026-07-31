@@ -8,11 +8,14 @@ GroupFormationSystem время от времени случайно собир�
 Map.update()). ScoutDrone теперь входит в SOLO_TYPES и никогда не
 участвует в группах — ни как лидер, ни как ведомый: его единственная
 задача — разведка и бегство от башен."""
+import math
+
 import pytest
 
 from src.core.coordinate import Coordinate
 from src.core.map import Map
-from src.entities.enemies import DroneWalker, GiantRoach, HeavyAssaultDrone, ScoutDrone
+from src.entities.enemies import DroneWalker, GiantRoach, HeavyAssaultDrone, MedicDrone, ScoutDrone
+from src.entities.turrets import LaserTurret
 from src.systems.group_formation import GroupFormationSystem
 
 
@@ -184,6 +187,80 @@ def test_group_disbands_when_leader_dies():
 
     assert follower.group_leader is None
     assert follower.position.x == pytest.approx(50.0)  # снова по своему маршруту, speed=50
+
+
+# --------------------------------------------- группа прикрывает лидера от обстрела
+
+def test_shield_offset_biases_towards_tower_direction():
+    game_map = Map(width=4000, height=4000)
+    leader_pos = Coordinate(500, 500)
+    tower_pos = Coordinate(500, 400)  # прямо "над" лидером
+    offset = Coordinate(50, 0)  # исходный слот - справа от лидера
+
+    shielded = game_map._shield_offset(offset, tower_pos, leader_pos)
+
+    def _angle_diff(a, b):
+        return abs((a - b + math.pi) % (2 * math.pi) - math.pi)
+
+    original_angle = math.atan2(offset.y, offset.x)
+    tower_angle = math.atan2(tower_pos.y - leader_pos.y, tower_pos.x - leader_pos.x)
+    shielded_angle = math.atan2(shielded.y, shielded.x)
+
+    assert _angle_diff(shielded_angle, tower_angle) < _angle_diff(original_angle, tower_angle), \
+        "смещённый угол слота должен быть заметно ближе к направлению на башню"
+    assert math.hypot(shielded.x, shielded.y) == pytest.approx(math.hypot(offset.x, offset.y)), \
+        "расстояние до лидера должно сохраняться - меняется только угол"
+
+
+def test_combatant_follower_shields_leader_from_threatening_tower():
+    game_map = Map(width=4000, height=4000, group_formation=GroupFormationSystem(rng=_NeverFormRng()))
+    tower = LaserTurret(Coordinate(500, 300))  # range_radius=120 по умолчанию
+    game_map.modules.append(tower)
+
+    leader = HeavyAssaultDrone(Coordinate(500, 380))  # в 80 юнитах от башни - накрыт
+    leader.speed = 0
+    leader.is_group_leader = True
+    leader.group_id = 7
+    leader.set_path([Coordinate(9999, 9999)])
+
+    follower = DroneWalker(Coordinate(550, 380))
+    follower.join_group(7, leader, Coordinate(50, 0))
+    follower.set_path([Coordinate(-9999, -9999)])
+
+    game_map.spawn_enemy(leader)
+    game_map.spawn_enemy(follower)
+
+    plain_slot_distance_to_tower = Coordinate(550, 380).distance_to(tower.position)
+    game_map.update(1.0)
+
+    assert follower.position.distance_to(tower.position) < plain_slot_distance_to_tower, \
+        "боевой эскорт должен смещаться в сторону угрожающей лидеру башни, прикрывая его собой"
+
+
+def test_noncombatant_follower_ignores_shielding_and_keeps_normal_slot():
+    """Медик не должен подставляться под огонь вместе с боевым эскортом -
+    is_combatant()=False полностью отключает смещение слота построения."""
+    game_map = Map(width=4000, height=4000, group_formation=GroupFormationSystem(rng=_NeverFormRng()))
+    tower = LaserTurret(Coordinate(500, 300))
+    game_map.modules.append(tower)
+
+    leader = HeavyAssaultDrone(Coordinate(500, 380))
+    leader.speed = 0
+    leader.is_group_leader = True
+    leader.group_id = 7
+    leader.set_path([Coordinate(9999, 9999)])
+
+    medic = MedicDrone(Coordinate(550, 380))
+    medic.join_group(7, leader, Coordinate(50, 0))
+    medic.set_path([Coordinate(-9999, -9999)])
+
+    game_map.spawn_enemy(leader)
+    game_map.spawn_enemy(medic)
+
+    game_map.update(1.0)
+
+    assert medic.position == Coordinate(550, 380), \
+        "не боевой юнит сохраняет обычный слот построения, даже когда лидер под обстрелом"
 
 
 def test_group_disbands_when_leader_has_reached_end_of_path():

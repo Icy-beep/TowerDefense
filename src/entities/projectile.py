@@ -112,9 +112,19 @@ class BulletProjectile(_LinearProjectile):
     """Пуля, летящая по прямой к позиции цели на момент выстрела."""
 
     def __init__(self, position: Coordinate, target: "HostileEntity", damage: float, damage_type: DamageType,
-                 speed: float, max_distance: float = 900.0):
-        """Создаёт пулю, летящую в сторону цели."""
+                 speed: float, max_distance: float = 900.0, spread_degrees: float = 0.0,
+                 rng: Optional[random.Random] = None):
+        """Создаёт пулю, летящую в сторону цели с необязательным случайным
+        разбросом направления в пределах ±spread_degrees/2."""
         direction = (target.position.x - position.x, target.position.y - position.y)
+        if spread_degrees:
+            rng = rng or random
+            angle = math.radians(rng.uniform(-spread_degrees / 2, spread_degrees / 2))
+            cos_a, sin_a = math.cos(angle), math.sin(angle)
+            direction = (
+                direction[0] * cos_a - direction[1] * sin_a,
+                direction[0] * sin_a + direction[1] * cos_a,
+            )
         super().__init__(Coordinate(position.x, position.y), direction, damage, damage_type, speed, max_distance)
 
 
