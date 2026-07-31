@@ -37,3 +37,5 @@ Thumbs.db
 
 # other
 .claudeignore
+docs/PROJECT_REFERENCE.md
+docs/DESIGN_RTS_TRANSITION.md
