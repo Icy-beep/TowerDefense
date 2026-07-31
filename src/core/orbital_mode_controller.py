@@ -17,7 +17,7 @@ _KEY_TO_TOWER_TYPE = {
 
 
 class OrbitalModeController(IGameModeController):
-    """Свободная камера, строительство башен, управление волнами."""
+    """Свободная камера и строительство башен - RTS-режим обзора."""
 
     ENEMY_SELECT_RADIUS = 16
 
@@ -54,8 +54,6 @@ class OrbitalModeController(IGameModeController):
         if event.type == pygame.KEYDOWN:
             if event.key in _KEY_TO_TOWER_TYPE:
                 self.select_tower(_KEY_TO_TOWER_TYPE[event.key])
-            elif event.key == pygame.K_SPACE:
-                self.start_next_wave()
             elif event.key == pygame.K_u:
                 self.upgrade_selected()
             elif event.key == pygame.K_p:
@@ -143,13 +141,6 @@ class OrbitalModeController(IGameModeController):
         self.selected_tower_type = None
         self.selected_enemy = None
 
-    def start_next_wave(self) -> bool:
-        """Запускает следующую волну досрочно."""
-        if self.session.wave_protocol.is_active:
-            return False
-        self.session.wave_protocol.force_start_next_wave()
-        return True
-
     def pause_game(self):
         """Переключает игру между паузой и продолжением."""
         if self.session.state == GameState.PLAYING:
@@ -157,20 +148,15 @@ class OrbitalModeController(IGameModeController):
         elif self.session.state == GameState.PAUSED:
             self.session.state = GameState.PLAYING
 
-    def get_next_wave_time(self) -> float:
-        """Время до следующей волны."""
-        return self.session.wave_protocol.get_time_until_next_wave()
-
     def get_game_state(self) -> dict:
         """Собирает состояние игры для HUD."""
         return {
             "credits": self.session.resources.credits,
             "base_health": self.session.base_health,
             "max_base_health": self.session.max_base_health,
-            "current_wave": self.session.wave_protocol.current_wave_idx + 1,
-            "total_waves": len(self.session.wave_protocol.waves),
+            "elapsed_time": self.session.elapsed_time,
+            "survive_duration_target": self.session.survive_duration_target,
             "game_state": self.session.state,
-            "is_wave_active": self.session.wave_protocol.is_active,
             "selected_tower": self.selected_tower_type,
         }
 

@@ -121,28 +121,14 @@ def test_spawn_factory_returns_none_when_faction_has_no_spawn_points_at_all():
     assert session._spawn_enemy_factory("drone_walker") is None
 
 
-# ---------------------------------------------------------------- WaveProtocol
+def test_spawn_factory_uses_explicit_position_when_given():
+    """ShipLandingStrategy передаёт конкретную точку высадки вместо того,
+    чтобы полагаться на случайный выбор из точек спавна фракции."""
+    session = GameSession()
+    session.setup_game()
 
-def test_wave_protocol_calls_spawn_factory_with_only_the_enemy_type():
-    from src.systems.wave_protocol import WaveProtocol, WaveConfig
+    landing_point = Coordinate(3999, 1)
+    enemy = session._spawn_enemy_factory("drone_walker", landing_point)
 
-    calls = []
-
-    class _FakeMap:
-        def __init__(self):
-            self.enemies = []
-
-        def spawn_enemy(self, enemy):
-            self.enemies.append(enemy)
-
-    def spy_spawn_factory(enemy_type):
-        calls.append(enemy_type)
-        return object()
-
-    wp = WaveProtocol()
-    wp.set_waves([WaveConfig(["drone_walker"], 1, 0.1)])
-    wp.start_next_wave()
-
-    wp.update(0.1, _FakeMap(), spy_spawn_factory)
-
-    assert calls == ["drone_walker"]
+    assert (enemy.position.x, enemy.position.y) == (landing_point.x, landing_point.y)
+    assert enemy.position is not landing_point

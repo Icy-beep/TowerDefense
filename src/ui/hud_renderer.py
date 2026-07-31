@@ -40,7 +40,8 @@ class HudRenderer:
         self._draw_selection_panel(screen, state, controller, tower_options, small_font, width, height)
 
     def _draw_status_panel(self, screen, state, controller, font, pad, alpha):
-        """Рисует панель с деньгами, здоровьем базы и номером волны."""
+        """Рисует панель с деньгами, здоровьем базы и прогрессом по времени
+        под давлением угроз."""
         surf1 = pygame.Surface((360, 125), pygame.SRCALPHA)
         surf1.fill((20, 25, 35, alpha))
         screen.blit(surf1, (pad, pad))
@@ -51,24 +52,18 @@ class HudRenderer:
             font.render(loc.get("hud.base_health", hp=state['base_health'], max_hp=state['max_base_health']),
                         True, (255, 100, 100)),
             (pad + 10, pad + 40))
+
+        target = state['survive_duration_target']
+        current = min(state['elapsed_time'], target)
         screen.blit(
-            font.render(loc.get("hud.wave", current=state['current_wave'], total=state['total_waves']),
+            font.render(loc.get("hud.survive_progress", current=int(current), target=int(target)),
                         True, (100, 200, 255)),
             (pad + 10, pad + 70))
 
-        if state['is_wave_active']:
-            wave_line = loc.get("hud.wave_active")
-            color = (255, 150, 150)
-        else:
-            seconds_left = controller.get_next_wave_time()
-            if seconds_left > 0:
-                wave_line = loc.get("hud.wave_next_in", seconds=seconds_left)
-                color = (200, 200, 100)
-            else:
-                wave_line = (loc.get("hud.wave_game_over") if state['current_wave'] > state['total_waves']
-                             else loc.get("hud.wave_start_prompt"))
-                color = (150, 255, 150)
-        screen.blit(font.render(wave_line, True, color), (pad + 10, pad + 100))
+        remaining = max(0.0, target - state['elapsed_time'])
+        color = (150, 255, 150) if remaining <= 0 else (200, 200, 100)
+        screen.blit(font.render(loc.get("hud.survive_remaining", seconds=remaining), True, color),
+                    (pad + 10, pad + 100))
 
     def _draw_missions_panel(self, screen, session, small_font, pad, alpha, width):
         """Рисует панель заданий в правом верхнем углу."""

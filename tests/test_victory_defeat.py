@@ -55,27 +55,13 @@ def test_check_defeat_true_when_base_health_zero_or_below():
     assert gsm.check_defeat(base_health=1) is False
 
 
-class _FakeWaveProtocol:
-    def __init__(self, complete):
-        self._complete = complete
-
-    def is_all_waves_complete(self):
-        return self._complete
-
-
-class _FakeMap:
-    def __init__(self, enemies):
-        self.enemies = enemies
-
-
-def test_check_victory_requires_both_conditions_simultaneously():
+def test_check_victory_true_once_target_duration_reached():
     gsm = GameStateManager()
 
-    assert gsm.check_victory(_FakeMap([]), _FakeWaveProtocol(True)) is True
-    assert gsm.check_victory(_FakeMap(["enemy"]), _FakeWaveProtocol(True)) is False, \
-        "победа не должна засчитываться, пока на поле остаются противники"
-    assert gsm.check_victory(_FakeMap([]), _FakeWaveProtocol(False)) is False, \
-        "победа не должна засчитываться, пока не пройдены все волны"
+    assert gsm.check_victory(elapsed_time=180.0, target_duration=180.0) is True
+    assert gsm.check_victory(elapsed_time=200.0, target_duration=180.0) is True
+    assert gsm.check_victory(elapsed_time=179.9, target_duration=180.0) is False, \
+        "победа не должна засчитываться раньше целевого времени"
 
 
 # ---------------------------------------------------------------------
@@ -93,11 +79,10 @@ def test_game_session_transitions_to_game_over_on_defeat():
     assert session.state == GameState.GAME_OVER
 
 
-def test_game_session_transitions_to_victory_when_all_waves_cleared():
+def test_game_session_transitions_to_victory_when_duration_target_reached():
     session = GameSession()
     session.setup_game()
-    session.wave_protocol.finished = True
-    session.wave_protocol.is_active = False
+    session.elapsed_time = session.survive_duration_target
     session.map.enemies = []
 
     session.update(delta_time=0.016)
@@ -115,13 +100,12 @@ def test_game_session_stays_in_playing_state_during_normal_gameplay():
 
 
 def test_defeat_takes_priority_when_both_conditions_true_simultaneously():
-    """Если база уже разрушена в тот же тик, когда волны закончились —
+    """Если база уже разрушена в тот же тик, когда целевое время достигнуто —
     поражение должно иметь приоритет (игрок не успел выиграть)."""
     session = GameSession()
     session.setup_game()
     session.base_health = 5
-    session.wave_protocol.finished = True
-    session.wave_protocol.is_active = False
+    session.elapsed_time = session.survive_duration_target
     session.map.enemies = [_enemy_that_reached_base()]  # снимет ещё 10 хп -> уйдёт в минус
 
     session.update(delta_time=0.016)

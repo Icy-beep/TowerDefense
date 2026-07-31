@@ -51,10 +51,6 @@ class GameController:
         """Возвращает состояние игры для HUD."""
         return self.active_mode.get_game_state()
 
-    def get_next_wave_time(self) -> float:
-        """Время до следующей волны."""
-        return self.active_mode.get_next_wave_time()
-
     def _is_valid_position(self, position: Coordinate) -> bool:
         """Проверяет, можно ли поставить башню в этой точке."""
         return self.active_mode._is_valid_position(position)

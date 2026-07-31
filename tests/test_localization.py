@@ -19,7 +19,7 @@ def test_loc_substitutes_placeholders():
 
 
 def test_loc_supports_format_spec_in_template():
-    text = loc.get("hud.wave_next_in", seconds=3.14159)
+    text = loc.get("hud.survive_remaining", seconds=3.14159)
     assert "3.1 с" in text
 
 
@@ -55,8 +55,7 @@ def test_all_ru_json_keys_used_by_hud_menu_gameover_are_present():
         keys = set(json.load(f).keys())
 
     used_keys = {
-        "hud.money", "hud.base_health", "hud.wave", "hud.wave_active",
-        "hud.wave_next_in", "hud.wave_game_over", "hud.wave_start_prompt",
+        "hud.money", "hud.base_health", "hud.survive_progress", "hud.survive_remaining",
         "hud.camera_info", "hud.controls_move", "hud.controls_drag",
         "hud.controls_build", "hud.controls_select", "hud.controls_misc",
         "hud.build_label", "hud.build_hint", "hud.tower_level",

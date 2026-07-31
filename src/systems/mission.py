@@ -1,4 +1,4 @@
-"""Задания — необязательный слой поверх основного волнового цикла."""
+"""Задания - слой целей поверх непрерывного давления фракций угроз."""
 from abc import ABC, abstractmethod
 
 from src.enums import GameState
@@ -28,26 +28,28 @@ class Objective(ABC):
         pass
 
 
-class SurviveWavesObjective(Objective):
-    """Задание продержаться до определённой волны."""
+class SurviveDurationObjective(Objective):
+    """Задание продержаться заданное время под непрерывным давлением
+    угроз (временная замена SurviveWavesObjective на этап 1 перехода на
+    RTS-модель, см. docs/DESIGN_RTS_TRANSITION.md, раздел 4)."""
 
-    def __init__(self, target_wave_count: int):
-        """Создаёт задание с целевой волной."""
+    def __init__(self, target_seconds: float):
+        """Создаёт задание с целевой длительностью в секундах."""
         super().__init__()
-        self.target_wave_count = target_wave_count
+        self.target_seconds = target_seconds
 
     def update(self, session):
-        """Проверяет поражение или достижение целевой волны."""
+        """Проверяет поражение или достижение целевого времени."""
         if session.state == GameState.GAME_OVER:
             self.failed = True
             return
-        if session.wave_protocol.current_wave_idx >= self.target_wave_count:
+        if session.elapsed_time >= self.target_seconds:
             self.completed = True
 
     def describe(self, session) -> str:
         """Возвращает текст прогресса задания."""
-        current = min(session.wave_protocol.current_wave_idx, self.target_wave_count)
-        return loc.get("mission.survive_waves", current=current, target=self.target_wave_count)
+        current = min(session.elapsed_time, self.target_seconds)
+        return loc.get("mission.survive_duration", current=int(current), target=int(self.target_seconds))
 
 
 class ProtectTowersObjective(Objective):
@@ -58,7 +60,7 @@ class ProtectTowersObjective(Objective):
         if session.map.towers_lost_count > 0:
             self.failed = True
             return
-        if session.wave_protocol.is_all_waves_complete():
+        if session.state == GameState.VICTORY:
             self.completed = True
 
     def describe(self, session) -> str:
