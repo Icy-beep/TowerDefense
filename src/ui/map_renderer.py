@@ -4,6 +4,7 @@ import pygame
 from src.core.coordinate import Coordinate
 from src.entities.projectile import HitscanBeam, MortarShell, ShrapnelPellet
 from src.enums import Faction
+from src.systems.threat_strategy import ShipLandingStrategy
 
 MAP_WIDTH = 4000
 MAP_HEIGHT = 4000
@@ -77,10 +78,18 @@ class MapRenderer:
                 pygame.draw.line(screen, color, (0, sy), (width, sy))
 
     def _draw_spawn_points(self, screen, camera, session):
-        """Рисует точки спавна врагов, разными цветами по фракциям."""
+        """Рисует точки спавна врагов, разными цветами по фракциям - но
+        только для фракций, которые действительно ещё появляются из
+        фиксированной точки. Corporation высаживается кораблями в
+        телеграфируемых точках (ShipLandingStrategy), поэтому её старые
+        точки спавна (используются только как цель отступления на лечение)
+        на карте больше не показываются."""
         by_faction = getattr(session.map, "spawn_points_by_faction", {}) or {}
+        threat_strategies = getattr(session, "threat_strategies", {}) or {}
         if by_faction:
             for faction, points in by_faction.items():
+                if isinstance(threat_strategies.get(faction), ShipLandingStrategy):
+                    continue
                 color = FACTION_SPAWN_COLORS.get(faction, DEFAULT_SPAWN_COLOR)
                 for point in points:
                     self._draw_spawn_marker(screen, camera, point, color)

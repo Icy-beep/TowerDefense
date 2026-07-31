@@ -121,6 +121,39 @@ def test_spawn_factory_returns_none_when_faction_has_no_spawn_points_at_all():
     assert session._spawn_enemy_factory("drone_walker") is None
 
 
+def test_map_renderer_does_not_draw_stale_corporation_spawn_markers():
+    """Corporation больше не появляется из фиксированных точек спавна
+    (высаживается кораблями через ShipLandingStrategy) - старые точки
+    остаются в spawn_points_by_faction только для отступления на лечение
+    и не должны рисоваться на карте как места появления врагов."""
+    from src.ui.map_renderer import MapRenderer, FACTION_SPAWN_COLORS
+    import types
+    import pygame
+
+    session = GameSession()
+    session.setup_game()
+
+    drawn_colors = []
+    original_polygon = pygame.draw.polygon
+
+    def spy_polygon(surface, color, points, *args, **kwargs):
+        drawn_colors.append(tuple(color))
+        return original_polygon(surface, color, points, *args, **kwargs)
+
+    pygame.draw.polygon = spy_polygon
+    try:
+        camera = types.SimpleNamespace(world_to_screen=lambda x, y: (x, y), x=0, y=0, zoom=1.0)
+        screen = pygame.Surface((900, 600))
+        MapRenderer()._draw_spawn_points(screen, camera, session)
+    finally:
+        pygame.draw.polygon = original_polygon
+
+    corp_color = FACTION_SPAWN_COLORS[Faction.CORPORATION]
+    fauna_color = FACTION_SPAWN_COLORS[Faction.FAUNA]
+    assert corp_color not in drawn_colors, "маркеры точек высадки корпоратов не должны рисоваться"
+    assert fauna_color in drawn_colors, "точки спавна фауны всё ещё актуальны и должны рисоваться"
+
+
 def test_spawn_factory_uses_explicit_position_when_given():
     """ShipLandingStrategy передаёт конкретную точку высадки вместо того,
     чтобы полагаться на случайный выбор из точек спавна фракции."""
