@@ -40,8 +40,12 @@ class Map:
         self.modules.append(module)
 
     def spawn_points_for(self, faction: Faction) -> List[Coordinate]:
-        """Возвращает точки спавна фракции, а если для неё отдельных не задано — общий список."""
-        return self.spawn_points_by_faction.get(faction) or self.spawn_points
+        """Возвращает точки спавна фракции. Если для фракции явно задан
+        (пусть даже пустой) список - используется он; общий список -
+        только фолбэк для фракций без какой-либо настройки вовсе."""
+        if faction in self.spawn_points_by_faction:
+            return self.spawn_points_by_faction[faction]
+        return self.spawn_points
 
     def can_place_module(self, position: Coordinate, min_distance: float = 30.0) -> bool:
         """Проверяет, можно ли поставить башню в этой точке."""
@@ -220,6 +224,8 @@ class Map:
     HEAL_RATE_PER_SECOND = 0.15
     LOW_ENEMY_COUNT_NO_RETREAT = 4
 
+    FACTIONS_WITHOUT_RETREAT_HEALING = {Faction.CORPORATION}
+
     def _is_wounded(self, enemy: HostileEntity) -> bool:
         """Проверяет, ранен ли враг настолько, что ему пора отступать лечиться."""
         return enemy.health < enemy.max_health * self.WOUNDED_HEALTH_RATIO
@@ -252,6 +258,47 @@ class Map:
         """Проверяет, находится ли враг рядом с одной из точек спавна своей фракции."""
         spawn_points = self.spawn_points_for(enemy.faction)
         return any(enemy.position.distance_to(p) <= self.HEAL_RADIUS for p in spawn_points)
+
+    HEALER_JOIN_RADIUS = 60.0
+    HEALER_HEAL_RADIUS = 120.0
+    HEALER_HEAL_RATE_PER_SECOND = 0.12
+
+    def _find_nearest_ally_group_leader(self, enemy: HostileEntity) -> Optional[HostileEntity]:
+        """Находит ближайшего живого лидера группы своей фракции."""
+        leaders = [
+            other for other in self.enemies
+            if other is not enemy
+            and other.is_alive()
+            and other.is_group_leader
+            and other.faction == enemy.faction
+        ]
+        if not leaders:
+            return None
+        return min(leaders, key=lambda leader: enemy.position.distance_to(leader.position))
+
+    def _advance_healer_seeking(self, enemy: HostileEntity, delta_time: float):
+        """Двигает лечащего врага к ближайшей группе союзников; при подходе
+        достаточно близко - присоединяет его к ней. Если группы нет вовсе,
+        враг идёт к базе как обычно."""
+        leader = self._find_nearest_ally_group_leader(enemy)
+        if leader is None:
+            self._advance_towards_base(enemy, delta_time)
+            return
+        if enemy.position.distance_to(leader.position) <= self.HEALER_JOIN_RADIUS:
+            offset = Coordinate(-self.HEALER_JOIN_RADIUS * 0.4, 0.0)
+            enemy.join_group(leader.group_id, leader, offset)
+        else:
+            enemy.move_towards_point(leader.position, delta_time)
+
+    def _apply_ally_healing(self, healer: HostileEntity, delta_time: float):
+        """Лечит участников группы лечащего врага в радиусе его действия."""
+        for member in self.enemies:
+            if not member.is_alive() or member.group_id != healer.group_id:
+                continue
+            if healer.position.distance_to(member.position) > self.HEALER_HEAL_RADIUS:
+                continue
+            member.health = min(member.max_health,
+                                 member.health + member.max_health * self.HEALER_HEAL_RATE_PER_SECOND * delta_time)
 
     def _apply_dodge(self, enemy: HostileEntity, delta_time: float, pre_move_position: Coordinate):
         """Добавляет боковое покачивание к движению врага, уклоняющегося от обстрела."""
@@ -321,13 +368,14 @@ class Map:
             if not allow_retreat:
                 enemy.is_healing = False
 
-            target_tower = enemy.group_target_tower()
+            target_tower = enemy.group_target_tower() if enemy.is_combatant() else None
             hunting_tower = target_tower is not None and not target_tower.is_destroyed()
 
-            combat_target = self._find_enemy_combat_target(enemy)
+            combat_target = self._find_enemy_combat_target(enemy) if enemy.is_combatant() else None
             in_combat = combat_target is not None
 
-            retreating_now = (allow_retreat and enemy.group_leader is None
+            uses_retreat_healing = enemy.faction not in self.FACTIONS_WITHOUT_RETREAT_HEALING
+            retreating_now = (allow_retreat and uses_retreat_healing and enemy.group_leader is None
                                and (enemy.is_healing or self._group_needs_healing(enemy)))
 
             if not hunting_tower and not in_combat and not retreating_now and enemy.path_index >= len(enemy.path):
@@ -340,6 +388,9 @@ class Map:
             if self._is_near_own_spawn(enemy):
                 enemy.health = min(enemy.max_health,
                                     enemy.health + enemy.max_health * self.HEAL_RATE_PER_SECOND * delta_time)
+
+            if enemy.heals_allies() and enemy.group_leader is not None:
+                self._apply_ally_healing(enemy, delta_time)
 
             if enemy.is_moving():
                 pre_move_position = Coordinate(enemy.position.x, enemy.position.y)
@@ -383,7 +434,10 @@ class Map:
                     else:
                         if leader is not None:
                             enemy.leave_group()
-                        self._advance_towards_base(enemy, delta_time)
+                        if enemy.heals_allies():
+                            self._advance_healer_seeking(enemy, delta_time)
+                        else:
+                            self._advance_towards_base(enemy, delta_time)
 
                 if in_danger and enemy.dodges_projectiles():
                     self._apply_dodge(enemy, delta_time, pre_move_position)

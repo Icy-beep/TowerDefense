@@ -10,6 +10,7 @@ ENEMY_DISPLAY_KEYS = {
     "scout_drone": "enemy.scout_drone",
     "heavy_assault_drone": "enemy.heavy_assault_drone",
     "bio_titan": "enemy.bio_titan",
+    "medic_drone": "enemy.medic_drone",
 }
 
 ARMOR_LABEL_KEYS = {

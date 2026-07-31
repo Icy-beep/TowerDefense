@@ -3,7 +3,7 @@ from typing import Dict, Optional, Type
 
 from src.entities.hostile_entity import HostileEntity
 from src.core.coordinate import Coordinate
-from src.entities.enemies import DroneWalker, GiantRoach, ScoutDrone, HeavyAssaultDrone, BioTitan
+from src.entities.enemies import DroneWalker, GiantRoach, ScoutDrone, HeavyAssaultDrone, BioTitan, MedicDrone
 from src.enums import ArmorType, Faction
 from src.config.config_loader import ConfigLoader
 
@@ -20,6 +20,7 @@ class EnemyFactory:
         self.register("scout_drone", ScoutDrone)
         self.register("heavy_assault_drone", HeavyAssaultDrone)
         self.register("bio_titan", BioTitan)
+        self.register("medic_drone", MedicDrone)
 
     def register(self, type_name: str, enemy_class: Type[HostileEntity]) -> None:
         """Регистрирует новый тип врага."""

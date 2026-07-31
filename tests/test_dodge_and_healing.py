@@ -84,13 +84,17 @@ def test_heavy_enemy_does_not_wiggle_even_when_under_fire():
 
 
 # ---------------------------------------------------------- retreat & heal
+#
+# Отступление на лечение через точку спавна теперь работает только для
+# Fauna - у Corporation вместо этого MedicDrone, лечащий группу напрямую
+# (см. Map.FACTIONS_WITHOUT_RETREAT_HEALING и test_medic_drone.py).
 
-def _spawn_fillers(game_map, count=4, faction=Faction.CORPORATION, far_away=Coordinate(3999, 3999)):
+def _spawn_fillers(game_map, count=4, faction=Faction.FAUNA, far_away=Coordinate(3999, 3999)):
     """Добавляет здоровых 'фоновых' врагов далеко в стороне — нужно только
     чтобы общее число живых врагов на карте превышало LOW_ENEMY_COUNT_NO_RETREAT
     и не мешало отступлению срабатывать в тестах на само отступление."""
     for i in range(count):
-        filler = DroneWalker(Coordinate(far_away.x, far_away.y - i * 10))
+        filler = GiantRoach(Coordinate(far_away.x, far_away.y - i * 10))
         filler.faction = faction
         filler.set_path([Coordinate(far_away.x - 500, far_away.y)])
         game_map.spawn_enemy(filler)
@@ -98,11 +102,11 @@ def _spawn_fillers(game_map, count=4, faction=Faction.CORPORATION, far_away=Coor
 
 def test_solo_wounded_enemy_retreats_towards_its_spawn_point():
     game_map = Map(width=4000, height=4000)
-    game_map.spawn_points_by_faction = {Faction.CORPORATION: [Coordinate(200, 200)]}
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
     _spawn_fillers(game_map)
 
-    enemy = DroneWalker(Coordinate(2000, 2000))
-    enemy.health = 5  # меньше 30% от max_health=60
+    enemy = GiantRoach(Coordinate(2000, 2000))
+    enemy.health = 50  # меньше 30% от max_health=250
     enemy.set_path([Coordinate(2500, 2000)])
     game_map.spawn_enemy(enemy)
 
@@ -117,9 +121,9 @@ def test_solo_wounded_enemy_retreats_towards_its_spawn_point():
 
 def test_healthy_solo_enemy_does_not_retreat():
     game_map = Map(width=4000, height=4000)
-    game_map.spawn_points_by_faction = {Faction.CORPORATION: [Coordinate(200, 200)]}
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
 
-    enemy = DroneWalker(Coordinate(2000, 2000))  # полное здоровье
+    enemy = GiantRoach(Coordinate(2000, 2000))  # полное здоровье
     enemy.set_path([Coordinate(2500, 2000)])
     game_map.spawn_enemy(enemy)
 
@@ -131,11 +135,11 @@ def test_healthy_solo_enemy_does_not_retreat():
 def test_wounded_enemy_heals_near_spawn_and_resumes_path_to_base():
     game_map = Map(width=4000, height=4000)
     game_map.base_position = Coordinate(2000, 2000)
-    game_map.spawn_points_by_faction = {Faction.CORPORATION: [Coordinate(200, 200)]}
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
     _spawn_fillers(game_map)
 
-    enemy = DroneWalker(Coordinate(210, 210))  # уже рядом со своей точкой спавна
-    enemy.health = 5
+    enemy = GiantRoach(Coordinate(210, 210))  # уже рядом со своей точкой спавна
+    enemy.health = 50
     enemy.set_path([Coordinate(2000, 2000)])
     game_map.spawn_enemy(enemy)
 
@@ -149,16 +153,16 @@ def test_wounded_enemy_heals_near_spawn_and_resumes_path_to_base():
 
 def test_group_retreats_when_a_follower_is_wounded():
     game_map = Map(width=4000, height=4000)
-    game_map.spawn_points_by_faction = {Faction.CORPORATION: [Coordinate(200, 200)]}
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
     _spawn_fillers(game_map)
 
-    leader = DroneWalker(Coordinate(2000, 2000))
+    leader = GiantRoach(Coordinate(2000, 2000))
     leader.is_group_leader = True
     leader.group_id = 1
     leader.set_path([Coordinate(2500, 2000)])
 
-    follower = DroneWalker(Coordinate(2020, 2000))
-    follower.health = 3  # ранен, лидер — нет
+    follower = GiantRoach(Coordinate(2020, 2000))
+    follower.health = 30  # ранен, лидер — нет
     follower.set_path([Coordinate(2500, 2000)])
     follower.join_group(1, leader, Coordinate(20, 0))
 
@@ -182,15 +186,15 @@ def test_retreating_enemy_ignores_a_nearby_opposing_enemy_instead_of_fighting():
     могло переключаться туда-сюда, и группа могла бесконечно топтаться на
     месте вместо того, чтобы дойти до точки спавна."""
     game_map = Map(width=4000, height=4000)
-    game_map.spawn_points_by_faction = {Faction.CORPORATION: [Coordinate(200, 200)]}
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
     _spawn_fillers(game_map)
 
-    wounded = DroneWalker(Coordinate(2000, 2000))
-    wounded.health = 5  # меньше 30% от 60
+    wounded = GiantRoach(Coordinate(2000, 2000))
+    wounded.health = 50  # меньше 30% от 250
     wounded.set_path([Coordinate(2500, 2000)])
     game_map.spawn_enemy(wounded)
 
-    pest = GiantRoach(Coordinate(2030, 2000))  # чужая фракция, в радиусе обзора
+    pest = DroneWalker(Coordinate(2030, 2000))  # чужая фракция, в радиусе обзора
     game_map.spawn_enemy(pest)
 
     initial_distance = wounded.position.distance_to(Coordinate(200, 200))
@@ -201,6 +205,28 @@ def test_retreating_enemy_ignores_a_nearby_opposing_enemy_instead_of_fighting():
     assert wounded.is_healing is True
     assert wounded.position.distance_to(Coordinate(200, 200)) < initial_distance, \
         "раненый враг должен непрерывно отступать к спавну, не отвлекаясь на бой"
+
+
+def test_corporation_enemies_never_use_retreat_to_heal_even_when_wounded():
+    """Corporation больше не отступает к точке спавна лечиться вовсе -
+    вместо этого их лечит MedicDrone внутри группы (см. test_medic_drone.py)."""
+    game_map = Map(width=4000, height=4000)
+    game_map.spawn_points_by_faction = {Faction.CORPORATION: [Coordinate(200, 200)]}
+    _spawn_fillers(game_map)
+
+    wounded = DroneWalker(Coordinate(2000, 2000))
+    wounded.health = 5  # меньше 30% от max_health=60
+    wounded.set_path([Coordinate(2500, 2000)])
+    game_map.spawn_enemy(wounded)
+
+    initial_distance = wounded.position.distance_to(Coordinate(200, 200))
+
+    for _ in range(20):
+        game_map.update(0.1)
+
+    assert wounded.is_healing is False
+    assert wounded.position.distance_to(Coordinate(200, 200)) >= initial_distance, \
+        "раненый Corporation-юнит должен продолжать двигаться вперёд, а не отступать к спавну"
 
 
 def test_is_near_own_spawn_heals_passively_over_time():
@@ -220,8 +246,8 @@ def test_is_near_own_spawn_heals_passively_over_time():
 
 # ---------------------------------------- last stragglers of a wave: no retreat
 
-def _make_wounded_solo(position, health=5):
-    enemy = DroneWalker(position)
+def _make_wounded_solo(position, health=50):
+    enemy = GiantRoach(position)
     enemy.health = health
     enemy.set_path([Coordinate(position.x + 500, position.y)])
     return enemy
@@ -229,12 +255,12 @@ def _make_wounded_solo(position, health=5):
 
 def test_wounded_enemy_does_not_retreat_when_wave_is_down_to_the_last_few():
     game_map = Map(width=4000, height=4000)
-    game_map.spawn_points_by_faction = {Faction.CORPORATION: [Coordinate(200, 200)]}
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
 
     # Всего 3 живых врага на карте — меньше LOW_ENEMY_COUNT_NO_RETREAT (4).
     wounded = _make_wounded_solo(Coordinate(2000, 2000))
-    ally_1 = DroneWalker(Coordinate(2100, 2000))
-    ally_2 = DroneWalker(Coordinate(2200, 2000))
+    ally_1 = GiantRoach(Coordinate(2100, 2000))
+    ally_2 = GiantRoach(Coordinate(2200, 2000))
     for e in (ally_1, ally_2):
         e.set_path([Coordinate(2500, 2000)])
     game_map.spawn_enemy(wounded)
@@ -254,11 +280,11 @@ def test_wounded_enemy_does_not_retreat_when_wave_is_down_to_the_last_few():
 
 def test_wounded_enemy_retreats_when_plenty_of_enemies_remain():
     game_map = Map(width=4000, height=4000)
-    game_map.spawn_points_by_faction = {Faction.CORPORATION: [Coordinate(200, 200)]}
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
 
     wounded = _make_wounded_solo(Coordinate(2000, 2000))
     game_map.spawn_enemy(wounded)
-    allies = [DroneWalker(Coordinate(2100 + i * 30, 2000)) for i in range(5)]  # итого 6 > 4
+    allies = [GiantRoach(Coordinate(2100 + i * 30, 2000)) for i in range(5)]  # итого 6 > 4
     for a in allies:
         a.set_path([Coordinate(2500, 2000)])
         game_map.spawn_enemy(a)
@@ -271,11 +297,11 @@ def test_wounded_enemy_retreats_when_plenty_of_enemies_remain():
 
 def test_retreat_stops_once_wave_thins_out_to_the_threshold():
     game_map = Map(width=4000, height=4000)
-    game_map.spawn_points_by_faction = {Faction.CORPORATION: [Coordinate(200, 200)]}
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
 
     wounded = _make_wounded_solo(Coordinate(2000, 2000))
     game_map.spawn_enemy(wounded)
-    allies = [DroneWalker(Coordinate(2100 + i * 30, 2000)) for i in range(5)]  # итого 6 > 4
+    allies = [GiantRoach(Coordinate(2100 + i * 30, 2000)) for i in range(5)]  # итого 6 > 4
     for a in allies:
         a.set_path([Coordinate(2500, 2000)])
         game_map.spawn_enemy(a)

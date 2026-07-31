@@ -48,6 +48,14 @@ class HostileEntity(Entity, ABC):
         """Проверяет, должен ли враг убегать от простреливаемых башнями зон вместо боя."""
         return False
 
+    def is_combatant(self) -> bool:
+        """Проверяет, может ли враг атаковать вражеских юнитов и башни."""
+        return True
+
+    def heals_allies(self) -> bool:
+        """Проверяет, лечит ли враг участников своей группы (см. MedicDrone)."""
+        return False
+
     DODGE_AMPLITUDE = 24.0
     DODGE_FREQUENCY = 5.0
 

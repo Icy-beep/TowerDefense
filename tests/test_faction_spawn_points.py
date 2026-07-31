@@ -60,33 +60,39 @@ def test_spawn_points_for_falls_back_to_shared_list_when_faction_not_configured(
 
 
 def test_faction_spawn_points_are_actually_different_after_setup():
+    """Corporation высаживается кораблями и больше не держит фиксированных
+    точек спавна вовсе (см. ShipLandingStrategy/MedicDrone) - только Fauna
+    по-прежнему появляется из своих двух точек."""
     session = GameSession()
     session.setup_game()
 
     corp_points = session.map.spawn_points_for(Faction.CORPORATION)
     fauna_points = session.map.spawn_points_for(Faction.FAUNA)
 
-    assert corp_points, "у Corporation должны быть свои точки спавна"
-    assert fauna_points, "у Fauna должны быть свои точки спавна"
-    assert set((p.x, p.y) for p in corp_points).isdisjoint(set((p.x, p.y) for p in fauna_points)), \
-        "фракции не должны делить одни и те же точки спавна"
+    assert corp_points == [], "у Corporation больше не должно быть фиксированных точек спавна"
+    assert fauna_points, "у Fauna по-прежнему должны быть свои точки спавна"
 
 
 # --------------------------------------------------------- GameSession._spawn_enemy_factory
 
-def test_spawned_enemy_appears_at_a_point_belonging_to_its_faction():
+def test_spawned_fauna_enemy_appears_at_a_point_belonging_to_its_faction():
     session = GameSession()
     session.setup_game()
 
-    corp_points = {(p.x, p.y) for p in session.map.spawn_points_for(Faction.CORPORATION)}
     fauna_points = {(p.x, p.y) for p in session.map.spawn_points_for(Faction.FAUNA)}
 
     for _ in range(20):
-        corp_enemy = session._spawn_enemy_factory("drone_walker")
-        assert (corp_enemy.position.x, corp_enemy.position.y) in corp_points
-
         fauna_enemy = session._spawn_enemy_factory("giant_roach")
         assert (fauna_enemy.position.x, fauna_enemy.position.y) in fauna_points
+
+
+def test_spawning_corporation_enemy_without_explicit_position_fails():
+    """У Corporation больше нет фиксированных точек спавна - без явной
+    позиции (её передаёт ShipLandingStrategy) спавн невозможен."""
+    session = GameSession()
+    session.setup_game()
+
+    assert session._spawn_enemy_factory("drone_walker") is None
 
 
 def test_spawned_enemy_does_not_alias_the_spawn_point_coordinate():
@@ -98,7 +104,7 @@ def test_spawned_enemy_does_not_alias_the_spawn_point_coordinate():
     session = GameSession()
     session.setup_game()
 
-    enemy = session._spawn_enemy_factory("drone_walker")
+    enemy = session._spawn_enemy_factory("giant_roach")
     spawn_points = session.map.spawn_points_for(enemy.faction)
 
     assert not any(enemy.position is p for p in spawn_points), \

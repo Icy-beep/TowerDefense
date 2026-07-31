@@ -66,7 +66,11 @@ class GameSession:
             Coordinate(3800, 3800)
         ]
         self.map.spawn_points_by_faction = {
-            Faction.CORPORATION: [Coordinate(200, 200), Coordinate(3800, 3800)],
+            # Corporation больше не спавнится и не лечится через фиксированные
+            # точки - высаживается кораблями (ShipLandingStrategy), а раненых
+            # лечит MedicDrone внутри группы. Пустой список (а не отсутствие
+            # ключа) явно отключает и спавн, и фолбэк на общий self.spawn_points.
+            Faction.CORPORATION: [],
             Faction.FAUNA: [Coordinate(3800, 200), Coordinate(200, 3800)],
         }
 
