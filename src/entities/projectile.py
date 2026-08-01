@@ -28,6 +28,10 @@ class Projectile(ABC):
         """Возвращает снаряды, порождённые этим (например, шрапнель)."""
         return []
 
+    def landed_event_name(self) -> Optional[str]:
+        """Имя звукового события при исчезновении снаряда с карты, если оно есть."""
+        return None
+
     def _find_collision(self, enemies: List["HostileEntity"],
                          hit_radius: Optional[float] = None) -> Optional["HostileEntity"]:
         """Находит ближайшего живого врага в радиусе поражения снаряда."""
@@ -180,6 +184,10 @@ class MortarShell(Projectile):
             self._land()
             return False
         return True
+
+    def landed_event_name(self) -> Optional[str]:
+        """Имя звукового события взрыва миномётного снаряда."""
+        return "mortar_explosion"
 
     def _land(self):
         """Взрывается и создаёт осколки шрапнели вокруг точки падения."""

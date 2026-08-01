@@ -226,6 +226,25 @@ def test_mortar_turret_fire_returns_mortar_shell():
     assert isinstance(turret.fire(target), MortarShell)
 
 
+def test_landed_event_name_is_none_for_projectiles_without_an_explosion():
+    target = _enemy(100, 0)
+    beam = HitscanBeam(Coordinate(0, 0), target, damage=25, damage_type=DamageType.ENERGY)
+    bullet = BulletProjectile(Coordinate(0, 0), target, damage=10, damage_type=DamageType.KINETIC, speed=50)
+    pellet = ShrapnelPellet(Coordinate(0, 0), direction=(1, 0), damage=10,
+                             damage_type=DamageType.EXPLOSIVE, speed=200, max_distance=90)
+
+    assert beam.landed_event_name() is None
+    assert bullet.landed_event_name() is None
+    assert pellet.landed_event_name() is None
+
+
+def test_mortar_shell_landed_event_name_is_mortar_explosion():
+    target = _enemy(300, 0)
+    shell = MortarShell(Coordinate(0, 0), target, damage=80, damage_type=DamageType.EXPLOSIVE)
+
+    assert shell.landed_event_name() == "mortar_explosion"
+
+
 def test_shrapnel_pellet_damages_enemy_in_path_and_expires():
     victim = _enemy(50, 0)
     pellet = ShrapnelPellet(Coordinate(0, 0), direction=(1, 0), damage=10,
@@ -294,3 +313,30 @@ def test_map_update_collects_mortar_shrapnel_into_projectile_list():
 
     pellets = [p for p in game_map.projectiles if isinstance(p, ShrapnelPellet)]
     assert len(pellets) == MortarShell.SHRAPNEL_COUNT
+
+
+def test_map_emits_mortar_explosion_separately_from_tower_fired_on_landing():
+    events = []
+    game_map = Map(width=4000, height=4000, on_event=lambda name, **data: events.append((name, data)))
+    turret = MortarTurret(Coordinate(0, 0))
+    turret.type_name = "mortar"
+    turret.cooldown_timer = 0
+    game_map.modules.append(turret)
+
+    target = _enemy(150, 0)
+    game_map.enemies.append(target)
+
+    game_map.update(0.1)
+    fired = [e for e in events if e[0] == "tower_fired"]
+    assert len(fired) == 1, "выстрел должен породить ровно одно событие tower_fired"
+    assert not any(e[0] == "mortar_explosion" for e in events), "снаряд ещё в полёте, взрыва быть не должно"
+
+    shell = next(p for p in game_map.projectiles if isinstance(p, MortarShell))
+    for _ in range(200):
+        if shell not in game_map.projectiles:
+            break
+        game_map.update(0.05)
+
+    exploded = [e for e in events if e[0] == "mortar_explosion"]
+    assert len(exploded) == 1
+    assert exploded[0][1]["position"] == shell.position

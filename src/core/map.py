@@ -579,6 +579,10 @@ class Map:
             spawned_projectiles.extend(projectile.collect_spawned())
             if alive:
                 surviving_projectiles.append(projectile)
+            else:
+                event_name = projectile.landed_event_name()
+                if event_name:
+                    self._emit(event_name, position=projectile.position)
         self.projectiles = surviving_projectiles + spawned_projectiles
 
         return enemies_reached_base, killed_enemies
