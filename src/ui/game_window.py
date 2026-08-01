@@ -30,6 +30,14 @@ class GameView:
     }
     SOUND_COOLDOWNS = {
         "base_hit": 7.0,
+        "laser_hit": 0.08,
+        "bullet_hit": 0.06,
+        "mortar_explosion": 0.15,
+    }
+    SOUND_VOLUME_MULTIPLIERS = {
+        "laser_hit": 0.6,
+        "bullet_hit": 0.6,
+        "mortar_explosion": 0.85,
     }
     ALWAYS_AUDIBLE_EVENTS = {"base_hit"}
 
@@ -123,6 +131,7 @@ class GameView:
             volume_multiplier = 1.0
         else:
             volume_multiplier = volume_for_position(self.camera, position) if (position and self.controller) else 1.0
+        volume_multiplier *= self.SOUND_VOLUME_MULTIPLIERS.get(event_name, 1.0)
         cooldown = self.SOUND_COOLDOWNS.get(event_name, 0.0)
 
         if event_name == "tower_fired":
