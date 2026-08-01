@@ -1,5 +1,6 @@
 """Событийные хуки Map/GameSession и загрузка звуков в SoundManager."""
 import os
+import random
 
 import pytest
 
@@ -26,6 +27,21 @@ def test_discover_sound_files_groups_by_subfolder_and_filters_extensions(tmp_pat
 
 def test_discover_sound_files_returns_empty_dict_for_missing_root(tmp_path):
     assert discover_sound_files(str(tmp_path / "does_not_exist")) == {}
+
+
+def test_discover_sound_files_assigns_lower_weight_to_rare_subfolder(tmp_path):
+    event_dir = tmp_path / "base_hit"
+    event_dir.mkdir()
+    (event_dir / "common.wav").write_bytes(b"x")
+    rare_dir = event_dir / "rare"
+    rare_dir.mkdir()
+    (rare_dir / "alarm.wav").write_bytes(b"x")
+
+    result = discover_sound_files(str(tmp_path))
+
+    weights = {os.path.basename(path): weight for path, weight in result["base_hit"]}
+    assert weights["common.wav"] == 1.0
+    assert 0.0 < weights["alarm.wav"] < weights["common.wav"]
 
 
 class _FakeError(Exception):
@@ -84,19 +100,24 @@ class _FirstChoiceRng:
     def choice(self, seq):
         return seq[0]
 
+    def choices(self, population, weights=None, k=1):
+        return [population[0]] * k
+
     def uniform(self, a, b):
         return 0.0
 
 
-class _FixedPitchRng:
-    def __init__(self, pitch_offset):
-        self._pitch_offset = pitch_offset
+class _SeededRng:
+    """Настоящий взвешенный/случайный выбор через random.Random с фиксированным seed."""
+
+    def __init__(self, seed):
+        self._random = random.Random(seed)
 
     def choice(self, seq):
-        return seq[0]
+        return self._random.choice(seq)
 
-    def uniform(self, a, b):
-        return self._pitch_offset
+    def choices(self, population, weights=None, k=1):
+        return self._random.choices(population, weights=weights, k=k)
 
 
 def _make_sound_root(tmp_path, event_name, filenames):
@@ -127,38 +148,107 @@ def test_sound_manager_play_uses_rng_and_sets_volume(tmp_path, monkeypatch):
     manager = SoundManager(sounds_root=root, volume=0.4, rng=_FirstChoiceRng())
     manager.play("base_hit")
 
-    played = manager._sounds["base_hit"][0]
+    played = manager._sounds["base_hit"][0][0]
     assert played.play_calls == 1
     assert played.volume == 0.4
 
 
-def test_sound_manager_play_applies_random_pitch_variation(tmp_path, monkeypatch):
+def test_sound_manager_precomputes_pitch_variants_at_load_time(tmp_path, monkeypatch):
     root = _make_sound_root(tmp_path, "base_hit", ["hit.wav"])
     fake_pygame = _FakePygame()
     monkeypatch.setattr("src.ui.sound_manager.pygame", fake_pygame)
     _FakeSound.created_via_buffer = []
 
-    manager = SoundManager(sounds_root=root, volume=0.4, rng=_FixedPitchRng(0.05))
-    manager.play("base_hit")
+    manager = SoundManager(sounds_root=root, rng=_FirstChoiceRng())
 
-    original = manager._sounds["base_hit"][0]
-    assert original.play_calls == 0, "должен проигрываться ресемплированный клон, а не сам оригинал"
-    assert len(_FakeSound.created_via_buffer) == 1
-    pitched = _FakeSound.created_via_buffer[0]
-    assert pitched.play_calls == 1
-    assert pitched.volume == 0.4
+    variants = manager._sounds["base_hit"][0]
+    assert len(variants) == manager.PITCH_VARIANTS + 1, "оригинал + заранее просчитанные вариации питча"
+    assert len(_FakeSound.created_via_buffer) == manager.PITCH_VARIANTS
 
 
-def test_sound_manager_play_skips_pitch_shift_when_variation_is_zero(tmp_path, monkeypatch):
+def test_sound_manager_play_does_not_resample_at_playback_time(tmp_path, monkeypatch):
     root = _make_sound_root(tmp_path, "base_hit", ["hit.wav"])
-    fake_pygame = _FakePygame()
-    monkeypatch.setattr("src.ui.sound_manager.pygame", fake_pygame)
+    monkeypatch.setattr("src.ui.sound_manager.pygame", _FakePygame())
     _FakeSound.created_via_buffer = []
 
-    manager = SoundManager(sounds_root=root, volume=0.4, rng=_FirstChoiceRng())
-    manager.play("base_hit")
+    manager = SoundManager(sounds_root=root, rng=_FirstChoiceRng())
+    created_at_load = len(_FakeSound.created_via_buffer)
 
-    assert _FakeSound.created_via_buffer == [], "нулевая вариация питча не должна создавать копию звука"
+    for _ in range(50):
+        manager.play("base_hit")
+
+    assert len(_FakeSound.created_via_buffer) == created_at_load, (
+        "play() не должен ресемплировать на лету (это и вызывало статтер) — "
+        "только переиспользовать готовые вариации"
+    )
+
+
+def test_sound_manager_play_respects_cooldown_between_calls(tmp_path, monkeypatch):
+    root = _make_sound_root(tmp_path, "base_hit", ["hit.wav"])
+    monkeypatch.setattr("src.ui.sound_manager.pygame", _FakePygame())
+
+    manager = SoundManager(sounds_root=root, rng=_FirstChoiceRng())
+    sound = manager._sounds["base_hit"][0][0]
+
+    manager.play("base_hit", cooldown=2.0)
+    manager.play("base_hit", cooldown=2.0)
+    manager.play("base_hit", cooldown=2.0)
+
+    assert sound.play_calls == 1, "повторные вызовы внутри кулдауна не должны проигрывать звук снова"
+
+    manager.update(2.0)
+    manager.play("base_hit", cooldown=2.0)
+
+    assert sound.play_calls == 2, "после истечения кулдауна звук должен проиграться снова"
+
+
+def test_sound_manager_update_ticks_down_cooldown_partially(tmp_path, monkeypatch):
+    root = _make_sound_root(tmp_path, "base_hit", ["hit.wav"])
+    monkeypatch.setattr("src.ui.sound_manager.pygame", _FakePygame())
+
+    manager = SoundManager(sounds_root=root, rng=_FirstChoiceRng())
+    sound = manager._sounds["base_hit"][0][0]
+
+    manager.play("base_hit", cooldown=2.0)
+    manager.update(1.0)
+    manager.play("base_hit", cooldown=2.0)
+
+    assert sound.play_calls == 1, "кулдаун ещё не истёк полностью"
+
+
+def test_sound_manager_play_without_cooldown_always_plays(tmp_path, monkeypatch):
+    root = _make_sound_root(tmp_path, "tower_placed", ["a.wav"])
+    monkeypatch.setattr("src.ui.sound_manager.pygame", _FakePygame())
+
+    manager = SoundManager(sounds_root=root, rng=_FirstChoiceRng())
+    sound = manager._sounds["tower_placed"][0][0]
+
+    manager.play("tower_placed")
+    manager.play("tower_placed")
+
+    assert sound.play_calls == 2, "события без кулдауна должны проигрываться каждый раз"
+
+
+def test_sound_manager_rarely_plays_files_from_the_rare_subfolder(tmp_path, monkeypatch):
+    event_dir = tmp_path / "base_hit"
+    event_dir.mkdir()
+    (event_dir / "common.wav").write_bytes(b"x")
+    rare_dir = event_dir / "rare"
+    rare_dir.mkdir()
+    (rare_dir / "alarm.wav").write_bytes(b"x")
+    monkeypatch.setattr("src.ui.sound_manager.pygame", _FakePygame())
+
+    manager = SoundManager(sounds_root=str(tmp_path), rng=_SeededRng(seed=1))
+    common_variants = next(g for g in manager._sounds["base_hit"] if g[0].path.endswith("common.wav"))
+    rare_variants = next(g for g in manager._sounds["base_hit"] if g[0].path.endswith("alarm.wav"))
+
+    for _ in range(2000):
+        manager.play("base_hit")
+
+    common_plays = sum(s.play_calls for s in common_variants)
+    rare_plays = sum(s.play_calls for s in rare_variants)
+    rare_share = rare_plays / (common_plays + rare_plays)
+    assert rare_share < 0.15, "файл из rare/ не должен звучать почти так же часто, как обычный"
 
 
 def test_sound_manager_play_is_a_no_op_for_unknown_event(tmp_path, monkeypatch):

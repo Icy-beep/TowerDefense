@@ -28,6 +28,10 @@ class GameView:
         "victory": "victory",
         "defeat": "defeat",
     }
+    SOUND_COOLDOWNS = {
+        "base_hit": 7.0,
+    }
+    ALWAYS_AUDIBLE_EVENTS = {"base_hit"}
 
     def __init__(self, session: GameSession):
         """Создаёт окно и рендереры для заданной игровой сессии."""
@@ -69,6 +73,7 @@ class GameView:
             if self.session.state != GameState.MENU and self.controller:
                 self.controller.update(dt)
                 self.session.update(dt)
+                self.sound_manager.update(dt)
             self.render()
             pygame.display.flip()
         pygame.quit()
@@ -112,14 +117,18 @@ class GameView:
         self.controller = GameController(self.session, self.width, self.height)
 
     def _handle_game_event(self, event_name, **data):
-        """Проигрывает звук, привязанный к игровому событию, приглушая его вне вида камеры."""
+        """Проигрывает звук, привязанный к игровому событию, приглушая его вне вида камеры и с учётом кулдауна."""
         position = data.get("position")
-        volume_multiplier = volume_for_position(self.camera, position) if (position and self.controller) else 1.0
+        if event_name in self.ALWAYS_AUDIBLE_EVENTS:
+            volume_multiplier = 1.0
+        else:
+            volume_multiplier = volume_for_position(self.camera, position) if (position and self.controller) else 1.0
+        cooldown = self.SOUND_COOLDOWNS.get(event_name, 0.0)
 
         if event_name == "tower_fired":
             self.sound_manager.play(f"{data.get('tower_type')}_fire", volume_multiplier)
         elif event_name in self.SOUND_EVENTS:
-            self.sound_manager.play(self.SOUND_EVENTS[event_name], volume_multiplier)
+            self.sound_manager.play(self.SOUND_EVENTS[event_name], volume_multiplier, cooldown=cooldown)
 
     def render(self):
         """Рисует текущий кадр игры."""
