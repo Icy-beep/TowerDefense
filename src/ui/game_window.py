@@ -10,6 +10,7 @@ from src.ui.hud_renderer import HudRenderer
 from src.ui.game_over_screen import GameOverScreen
 from src.ui.menu_screen import MenuScreen
 from src.ui.sound_manager import SoundManager
+from src.ui.music_manager import MusicManager
 from src.systems.spatial_audio import volume_for_position
 
 
@@ -67,6 +68,8 @@ class GameView:
         self.game_over_screen = GameOverScreen()
         self.menu_screen = MenuScreen()
         self.sound_manager = SoundManager()
+        self.music_manager = MusicManager()
+        self.music_manager.play_category("menu")
 
     @property
     def camera(self):
@@ -123,6 +126,7 @@ class GameView:
         self.session.setup_game()
         self.session.on_event = self._handle_game_event
         self.controller = GameController(self.session, self.width, self.height)
+        self.music_manager.play_category("gameplay")
 
     def _handle_game_event(self, event_name, **data):
         """Проигрывает звук, привязанный к игровому событию, приглушая его вне вида камеры и с учётом кулдауна."""

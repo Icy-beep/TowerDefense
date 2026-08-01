@@ -36,6 +36,11 @@ Thumbs.db
 # Черновой звуковой материал (не используется игрой напрямую)
 raw-sounds/
 
+# OST-треки (слишком большие для репозитория, папки и README остаются)
+assets/music/**/*.wav
+assets/music/**/*.mp3
+assets/music/**/*.ogg
+
 # docs
 
 # other
