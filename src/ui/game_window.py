@@ -67,9 +67,28 @@ class GameView:
         self.hud_renderer = HudRenderer()
         self.game_over_screen = GameOverScreen()
         self.menu_screen = MenuScreen()
-        self.sound_manager = SoundManager()
+
+        self._show_loading_screen("Loading sounds...")
+        self.sound_manager = SoundManager(on_progress=self._on_sound_loading_progress)
+        self._show_loading_screen("Loading music...")
         self.music_manager = MusicManager()
-        self.music_manager.play_category("menu")
+        self._menu_music_pending = True
+
+    def _on_sound_loading_progress(self, done: int, total: int):
+        """Перерисовывает экран загрузки и откачивает события после каждого загруженного звука —
+        расчёт вариаций питча небыстрый, и без этого ОС считает окно зависшим на время загрузки."""
+        percent = int(done / total * 100) if total else 100
+        self._show_loading_screen(f"Loading sounds... {percent}%")
+
+    def _show_loading_screen(self, text_line: str = "Loading..."):
+        """Рисует кадр загрузки с текстом и откачивает очередь событий — вызывается регулярно
+        во время долгой загрузки ассетов, иначе ОС считает не обновляющееся окно зависшим."""
+        self.screen.fill((20, 24, 28))
+        text = self.title_font.render(text_line, True, (255, 255, 255))
+        rect = text.get_rect(center=(self.width // 2, self.height // 2))
+        self.screen.blit(text, rect)
+        pygame.display.flip()
+        pygame.event.pump()
 
     @property
     def camera(self):
@@ -87,6 +106,9 @@ class GameView:
                 self.sound_manager.update(dt)
             self.render()
             pygame.display.flip()
+            if self._menu_music_pending:
+                self.music_manager.play_category("menu")
+                self._menu_music_pending = False
         pygame.quit()
         sys.exit()
 

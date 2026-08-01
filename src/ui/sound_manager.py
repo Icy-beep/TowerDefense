@@ -2,7 +2,7 @@
 import array
 import os
 import random
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import pygame
 
@@ -56,8 +56,13 @@ class SoundManager:
     PITCH_VARIANTS = 4
 
     def __init__(self, sounds_root: str = DEFAULT_SOUNDS_ROOT, volume: float = 0.45,
-                 rng: Optional[random.Random] = None):
-        """Загружает все звуки, найденные в sounds_root, по подпапкам-событиям."""
+                 rng: Optional[random.Random] = None,
+                 on_progress: Optional[Callable[[int, int], None]] = None):
+        """Загружает все звуки, найденные в sounds_root, по подпапкам-событиям.
+
+        on_progress(done, total), если задан, вызывается после каждого обработанного файла —
+        расчёт вариаций питча небыстрый (доли секунды на файл), и без периодических пауз на
+        откачку событий ОС считает окно игры зависшим на время всей загрузки."""
         self._rng = rng or random
         self.volume = volume
         self.enabled = True
@@ -73,7 +78,11 @@ class SoundManager:
             self.enabled = False
             return
 
-        for event_name, entries in discover_sound_files(sounds_root).items():
+        entries_by_event = discover_sound_files(sounds_root)
+        total_files = sum(len(entries) for entries in entries_by_event.values())
+        loaded_files = 0
+
+        for event_name, entries in entries_by_event.items():
             loaded_variant_groups = []
             loaded_weights = []
             for path, weight in entries:
@@ -83,6 +92,9 @@ class SoundManager:
                     continue
                 loaded_variant_groups.append(self._build_pitch_variants(base_sound))
                 loaded_weights.append(weight)
+                loaded_files += 1
+                if on_progress:
+                    on_progress(loaded_files, total_files)
             if loaded_variant_groups:
                 self._sounds[event_name] = loaded_variant_groups
                 self._weights[event_name] = loaded_weights

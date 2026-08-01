@@ -153,6 +153,31 @@ def test_sound_manager_play_uses_rng_and_sets_volume(tmp_path, monkeypatch):
     assert played.volume == 0.4
 
 
+def test_sound_manager_reports_progress_after_each_file(tmp_path, monkeypatch):
+    (tmp_path / "laser_fire").mkdir()
+    (tmp_path / "laser_fire" / "a.wav").write_bytes(b"x")
+    (tmp_path / "laser_fire" / "b.wav").write_bytes(b"x")
+    (tmp_path / "base_hit").mkdir()
+    (tmp_path / "base_hit" / "hit.wav").write_bytes(b"x")
+    monkeypatch.setattr("src.ui.sound_manager.pygame", _FakePygame())
+
+    calls = []
+    SoundManager(sounds_root=str(tmp_path), rng=_FirstChoiceRng(),
+                 on_progress=lambda done, total: calls.append((done, total)))
+
+    assert calls == [(1, 3), (2, 3), (3, 3)], (
+        "колбэк должен звать после каждого файла с нарастающим прогрессом — иначе загрузка "
+        "звуков снова блокирует окно без откачки событий"
+    )
+
+
+def test_sound_manager_skips_progress_callback_when_not_given(tmp_path, monkeypatch):
+    root = _make_sound_root(tmp_path, "base_hit", ["hit.wav"])
+    monkeypatch.setattr("src.ui.sound_manager.pygame", _FakePygame())
+
+    SoundManager(sounds_root=root, rng=_FirstChoiceRng())
+
+
 def test_sound_manager_precomputes_pitch_variants_at_load_time(tmp_path, monkeypatch):
     root = _make_sound_root(tmp_path, "base_hit", ["hit.wav"])
     fake_pygame = _FakePygame()
