@@ -445,7 +445,7 @@ class Map:
         return changed_factions
 
     def update(self, delta_time: float) -> tuple[List[HostileEntity], List[HostileEntity]]:
-        """Обновляет карту на один кадр и возвращает (дошедшие до базы, убитые враги)."""
+        """Обновляет карту на один кадр."""
         destroyed_this_frame = sum(1 for module in self.modules if module.is_destroyed())
         self.towers_lost_count += destroyed_this_frame
         self.modules = [module for module in self.modules if not module.is_destroyed()]
