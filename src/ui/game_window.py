@@ -21,7 +21,6 @@ class GameView:
     MIN_HEIGHT = 480
     SOUND_EVENTS = {
         "tower_placed": "tower_placed",
-        "enemy_died": "enemy_death",
         "base_hit": "base_hit",
         "mortar_explosion": "mortar_explosion",
         "laser_hit": "laser_hit",
