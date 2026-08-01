@@ -79,12 +79,7 @@ class MapRenderer:
                 pygame.draw.line(screen, color, (0, sy), (width, sy))
 
     def _draw_spawn_points(self, screen, camera, session):
-        """Рисует точки спавна врагов, разными цветами по фракциям - но
-        только для фракций, которые действительно ещё появляются из
-        фиксированной точки. Corporation высаживается кораблями в
-        телеграфируемых точках (ShipLandingStrategy), поэтому её старые
-        точки спавна (используются только как цель отступления на лечение)
-        на карте больше не показываются."""
+        """Рисует точки спавна врагов по фракциям, кроме высаживающихся кораблями."""
         by_faction = getattr(session.map, "spawn_points_by_faction", {}) or {}
         threat_strategies = getattr(session, "threat_strategies", {}) or {}
         if by_faction:

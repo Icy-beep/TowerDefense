@@ -144,10 +144,7 @@ class GameSession:
         return False
 
     def _spawn_enemy_factory(self, enemy_type: str, position: Optional[Coordinate] = None) -> Optional[HostileEntity]:
-        """Создаёт врага заданного типа и прокладывает ему путь к базе. Если
-        конкретная точка не передана (её выбирает ShipLandingStrategy для
-        высадки корпоратов), враг появляется в случайной точке спавна своей
-        фракции - так пока спавнится Fauna через NestSpawnStrategy."""
+        """Создаёт врага и прокладывает путь к базе, при необходимости выбирая точку спавна фракции."""
         faction = self.enemy_factory.faction_for(enemy_type)
         if position is None:
             spawn_points = self.map.spawn_points_for(faction)

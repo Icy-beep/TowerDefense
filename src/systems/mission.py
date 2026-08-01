@@ -29,9 +29,7 @@ class Objective(ABC):
 
 
 class SurviveDurationObjective(Objective):
-    """Задание продержаться заданное время под непрерывным давлением
-    угроз (временная замена SurviveWavesObjective на этап 1 перехода на
-    RTS-модель, см. docs/DESIGN_RTS_TRANSITION.md, раздел 4)."""
+    """Задание продержаться заданное время под непрерывным давлением угроз."""
 
     def __init__(self, target_seconds: float):
         """Создаёт задание с целевой длительностью в секундах."""

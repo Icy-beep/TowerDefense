@@ -1,9 +1,4 @@
-"""Источники угрозы вместо единого счётчика волн: каждая фракция появляется
-на карте по своей логике, вместо общего списка WaveConfig на двоих.
-Corporation высаживается с кораблей в телеграфируемых точках на границе
-карты, Fauna пока прибывает через свои точки спавна на общих основаниях
-(разрушаемые гнёзда - отдельный этап плана, см. docs/DESIGN_RTS_TRANSITION.md,
-разделы 2 и 6)."""
+"""Источники угрозы: каждая фракция появляется на карте по своей логике."""
 import random
 from abc import ABC, abstractmethod
 from typing import Callable, List, Optional
@@ -34,10 +29,7 @@ class ThreatStrategy(ABC):
 
 
 class ShipLandingStrategy(ThreatStrategy):
-    """Corporation высаживается с кораблей: в случайной точке на границе
-    карты появляется телеграфируемый маркер, через warning_time там
-    материализуется отряд. Интервал между высадками постепенно
-    сокращается, повышая давление по ходу партии."""
+    """Corporation высаживается с кораблей: маркер на границе карты, затем через warning_time отряд."""
 
     def __init__(self, enemy_types: List[str], squad_size_range=(2, 4),
                  base_interval: float = 14.0, min_interval: float = 5.0,
@@ -62,9 +54,7 @@ class ShipLandingStrategy(ThreatStrategy):
         return max(self.min_interval, self.base_interval - self.elapsed * self.interval_decay_per_second)
 
     def _random_border_point(self, game_map) -> Coordinate:
-        """Случайная точка на границе карты. Чуть отступает от самого края
-        (width/height ровно на границе сетки уже вне её клеток), иначе
-        NavigationGrid не находит для неё узел и путь до базы не строится."""
+        """Случайная точка на границе карты, чуть отступая от самого края для NavigationGrid."""
         max_x = max(0.0, game_map.width - 1)
         max_y = max(0.0, game_map.height - 1)
         side = self.rng.choice(("top", "bottom", "left", "right"))
@@ -86,9 +76,7 @@ class ShipLandingStrategy(ThreatStrategy):
                 game_map.spawn_enemy(enemy)
 
     def update(self, delta_time: float, game_map, spawn_factory: Callable) -> None:
-        """Обновляет все текущие предупреждающие маркеры и таймер высадки.
-        Маркеры обрабатываются до появления нового - высадка не может
-        материализоваться в тот же кадр, когда её маркер только появился."""
+        """Обновляет предупреждающие маркеры и таймер высадки нового отряда."""
         if not self.enemy_types:
             return
 
@@ -110,10 +98,7 @@ class ShipLandingStrategy(ThreatStrategy):
 
 
 class NestSpawnStrategy(ThreatStrategy):
-    """Fauna пока прибывает через свои точки спавна на общих основаниях -
-    разрушаемые гнёзда появятся отдельным этапом плана. Спавнит одного
-    врага по таймеру, сокращающемуся так же, как и у высадки корпоратов,
-    с ограничением на число одновременно живых врагов фракции."""
+    """Fauna спавнит одного врага по таймеру с ограничением на число живых врагов фракции."""
 
     def __init__(self, enemy_types: List[str], base_interval: float = 6.0,
                  min_interval: float = 1.5, interval_decay_per_second: float = 0.02,

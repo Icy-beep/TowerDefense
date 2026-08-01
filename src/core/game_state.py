@@ -17,8 +17,5 @@ class GameStateManager:
         return base_health <= 0
 
     def check_victory(self, elapsed_time: float, target_duration: float) -> bool:
-        """Проверяет, наступила ли победа - продержаться заданное время под
-        непрерывным давлением угроз. Временное условие на этап 1 перехода на
-        RTS-модель угроз (docs/DESIGN_RTS_TRANSITION.md, раздел 4);
-        полноценные Objective-условия победы - отдельный этап (5) плана."""
+        """Проверяет, наступила ли победа - продержаться заданное время."""
         return elapsed_time >= target_duration

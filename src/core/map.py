@@ -352,9 +352,7 @@ class Map:
         return min(leaders, key=lambda leader: enemy.position.distance_to(leader.position))
 
     def _advance_healer_seeking(self, enemy: HostileEntity, delta_time: float):
-        """Двигает лечащего врага к ближайшей группе союзников; при подходе
-        достаточно близко - присоединяет его к ней. Если группы нет вовсе,
-        враг идёт к базе как обычно."""
+        """Двигает лечащего врага к ближайшей группе союзников и присоединяет к ней вблизи."""
         leader = self._find_nearest_ally_group_leader(enemy)
         if leader is None:
             self._advance_towards_base(enemy, delta_time)
