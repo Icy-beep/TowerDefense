@@ -23,6 +23,8 @@ class GameView:
         "enemy_died": "enemy_death",
         "base_hit": "base_hit",
         "mortar_explosion": "mortar_explosion",
+        "laser_hit": "laser_hit",
+        "bullet_hit": "bullet_hit",
         "victory": "victory",
         "defeat": "defeat",
     }

@@ -1,9 +1,12 @@
 """Загрузка и проигрывание звуков из assets/sounds/."""
+import array
 import os
 import random
 from typing import Dict, List, Optional
 
 import pygame
+
+from src.systems.pitch_shift import resample_pitch
 
 DEFAULT_SOUNDS_ROOT = os.path.join("assets", "sounds")
 SUPPORTED_EXTENSIONS = (".wav", ".ogg", ".mp3")
@@ -34,6 +37,7 @@ class SoundManager:
     """Проигрывает случайный звук из assets/sounds/<событие>/ по имени события."""
 
     NUM_CHANNELS = 32
+    PITCH_VARIATION = 0.06
 
     def __init__(self, sounds_root: str = DEFAULT_SOUNDS_ROOT, volume: float = 0.45,
                  rng: Optional[random.Random] = None):
@@ -62,15 +66,32 @@ class SoundManager:
                 self._sounds[event_name] = loaded
 
     def play(self, event_name: str, volume_multiplier: float = 1.0):
-        """Проигрывает случайный звук для события с учётом множителя громкости."""
+        """Проигрывает случайный звук для события со случайной вариацией питча и множителем громкости."""
         if not self.enabled or volume_multiplier <= 0.0:
             return
         sounds = self._sounds.get(event_name)
         if not sounds:
             return
         sound = self._rng.choice(sounds)
-        sound.set_volume(self.volume * volume_multiplier)
-        sound.play()
+        pitch_factor = 1.0 + self._rng.uniform(-self.PITCH_VARIATION, self.PITCH_VARIATION)
+        sound_to_play = self._with_pitch(sound, pitch_factor)
+        sound_to_play.set_volume(self.volume * volume_multiplier)
+        sound_to_play.play()
+
+    def _with_pitch(self, sound: "pygame.mixer.Sound", pitch_factor: float) -> "pygame.mixer.Sound":
+        """Возвращает копию звука с изменённой на pitch_factor высотой тона, либо сам звук без изменений."""
+        if abs(pitch_factor - 1.0) < 1e-6:
+            return sound
+        init = pygame.mixer.get_init()
+        if not init or abs(init[1]) != 16:
+            return sound
+        try:
+            samples = array.array("h")
+            samples.frombytes(sound.get_raw())
+            shifted = resample_pitch(samples, channels=init[2], pitch_factor=pitch_factor)
+            return pygame.mixer.Sound(buffer=shifted.tobytes())
+        except (ValueError, pygame.error):
+            return sound
 
     def has_sounds_for(self, event_name: str) -> bool:
         """Проверяет, загружены ли звуки для данного события."""

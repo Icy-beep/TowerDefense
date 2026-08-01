@@ -51,6 +51,21 @@ def test_hitscan_beam_does_not_damage_already_dead_target():
     assert target.health == 0
 
 
+def test_hitscan_beam_landed_event_name_is_laser_hit_when_target_was_alive():
+    target = _enemy(100, 0)
+    beam = HitscanBeam(Coordinate(0, 0), target, damage=25, damage_type=DamageType.ENERGY)
+
+    assert beam.landed_event_name() == "laser_hit"
+
+
+def test_hitscan_beam_landed_event_name_is_none_when_target_already_dead():
+    target = _enemy(100, 0)
+    target.health = 0
+    beam = HitscanBeam(Coordinate(0, 0), target, damage=25, damage_type=DamageType.ENERGY)
+
+    assert beam.landed_event_name() is None
+
+
 def test_laser_turret_fire_returns_hitscan_beam():
     turret = LaserTurret(Coordinate(0, 0))
     target = _enemy(50, 0)
@@ -93,6 +108,27 @@ def test_bullet_misses_if_nothing_in_path_and_expires_past_max_distance():
     alive = bullet.update(1.0, [])
 
     assert alive is False
+
+
+def test_bullet_landed_event_name_is_bullet_hit_after_hitting_someone():
+    original_target = _enemy(1000, 0)
+    decoy = _enemy(50, 0)
+    bullet = BulletProjectile(Coordinate(0, 0), original_target, damage=40,
+                               damage_type=DamageType.KINETIC, speed=100)
+
+    bullet.update(1.0, [decoy, original_target])
+
+    assert bullet.landed_event_name() == "bullet_hit"
+
+
+def test_bullet_landed_event_name_is_none_when_it_just_misses():
+    target = _enemy(100, 0)
+    bullet = BulletProjectile(Coordinate(0, 0), target, damage=10, damage_type=DamageType.KINETIC,
+                               speed=1000, max_distance=50)
+
+    bullet.update(1.0, [])
+
+    assert bullet.landed_event_name() is None
 
 
 def test_bullet_keeps_flying_while_under_max_distance_and_nothing_hit():
@@ -226,16 +262,24 @@ def test_mortar_turret_fire_returns_mortar_shell():
     assert isinstance(turret.fire(target), MortarShell)
 
 
-def test_landed_event_name_is_none_for_projectiles_without_an_explosion():
+def test_landed_event_name_is_none_before_any_collision():
     target = _enemy(100, 0)
-    beam = HitscanBeam(Coordinate(0, 0), target, damage=25, damage_type=DamageType.ENERGY)
     bullet = BulletProjectile(Coordinate(0, 0), target, damage=10, damage_type=DamageType.KINETIC, speed=50)
     pellet = ShrapnelPellet(Coordinate(0, 0), direction=(1, 0), damage=10,
                              damage_type=DamageType.EXPLOSIVE, speed=200, max_distance=90)
 
-    assert beam.landed_event_name() is None
     assert bullet.landed_event_name() is None
     assert pellet.landed_event_name() is None
+
+
+def test_shrapnel_pellet_never_has_its_own_landed_event_even_after_a_hit():
+    victim = _enemy(50, 0)
+    pellet = ShrapnelPellet(Coordinate(0, 0), direction=(1, 0), damage=10,
+                             damage_type=DamageType.EXPLOSIVE, speed=200, max_distance=90)
+
+    pellet.update(1.0, [victim])
+
+    assert pellet.landed_event_name() is None, "звук взрыва мортиры уже проигран, шрапнель не дублирует его"
 
 
 def test_mortar_shell_landed_event_name_is_mortar_explosion():
@@ -340,3 +384,42 @@ def test_map_emits_mortar_explosion_separately_from_tower_fired_on_landing():
     exploded = [e for e in events if e[0] == "mortar_explosion"]
     assert len(exploded) == 1
     assert exploded[0][1]["position"] == shell.position
+
+
+def test_map_emits_laser_hit_event_after_the_beam_expires():
+    events = []
+    game_map = Map(width=4000, height=4000, on_event=lambda name, **data: events.append((name, data)))
+    turret = LaserTurret(Coordinate(0, 0))
+    turret.type_name = "laser"
+    turret.cooldown_timer = 0
+    game_map.modules.append(turret)
+
+    target = _enemy(50, 0)
+    game_map.enemies.append(target)
+
+    game_map.update(0.01)
+    assert not any(e[0] == "laser_hit" for e in events), "луч ещё виден на экране, событие ещё не должно случиться"
+
+    game_map.update(HitscanBeam.BEAM_LIFETIME)
+
+    hits = [e for e in events if e[0] == "laser_hit"]
+    assert len(hits) == 1
+    assert hits[0][1]["position"] == Coordinate(0, 0)
+
+
+def test_map_emits_bullet_hit_event_only_when_the_bullet_actually_connects():
+    events = []
+    game_map = Map(width=4000, height=4000, on_event=lambda name, **data: events.append((name, data)))
+    turret = BulletTurret(Coordinate(0, 0), range_radius=5000)
+    turret.type_name = "bullet"
+    turret.cooldown_timer = 0
+    game_map.modules.append(turret)
+
+    target = _enemy(60, 0)
+    game_map.enemies.append(target)
+
+    for _ in range(20):
+        game_map.update(0.1)
+
+    hits = [e for e in events if e[0] == "bullet_hit"]
+    assert hits, "хотя бы одна из пуль должна была попасть по единственному врагу в радиусе"

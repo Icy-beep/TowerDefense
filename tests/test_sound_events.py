@@ -33,12 +33,20 @@ class _FakeError(Exception):
 
 
 class _FakeSound:
-    def __init__(self, path):
-        if "broken" in path:
+    created_via_buffer = []
+
+    def __init__(self, path=None, buffer=None):
+        if path is not None and "broken" in path:
             raise _FakeError("не удалось загрузить файл")
         self.path = path
+        self.buffer = buffer
         self.volume = None
         self.play_calls = 0
+        if buffer is not None:
+            _FakeSound.created_via_buffer.append(self)
+
+    def get_raw(self):
+        return self.buffer if self.buffer is not None else (b"\x00\x00\x10\x00\x20\x00\x30\x00" * 20)
 
     def set_volume(self, volume):
         self.volume = volume
@@ -53,7 +61,7 @@ class _FakeMixer:
         self._fail_init = fail_init
 
     def get_init(self):
-        return self._initialized
+        return (44100, -16, 2) if self._initialized else None
 
     def init(self):
         if self._fail_init:
@@ -75,6 +83,20 @@ class _FakePygame:
 class _FirstChoiceRng:
     def choice(self, seq):
         return seq[0]
+
+    def uniform(self, a, b):
+        return 0.0
+
+
+class _FixedPitchRng:
+    def __init__(self, pitch_offset):
+        self._pitch_offset = pitch_offset
+
+    def choice(self, seq):
+        return seq[0]
+
+    def uniform(self, a, b):
+        return self._pitch_offset
 
 
 def _make_sound_root(tmp_path, event_name, filenames):
@@ -108,6 +130,35 @@ def test_sound_manager_play_uses_rng_and_sets_volume(tmp_path, monkeypatch):
     played = manager._sounds["base_hit"][0]
     assert played.play_calls == 1
     assert played.volume == 0.4
+
+
+def test_sound_manager_play_applies_random_pitch_variation(tmp_path, monkeypatch):
+    root = _make_sound_root(tmp_path, "base_hit", ["hit.wav"])
+    fake_pygame = _FakePygame()
+    monkeypatch.setattr("src.ui.sound_manager.pygame", fake_pygame)
+    _FakeSound.created_via_buffer = []
+
+    manager = SoundManager(sounds_root=root, volume=0.4, rng=_FixedPitchRng(0.05))
+    manager.play("base_hit")
+
+    original = manager._sounds["base_hit"][0]
+    assert original.play_calls == 0, "должен проигрываться ресемплированный клон, а не сам оригинал"
+    assert len(_FakeSound.created_via_buffer) == 1
+    pitched = _FakeSound.created_via_buffer[0]
+    assert pitched.play_calls == 1
+    assert pitched.volume == 0.4
+
+
+def test_sound_manager_play_skips_pitch_shift_when_variation_is_zero(tmp_path, monkeypatch):
+    root = _make_sound_root(tmp_path, "base_hit", ["hit.wav"])
+    fake_pygame = _FakePygame()
+    monkeypatch.setattr("src.ui.sound_manager.pygame", fake_pygame)
+    _FakeSound.created_via_buffer = []
+
+    manager = SoundManager(sounds_root=root, volume=0.4, rng=_FirstChoiceRng())
+    manager.play("base_hit")
+
+    assert _FakeSound.created_via_buffer == [], "нулевая вариация питча не должна создавать копию звука"
 
 
 def test_sound_manager_play_is_a_no_op_for_unknown_event(tmp_path, monkeypatch):

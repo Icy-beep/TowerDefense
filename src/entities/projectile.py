@@ -78,13 +78,18 @@ class HitscanBeam(Projectile):
         self.end = Coordinate(target.position.x, target.position.y)
         self._target = target
         self._time_left = self.BEAM_LIFETIME
-        if self._target.is_alive():
+        self._hit = self._target.is_alive()
+        if self._hit:
             self._target.take_damage(self.damage, self.damage_type)
 
     def update(self, delta_time: float, enemies: List["HostileEntity"]) -> bool:
         """Отсчитывает время жизни луча на экране (урон уже нанесён при создании)."""
         self._time_left -= delta_time
         return self._time_left > 0
+
+    def landed_event_name(self) -> Optional[str]:
+        """Имя звукового события попадания лазера, если цель была поражена."""
+        return "laser_hit" if self._hit else None
 
 
 class _LinearProjectile(Projectile):
@@ -99,6 +104,7 @@ class _LinearProjectile(Projectile):
         self.speed = speed
         self.max_distance = max_distance
         self.traveled = 0.0
+        self._hit_something = False
 
     def update(self, delta_time: float, enemies: List["HostileEntity"]) -> bool:
         """Двигает снаряд вперёд и проверяет столкновение с врагами."""
@@ -111,6 +117,7 @@ class _LinearProjectile(Projectile):
         hit = self._find_path_collision(start, self.position, enemies, self.HIT_RADIUS)
         if hit:
             hit.take_damage(self.damage, self.damage_type)
+            self._hit_something = True
             return False
 
         return self.traveled < self.max_distance
@@ -134,6 +141,10 @@ class BulletProjectile(_LinearProjectile):
                 direction[0] * sin_a + direction[1] * cos_a,
             )
         super().__init__(Coordinate(position.x, position.y), direction, damage, damage_type, speed, max_distance)
+
+    def landed_event_name(self) -> Optional[str]:
+        """Имя звукового события попадания пули, если она во что-то попала."""
+        return "bullet_hit" if self._hit_something else None
 
 
 class ShrapnelPellet(_LinearProjectile):
