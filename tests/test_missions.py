@@ -1,7 +1,4 @@
-"""Задания (src/systems/mission.py) - слой целей поверх непрерывного
-давления фракций угроз: не заменяют и не блокируют victory/defeat
-(GameStateManager), просто дают дополнительную направленную цель и статус
-в HUD."""
+"""Задания (src/systems/mission.py) - слой целей поверх victory/defeat, не блокирует их."""
 import types
 
 from src.core.coordinate import Coordinate
@@ -20,7 +17,6 @@ def _fake_session(state=GameState.PLAYING, elapsed_time=0.0, towers_lost=0):
     )
 
 
-# --------------------------------------------------------------- Objective
 
 def test_objective_is_active_until_completed_or_failed():
     session = _fake_session()
@@ -32,7 +28,6 @@ def test_objective_is_active_until_completed_or_failed():
     assert objective.is_active() is False
 
 
-# --------------------------------------------------------- SurviveDurationObjective
 
 def test_survive_duration_completes_once_target_reached():
     objective = SurviveDurationObjective(target_seconds=60)
@@ -72,7 +67,6 @@ def test_survive_duration_describe_reports_progress():
     assert "20" in text and "50" in text
 
 
-# --------------------------------------------------------- ProtectTowersObjective
 
 def test_protect_towers_fails_as_soon_as_one_tower_is_lost():
     objective = ProtectTowersObjective()
@@ -103,7 +97,6 @@ def test_protect_towers_neither_completed_nor_failed_mid_game():
     assert objective.failed is False
 
 
-# --------------------------------------------------------------- Map.towers_lost_count
 
 def test_map_increments_towers_lost_count_when_a_tower_is_destroyed():
     game_map = Map(width=4000, height=4000)
@@ -126,7 +119,6 @@ def test_map_towers_lost_count_does_not_increment_for_healthy_towers():
     assert game_map.towers_lost_count == 0
 
 
-# --------------------------------------------------------------- GameSession wiring
 
 def test_setup_game_creates_default_objectives():
     session = GameSession()
@@ -186,6 +178,5 @@ def test_inactive_objective_stops_receiving_updates():
 
     session.update(delta_time=0.016)
 
-    # Уже неактивное задание не должно повторно проверяться/меняться
     assert protect_objective.failed is True
     assert protect_objective.completed is False

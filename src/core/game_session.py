@@ -1,5 +1,5 @@
 import random
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from src.core.map import Map
 from src.core.game_state import GameStateManager
@@ -29,6 +29,12 @@ class GameSession:
         self.elapsed_time = 0.0
         self.survive_duration_target = 180.0
         self.objectives: List[Objective] = []
+        self.on_event: Optional[Callable[..., None]] = None
+
+    def _emit(self, event_name: str, **data):
+        """Уведомляет подписчика (например, звуковую систему) об игровом событии."""
+        if self.on_event:
+            self.on_event(event_name, **data)
 
     @property
     def base_position(self) -> Optional[Coordinate]:
@@ -56,7 +62,7 @@ class GameSession:
         self.base_health = self.max_base_health
         self.resources = ResourceBank(start_credits=1000)
 
-        self.map = Map(width=4000, height=4000)
+        self.map = Map(width=4000, height=4000, on_event=self._emit)
         self.base_position = Coordinate(2000, 2000)
         self.map.nav_grid.set_blocked(self.base_position.x, self.base_position.y, blocked=True)
         self.map.spawn_points = [
@@ -103,16 +109,20 @@ class GameSession:
         reached_base, killed_enemies = self.map.update(delta_time)
         for enemy in killed_enemies:
             self.resources.add_reward(enemy.reward)
+            self._emit("enemy_died", enemy_type=getattr(enemy, "type_name", None), position=enemy.position)
 
         for _ in reached_base:
             self.base_health -= 10
+            self._emit("base_hit", position=self.base_position)
 
         if self.state_manager.check_defeat(self.base_health):
             self.state = GameState.GAME_OVER
+            self._emit("defeat")
 
         if self.state == GameState.PLAYING and self.state_manager.check_victory(
                 self.elapsed_time, self.survive_duration_target):
             self.state = GameState.VICTORY
+            self._emit("victory")
 
         for objective in self.objectives:
             if objective.is_active():
@@ -129,6 +139,7 @@ class GameSession:
         if self.resources.spend(turret.cost):
             self.map.add_module(turret)
             self.map.replan_enemy_paths()
+            self._emit("tower_placed", tower_type=tower_type, position=position)
             return True
         return False
 

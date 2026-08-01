@@ -9,6 +9,8 @@ from src.ui.map_renderer import MapRenderer
 from src.ui.hud_renderer import HudRenderer
 from src.ui.game_over_screen import GameOverScreen
 from src.ui.menu_screen import MenuScreen
+from src.ui.sound_manager import SoundManager
+from src.systems.spatial_audio import volume_for_position
 
 
 class GameView:
@@ -16,6 +18,13 @@ class GameView:
 
     MIN_WIDTH = 640
     MIN_HEIGHT = 480
+    SOUND_EVENTS = {
+        "tower_placed": "tower_placed",
+        "enemy_died": "enemy_death",
+        "base_hit": "base_hit",
+        "victory": "victory",
+        "defeat": "defeat",
+    }
 
     def __init__(self, session: GameSession):
         """Создаёт окно и рендереры для заданной игровой сессии."""
@@ -42,6 +51,7 @@ class GameView:
         self.hud_renderer = HudRenderer()
         self.game_over_screen = GameOverScreen()
         self.menu_screen = MenuScreen()
+        self.sound_manager = SoundManager()
 
     @property
     def camera(self):
@@ -95,7 +105,18 @@ class GameView:
     def _start_game(self):
         """Настраивает новую игру и создаёт контроллер."""
         self.session.setup_game()
+        self.session.on_event = self._handle_game_event
         self.controller = GameController(self.session, self.width, self.height)
+
+    def _handle_game_event(self, event_name, **data):
+        """Проигрывает звук, привязанный к игровому событию, приглушая его вне вида камеры."""
+        position = data.get("position")
+        volume_multiplier = volume_for_position(self.camera, position) if (position and self.controller) else 1.0
+
+        if event_name == "tower_fired":
+            self.sound_manager.play(f"{data.get('tower_type')}_fire", volume_multiplier)
+        elif event_name in self.SOUND_EVENTS:
+            self.sound_manager.play(self.SOUND_EVENTS[event_name], volume_multiplier)
 
     def render(self):
         """Рисует текущий кадр игры."""

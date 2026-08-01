@@ -1,6 +1,4 @@
-"""Привязка построек к сетке (Map.snap_to_grid), используемой также
-для навигации врагов (NavigationGrid) — башни ставятся по клеткам,
-а не в произвольной точке под курсором."""
+"""Привязка построек к сетке (Map.snap_to_grid) вместо произвольной точки."""
 import pytest
 from src.core.game_session import GameSession
 from src.core.map import Map
@@ -35,7 +33,7 @@ def test_snap_to_grid_is_idempotent():
 def test_two_nearby_clicks_in_same_cell_snap_to_identical_position():
     game_map = Map(width=4000, height=4000)
     cell = game_map.nav_grid.cell_size
-    cell_start = cell * 3  # начало клетки, а не произвольная точка
+    cell_start = cell * 3
 
     a = game_map.snap_to_grid(Coordinate(cell_start, cell_start))
     b = game_map.snap_to_grid(Coordinate(cell_start + cell - 1, cell_start + cell - 1))
@@ -45,7 +43,7 @@ def test_two_nearby_clicks_in_same_cell_snap_to_identical_position():
 
 def test_place_turret_snaps_position_to_grid(session):
     cell = session.map.nav_grid.cell_size
-    off_grid_pos = Coordinate(2300 + 3, 2000 + 3)  # чуть в стороне от центра клетки
+    off_grid_pos = Coordinate(2300 + 3, 2000 + 3)
 
     success = session.place_turret("laser", off_grid_pos)
 

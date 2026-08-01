@@ -1,8 +1,4 @@
-"""Дрон-медик корпорации (MedicDrone) - замена отступления на лечение
-для Corporation. Не атакует и не охотится на башни (HostileEntity.
-is_combatant()), ищет ближайшую живую группу союзников и присоединяется
-к ней, пока в группе - лечит её участников и игнорирует обстрел; пока
-один - избегает простреливаемых зон, как разведчик."""
+"""Дрон-медик Corporation: не атакует, лечит союзников в группе, избегает башен вне группы."""
 import pytest
 
 from src.core.coordinate import Coordinate
@@ -13,7 +9,6 @@ from src.factories.enemy_factory import EnemyFactory
 from src.core.game_session import GameSession
 
 
-# --------------------------------------------------------------- базовые хуки
 
 def test_medic_drone_cannot_attack_and_heals_allies():
     medic = MedicDrone(Coordinate(0, 0))
@@ -54,7 +49,6 @@ def test_medic_drone_is_part_of_corporation_landing_roster():
     assert "medic_drone" in strategy.enemy_types
 
 
-# --------------------------------------------------------------- поиск группы
 
 def test_solo_medic_moves_towards_nearest_ally_group_leader():
     game_map = Map(width=4000, height=4000)
@@ -128,7 +122,6 @@ def test_solo_medic_falls_back_to_advancing_to_base_when_no_group_exists():
     assert medic.position.x > 500, "без союзной группы медик должен идти к базе как обычно"
 
 
-# --------------------------------------------------------------- лечение группы
 
 def test_grouped_medic_heals_wounded_group_members():
     game_map = Map(width=4000, height=4000)
@@ -137,7 +130,7 @@ def test_grouped_medic_heals_wounded_group_members():
     leader = HeavyAssaultDrone(Coordinate(2000, 2000))
     leader.is_group_leader = True
     leader.group_id = 7
-    leader.health = 90  # ранен, max_health=180
+    leader.health = 90
     leader.set_path([Coordinate(2500, 100)])
     game_map.spawn_enemy(leader)
 
@@ -185,7 +178,7 @@ def test_medic_heals_itself_too():
     game_map.spawn_enemy(leader)
 
     medic = MedicDrone(Coordinate(2010, 2000))
-    medic.health = 40  # ранен, max_health=90
+    medic.health = 40
     medic.join_group(7, leader, Coordinate(10, 0))
     medic.set_path([Coordinate(9999, 9999)])
     game_map.spawn_enemy(medic)
@@ -196,7 +189,6 @@ def test_medic_heals_itself_too():
     assert medic.health > before
 
 
-# --------------------------------------------------------------- не атакует
 
 def test_medic_never_attacks_even_with_enemy_in_range():
     game_map = Map(width=4000, height=4000)
@@ -217,11 +209,7 @@ def test_medic_never_attacks_even_with_enemy_in_range():
 
 
 def test_medic_never_hunts_towers_even_as_part_of_a_group():
-    """Группа медика может преследовать башню через target_tower лидера
-    (group_target_tower), но is_combatant()=False должен полностью
-    отключить это поведение именно для медика. Лидер намеренно поставлен
-    далеко от башни, чтобы урон в тесте мог идти только от медика, если
-    бы гейт по is_combatant() не сработал."""
+    """is_combatant()=False должен блокировать охоту на башню лидера именно для медика."""
     from src.entities.turrets import LaserTurret
 
     game_map = Map(width=4000, height=4000)
@@ -235,7 +223,7 @@ def test_medic_never_hunts_towers_even_as_part_of_a_group():
     leader.set_path([Coordinate(0, 0)])
     game_map.spawn_enemy(leader)
 
-    medic = MedicDrone(Coordinate(2000, 2000))  # в радиусе атаки башни
+    medic = MedicDrone(Coordinate(2000, 2000))
     medic.join_group(7, leader, Coordinate(0, 0))
     medic.set_path([Coordinate(9999, 9999)])
     game_map.spawn_enemy(medic)

@@ -1,9 +1,4 @@
-"""Радиус атаки башни раньше рисовался всегда и для всех башен сразу —
-на скученной обороне поле быстро зарастало наложенными друг на друга
-полупрозрачными кругами. Теперь радиус виден только у выбранной башни
-или у ВСЕХ башен разом, пока зажат ALT (см. MapRenderer.render/
-_draw_modules) — ALT задуман как общий переключатель доп. информации,
-не привязанный жёстко только к радиусам."""
+"""Радиус атаки виден только у выбранной башни или у всех сразу, пока зажат ALT."""
 import types
 
 import pygame
@@ -59,7 +54,7 @@ def test_range_circle_shown_for_all_towers_when_alt_held(monkeypatch):
     tower_b = LaserTurret(Coordinate(900, 900))
     camera = _camera()
     session = types.SimpleNamespace(map=types.SimpleNamespace(modules=[tower_a, tower_b]))
-    controller = types.SimpleNamespace(selected_module=None)  # ни одна башня не выбрана
+    controller = types.SimpleNamespace(selected_module=None)
     expected_radius = int(tower_a.range_radius * camera.zoom)
 
     MapRenderer()._draw_modules(pygame.Surface((10, 10)), camera, session, controller, [], alt_held=True)

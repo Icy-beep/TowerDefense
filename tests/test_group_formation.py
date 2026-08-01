@@ -1,13 +1,4 @@
-"""Групповое поведение врагов (src/systems/group_formation.py).
-
-Раньше волна из одной фракции всегда шла к базе поодиночке. Теперь
-GroupFormationSystem время от времени случайно собирает эскорт вокруг
-врага-лидера определённого типа (по умолчанию HeavyAssaultDrone) из
-ближайших врагов ТОЙ ЖЕ фракции; пока лидер жив и не дошёл до базы,
-эскорт движется не по своему маршруту, а рядом с лидером (см.
-Map.update()). ScoutDrone теперь входит в SOLO_TYPES и никогда не
-участвует в группах — ни как лидер, ни как ведомый: его единственная
-задача — разведка и бегство от башен."""
+"""Групповое поведение врагов: эскорт вокруг лидера (src/systems/group_formation.py)."""
 import math
 
 import pytest
@@ -44,7 +35,6 @@ class _NeverFormRng:
         return seq[0]
 
 
-# --------------------------------------------------------- GroupFormationSystem
 
 def test_only_configured_leader_type_can_start_a_group():
     system = GroupFormationSystem(rng=_AlwaysFormRng())
@@ -60,7 +50,7 @@ def test_only_configured_leader_type_can_start_a_group():
 def test_heavy_assault_drone_recruits_nearby_enemy_of_same_faction():
     system = GroupFormationSystem(rng=_AlwaysFormRng())
     leader = _tagged(HeavyAssaultDrone(Coordinate(0, 0)), "heavy_assault_drone")
-    ally = _tagged(DroneWalker(Coordinate(50, 0)), "drone_walker")  # тоже Corporation
+    ally = _tagged(DroneWalker(Coordinate(50, 0)), "drone_walker")
 
     system.update(1.0, [leader, ally])
 
@@ -71,8 +61,8 @@ def test_heavy_assault_drone_recruits_nearby_enemy_of_same_faction():
 
 def test_heavy_assault_drone_does_not_recruit_enemy_of_different_faction():
     system = GroupFormationSystem(rng=_AlwaysFormRng())
-    leader = _tagged(HeavyAssaultDrone(Coordinate(0, 0)), "heavy_assault_drone")  # Corporation
-    roach = _tagged(GiantRoach(Coordinate(50, 0)), "giant_roach")  # Fauna
+    leader = _tagged(HeavyAssaultDrone(Coordinate(0, 0)), "heavy_assault_drone")
+    roach = _tagged(GiantRoach(Coordinate(50, 0)), "giant_roach")
 
     system.update(1.0, [leader, roach])
 
@@ -120,7 +110,7 @@ def test_already_grouped_enemy_is_not_recruited_by_another_leader():
     system.update(1.0, [leader_a, ally])
     assert ally.group_leader is leader_a
 
-    ally.position = Coordinate(1010, 0)  # физически рядом со вторым лидером
+    ally.position = Coordinate(1010, 0)
     system.update(1.0, [leader_b, ally])
 
     assert ally.group_leader is leader_a, "уже состоящий в группе враг не должен переманиваться"
@@ -147,16 +137,15 @@ def test_scout_drone_is_never_recruited_as_a_follower():
     assert scout.group_leader is None, "разведчик — SOLO_TYPES, не должен входить в группы"
 
 
-# --------------------------------------------------------------- Map.update()
 
 def test_map_moves_follower_towards_leader_instead_of_own_path():
     game_map = Map(width=4000, height=4000, group_formation=GroupFormationSystem(rng=_NeverFormRng()))
     leader = DroneWalker(Coordinate(500, 500))
-    leader.speed = 0  # позиция лидера должна остаться предсказуемой в тесте
+    leader.speed = 0
     leader.set_path([Coordinate(9999, 9999)])
 
     follower = DroneWalker(Coordinate(0, 0))
-    follower.set_path([Coordinate(-9999, -9999)])  # маршрут в противоположную сторону
+    follower.set_path([Coordinate(-9999, -9999)])
     follower.join_group(1, leader, Coordinate(20, 0))
 
     game_map.spawn_enemy(leader)
@@ -165,7 +154,6 @@ def test_map_moves_follower_towards_leader_instead_of_own_path():
     game_map.update(1.0)
 
     assert leader.position == Coordinate(500, 500)
-    # Двигался к лидеру (вправо-вниз), а не по своему пути (влево-вверх)
     assert follower.position.x > 0
     assert follower.position.y > 0
 
@@ -186,16 +174,15 @@ def test_group_disbands_when_leader_dies():
     game_map.update(1.0)
 
     assert follower.group_leader is None
-    assert follower.position.x == pytest.approx(50.0)  # снова по своему маршруту, speed=50
+    assert follower.position.x == pytest.approx(50.0)
 
 
-# --------------------------------------------- группа прикрывает лидера от обстрела
 
 def test_shield_offset_biases_towards_tower_direction():
     game_map = Map(width=4000, height=4000)
     leader_pos = Coordinate(500, 500)
-    tower_pos = Coordinate(500, 400)  # прямо "над" лидером
-    offset = Coordinate(50, 0)  # исходный слот - справа от лидера
+    tower_pos = Coordinate(500, 400)
+    offset = Coordinate(50, 0)
 
     shielded = game_map._shield_offset(offset, tower_pos, leader_pos)
 
@@ -214,10 +201,10 @@ def test_shield_offset_biases_towards_tower_direction():
 
 def test_combatant_follower_shields_leader_from_threatening_tower():
     game_map = Map(width=4000, height=4000, group_formation=GroupFormationSystem(rng=_NeverFormRng()))
-    tower = LaserTurret(Coordinate(500, 300))  # range_radius=120 по умолчанию
+    tower = LaserTurret(Coordinate(500, 300))
     game_map.modules.append(tower)
 
-    leader = HeavyAssaultDrone(Coordinate(500, 380))  # в 80 юнитах от башни - накрыт
+    leader = HeavyAssaultDrone(Coordinate(500, 380))
     leader.speed = 0
     leader.is_group_leader = True
     leader.group_id = 7
@@ -267,7 +254,7 @@ def test_group_disbands_when_leader_has_reached_end_of_path():
     game_map = Map(width=4000, height=4000, group_formation=GroupFormationSystem(rng=_NeverFormRng()))
     leader = DroneWalker(Coordinate(500, 500))
     leader.set_path([Coordinate(500, 500)])
-    leader.path_index = 1  # уже дошёл до конца маршрута (убран бы из карты)
+    leader.path_index = 1
 
     follower = DroneWalker(Coordinate(0, 0))
     follower.set_path([Coordinate(1000, 0)])

@@ -1,6 +1,4 @@
-"""Выбор врага кликом (описание врага в HUD): приоритет клика
-(башня > враг > холостой клик -> драг камеры) и очистка выбора,
-когда враг умирает/уходит с поля."""
+"""Выбор врага кликом: приоритет клика и очистка выбора при исчезновении врага."""
 import pytest
 from src.core.game_session import GameSession
 from src.core.orbital_mode_controller import OrbitalModeController

@@ -1,11 +1,4 @@
-"""Разрушаемые башни: DefenseModule.health/take_damage/is_destroyed давно
-существовали, но не были задействованы (ни один враг не атаковал башни).
-Теперь ТОЛЬКО сформированные эскорты (лидер + хотя бы один ведомый, см.
-src/systems/group_formation.py) могут целенаправленно переключиться с
-похода к базе на снос известной им башни в радиусе Map.TOWER_HUNT_RADIUS
-(см. Map._update_group_targets/HostileEntity.group_target_tower). Одиночки
-башни по-прежнему не трогают. После уничтожения башни группа как ни в чём
-не бывало продолжает путь к базе."""
+"""Разрушаемые башни: только сформированные эскорты сносят известные башни в радиусе охоты."""
 import pytest
 
 from src.core.coordinate import Coordinate
@@ -31,7 +24,6 @@ class _NeverFormRng:
         return seq[0]
 
 
-# --------------------------------------------------- _update_group_targets
 
 def test_solo_enemy_never_gets_a_tower_target():
     game_map = Map(width=4000, height=4000)
@@ -39,7 +31,7 @@ def test_solo_enemy_never_gets_a_tower_target():
     game_map.modules.append(tower)
     game_map.faction_intel[Faction.CORPORATION].reveal(tower)
 
-    solo = _tagged(ScoutDrone(Coordinate(10, 0)), "scout_drone")  # рядом, но без группы
+    solo = _tagged(ScoutDrone(Coordinate(10, 0)), "scout_drone")
     game_map._update_group_targets([solo])
 
     assert solo.group_target_tower() is None
@@ -80,7 +72,7 @@ def test_group_leader_ignores_towers_outside_hunt_radius():
 
 def test_group_leader_ignores_towers_unknown_to_its_faction():
     game_map = Map(width=4000, height=4000)
-    tower = LaserTurret(Coordinate(50, 0))  # не разведана
+    tower = LaserTurret(Coordinate(50, 0))
     game_map.modules.append(tower)
 
     leader = _tagged(ScoutDrone(Coordinate(0, 0)), "scout_drone")
@@ -117,26 +109,22 @@ def test_target_is_dropped_once_destroyed_and_replaced_only_if_new_candidate_exi
     leader = _tagged(DroneWalker(Coordinate(0, 0)), "scout_drone")
     leader.is_group_leader = True
     leader.target_tower = tower
-    tower.health = 0  # уничтожена
+    tower.health = 0
 
     game_map._update_group_targets([leader])
 
     assert leader.target_tower is None
 
 
-# ------------------------------------------------------------------- Map.update()
 
 def test_grouped_enemy_attacks_tower_in_range_instead_of_moving_to_base():
     game_map = Map(width=4000, height=4000, group_formation=GroupFormationSystem(rng=_NeverFormRng()))
     game_map.base_position = Coordinate(4000, 4000)
     tower = LaserTurret(Coordinate(20, 0))
-    tower.cooldown_timer = 999  # башня в этом тесте не должна отстреливаться
+    tower.cooldown_timer = 999
     game_map.modules.append(tower)
     game_map.faction_intel[Faction.CORPORATION].reveal(tower)
 
-    # DroneWalker, а не ScoutDrone: act() у DroneWalker ничего не делает,
-    # тогда как у ScoutDrone есть случайный шанс уйти в "разведку" и
-    # застыть — это сделало бы движение непредсказуемым в этом тесте.
     leader = _tagged(DroneWalker(Coordinate(0, 0)), "scout_drone")
     leader.is_group_leader = True
     leader.target_tower = tower
@@ -173,7 +161,7 @@ def test_tower_is_removed_from_map_once_destroyed():
     game_map = Map(width=4000, height=4000, group_formation=GroupFormationSystem(rng=_NeverFormRng()))
     game_map.base_position = Coordinate(4000, 4000)
     tower = LaserTurret(Coordinate(20, 0))
-    tower.health = 1  # умрёт от одной атаки
+    tower.health = 1
     tower.cooldown_timer = 999
     game_map.modules.append(tower)
     game_map.faction_intel[Faction.CORPORATION].reveal(tower)
@@ -187,7 +175,7 @@ def test_tower_is_removed_from_map_once_destroyed():
     game_map.update(1.0)
     assert tower.is_destroyed()
 
-    game_map.update(1.0)  # уничтоженные башни убираются в начале следующего update()
+    game_map.update(1.0)
     assert tower not in game_map.modules
 
 
@@ -206,11 +194,11 @@ def test_group_resumes_path_to_base_after_destroying_its_target():
     leader.set_path([Coordinate(1000, 0)])
     game_map.spawn_enemy(leader)
 
-    game_map.update(1.0)  # уничтожает башню
+    game_map.update(1.0)
     assert tower.is_destroyed()
     position_after_kill = Coordinate(leader.position.x, leader.position.y)
 
-    game_map.update(1.0)  # цель протухла, должен продолжить путь
+    game_map.update(1.0)
 
     assert leader.target_tower is None
     assert leader.position.x > position_after_kill.x, "должен снова двигаться по маршруту к базе"
@@ -237,7 +225,7 @@ def test_follower_resumes_following_leader_after_target_destroyed():
     game_map.spawn_enemy(leader)
     game_map.spawn_enemy(follower)
 
-    game_map.update(1.0)  # эскорт сносит башню
+    game_map.update(1.0)
     assert tower.is_destroyed()
 
     for _ in range(5):

@@ -1,8 +1,4 @@
-"""Источники угрозы (src/systems/threat_strategy.py), заменившие единый
-WaveProtocol на двоих: ShipLandingStrategy (Corporation, телеграфируемая
-высадка на границе карты) и NestSpawnStrategy (Fauna, спавн по таймеру
-через точки спавна фракции). Оба ужимают интервал появления врагов по
-ходу партии, создавая нарастающее давление вместо дискретных волн."""
+"""Источники угрозы (src/systems/threat_strategy.py): высадка кораблей и спавн фауны."""
 import random
 import types
 
@@ -36,7 +32,6 @@ def _spawn_factory_spy(calls, faction=Faction.CORPORATION):
     return factory
 
 
-# --------------------------------------------------------------- ShipLandingStrategy
 
 def test_ship_landing_creates_no_marker_before_base_interval_elapses():
     strategy = ShipLandingStrategy(enemy_types=["drone_walker"], base_interval=10.0)
@@ -78,8 +73,8 @@ def test_ship_landing_spawns_squad_once_warning_time_elapses():
     calls = []
     spawn_factory = _spawn_factory_spy(calls)
 
-    strategy.update(5.0, game_map, spawn_factory)  # маркер появляется
-    strategy.update(2.0, game_map, spawn_factory)  # время предупреждения истекло
+    strategy.update(5.0, game_map, spawn_factory)
+    strategy.update(2.0, game_map, spawn_factory)
 
     assert len(calls) == 3
     assert all(c[0] == "drone_walker" for c in calls)
@@ -123,7 +118,6 @@ def test_ship_landing_does_nothing_without_enemy_types():
     assert calls == []
 
 
-# --------------------------------------------------------------- NestSpawnStrategy
 
 def test_nest_spawn_does_not_spawn_before_interval_elapses():
     strategy = NestSpawnStrategy(enemy_types=["giant_roach"], base_interval=6.0)
@@ -198,7 +192,6 @@ def test_nest_spawn_does_nothing_without_enemy_types():
     assert calls == []
 
 
-# --------------------------------------------------------------- контракт ThreatStrategy
 
 def test_pending_landing_stores_position_and_warning_time():
     landing = PendingLanding(Coordinate(10, 20), warning_time=4.0)
@@ -215,7 +208,6 @@ def test_threat_strategy_cannot_be_instantiated_directly():
         pass
 
 
-# --------------------------------------------------------------- интеграция с GameSession
 
 def test_setup_game_wires_threat_strategies_per_faction():
     session = GameSession()
@@ -233,10 +225,7 @@ def test_game_session_no_longer_has_wave_protocol():
 
 
 def test_game_session_border_landings_get_a_valid_path_to_base():
-    """Регрессия: граничная точка ровно на width/height лежит вне сетки
-    NavigationGrid (её клетки индексируются от 0 до width/cell_size - 1),
-    из-за чего path_to_base возвращал [] и высаженный враг мгновенно
-    считался 'дошедшим до базы' прямо на месте спавна."""
+    """Граничная точка ровно на width/height не должна давать пустой путь до базы."""
     session = GameSession()
     session.setup_game()
     strategy = session.threat_strategies[Faction.CORPORATION]

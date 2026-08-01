@@ -1,8 +1,4 @@
-"""Новые типы врагов (HeavyAssaultDrone, BioTitan) — добавлены не только
-для разнообразия, но и чтобы уравновесить сильно возросший урон башен:
-каждый новый тип контрит один конкретный тип урона (см.
-HostileEntity.take_damage), не пропуская остальные, так что игроку
-по-прежнему нужен смешанный состав башен, а не просто самый сильный тип."""
+"""HeavyAssaultDrone и BioTitan: каждый контрит один конкретный тип урона башен."""
 from src.core.coordinate import Coordinate
 from src.entities.enemies import HeavyAssaultDrone, BioTitan
 from src.enums import ArmorType, Faction

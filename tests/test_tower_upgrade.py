@@ -1,6 +1,4 @@
-"""DefenseModule.upgrade()/can_upgrade()/get_upgrade_cost() — рабочий
-функционал (апгрейд башен по 'U'), но до сих пор не было ни одного
-теста на него."""
+"""DefenseModule.upgrade()/can_upgrade()/get_upgrade_cost() — апгрейд башен по 'U'."""
 import pytest
 from src.entities.turrets import LaserTurret
 from src.core.coordinate import Coordinate
@@ -51,7 +49,7 @@ def test_upgrade_scales_damage_range_and_attack_speed(turret):
     base_range = turret.base_range
     base_speed = turret.base_attack_speed
 
-    turret.upgrade()  # level 2
+    turret.upgrade()
 
     assert turret.damage == pytest.approx(base_damage * 1.4)
     assert turret.range_radius == pytest.approx(base_range * 1.2)
@@ -59,11 +57,9 @@ def test_upgrade_scales_damage_range_and_attack_speed(turret):
 
 
 def test_upgrade_stats_are_cumulative_not_additive_per_call(turret):
-    """Мультипликаторы считаются от level, а не накапливаются поверх уже
-    применённого апгрейда — level 3 должен пересчитываться от base_*,
-    а не от значений после level 2."""
-    turret.upgrade()  # level 2
-    turret.upgrade()  # level 3
+    """Мультипликаторы считаются от level, а не накапливаются поверх апгрейда."""
+    turret.upgrade()
+    turret.upgrade()
 
     assert turret.damage == pytest.approx(turret.base_damage * (1.0 + 2 * 0.4))
     assert turret.range_radius == pytest.approx(turret.base_range * (1.0 + 2 * 0.2))

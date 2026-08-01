@@ -1,11 +1,4 @@
-"""Настоящее патрулирование по периметру базы (src/core/map.py).
-
-Раньше враг, которому известная башня перекрывала прямой путь к базе,
-просто прокладывал маршрут в обход (мягкое избегание в path_to_base).
-Теперь, если известная башня перекрывает текущее направление на базу,
-враг вместо этого начинает кружить по периметру вокруг базы, ища угол,
-не перекрытый ни одной известной башней — и только найдя такой разрыв,
-возобновляет обычное движение к базе."""
+"""Патрулирование по периметру базы, пока известная башня перекрывает путь (src/core/map.py)."""
 import math
 
 import pytest
@@ -21,7 +14,7 @@ def _map_with_base_and_known_tower(tower_position, enemy_position):
     """Карта с базой в (2000, 2000) и одной башней, уже известной Corporation."""
     game_map = Map(width=4000, height=4000)
     game_map.base_position = Coordinate(2000, 2000)
-    tower = LaserTurret(tower_position)  # range_radius=120 по умолчанию
+    tower = LaserTurret(tower_position)
     game_map.modules.append(tower)
     game_map.faction_intel[Faction.CORPORATION].reveal(tower)
 
@@ -41,8 +34,8 @@ def test_bearing_from_base_matches_expected_angle():
 
 def test_advance_towards_base_starts_patrolling_when_known_tower_blocks_bearing():
     game_map, tower, enemy = _map_with_base_and_known_tower(
-        tower_position=Coordinate(2200, 2000),  # bearing 0 от базы
-        enemy_position=Coordinate(2500, 2000),  # тот же bearing 0 — перекрыт
+        tower_position=Coordinate(2200, 2000),
+        enemy_position=Coordinate(2500, 2000),
     )
 
     game_map._advance_towards_base(enemy, 0.1)
@@ -52,8 +45,8 @@ def test_advance_towards_base_starts_patrolling_when_known_tower_blocks_bearing(
 
 def test_advance_towards_base_goes_direct_when_gap_at_current_bearing():
     game_map, tower, enemy = _map_with_base_and_known_tower(
-        tower_position=Coordinate(2200, 2000),  # башня перекрывает bearing 0
-        enemy_position=Coordinate(1500, 2000),  # враг на bearing pi — разрыв тут есть
+        tower_position=Coordinate(2200, 2000),
+        enemy_position=Coordinate(1500, 2000),
     )
     enemy.set_path([Coordinate(1600, 2000)])
 
@@ -82,7 +75,7 @@ def test_patrol_eventually_finds_gap_and_resumes_normal_pathing():
     )
 
     found_gap = False
-    for _ in range(400):  # угловая скорость 0.5 рад/с * dt суммарно покрывает весь круг
+    for _ in range(400):
         game_map._advance_towards_base(enemy, 0.1)
         if not enemy.is_patrolling:
             found_gap = True
@@ -92,11 +85,9 @@ def test_patrol_eventually_finds_gap_and_resumes_normal_pathing():
 
 
 def test_patrol_keeps_enemy_outside_tower_range_while_circling():
-    # Башня далеко от базы (500 юнитов) — орбита патруля (150 + range_radius)
-    # проходит значительно ближе к базе, чем сама башня.
     game_map, tower, enemy = _map_with_base_and_known_tower(
         tower_position=Coordinate(2500, 2000),
-        enemy_position=Coordinate(2450, 2000),  # изначально в радиусе действия башни
+        enemy_position=Coordinate(2450, 2000),
     )
 
     for _ in range(40):
@@ -107,9 +98,7 @@ def test_patrol_keeps_enemy_outside_tower_range_while_circling():
 
 
 def test_map_update_patrols_enemy_around_defended_base():
-    """Интеграционный тест через полный Map.update(): враг с назначенным
-    маршрутом, при известной перекрывающей башне, кружит вокруг базы вместо
-    того, чтобы либо стоять, либо переть напролом через простреливаемую зону."""
+    """Через полный Map.update() враг кружит вокруг базы, а не стоит или прёт напролом."""
     game_map, tower, enemy = _map_with_base_and_known_tower(
         tower_position=Coordinate(2200, 2000),
         enemy_position=Coordinate(2500, 2000),
@@ -125,20 +114,16 @@ def test_map_update_patrols_enemy_around_defended_base():
     assert enemy.position.y != pytest.approx(2000.0)
 
 
-# --------------------------- avoids_danger()=True враги: без кругового патруля
 
 def test_avoiding_enemy_never_patrols_even_when_known_tower_blocks_bearing():
-    """Круговой патруль на одном радиусе плохо справляется с кластером из
-    нескольких перекрывающихся башен - враг мог застревать на стыке двух
-    зон. Разведчик (и любой другой avoids_danger()=True враг) вместо этого
-    идёт строго по честному A*-маршруту в обход, без патруля вовсе."""
+    """avoids_danger()=True враг идёт по честному A*-маршруту в обход, без патруля вовсе."""
     game_map = Map(width=4000, height=4000)
     game_map.base_position = Coordinate(2000, 2000)
-    tower = LaserTurret(Coordinate(2200, 2000))  # bearing 0 от базы - перекрыт
+    tower = LaserTurret(Coordinate(2200, 2000))
     game_map.modules.append(tower)
     game_map.faction_intel[Faction.CORPORATION].reveal(tower)
 
-    scout = ScoutDrone(Coordinate(2500, 2000))  # тот же bearing 0
+    scout = ScoutDrone(Coordinate(2500, 2000))
     scout.set_path([Coordinate(2000, 2000)])
 
     game_map._advance_towards_base(scout, 0.1)
@@ -154,7 +139,7 @@ def test_avoiding_enemy_follows_honest_route_around_known_tower():
     game_map.faction_intel[Faction.CORPORATION].reveal(tower)
 
     scout = ScoutDrone(Coordinate(2000, 500))
-    scout.set_path([Coordinate(2000, 3500)])  # "наивный" путь напрямик, будто башня не видна
+    scout.set_path([Coordinate(2000, 3500)])
     game_map.spawn_enemy(scout)
 
     for _ in range(700):
@@ -167,12 +152,10 @@ def test_avoiding_enemy_follows_honest_route_around_known_tower():
 
 
 def test_avoiding_enemy_gives_up_and_retreats_when_no_safe_route_exists():
-    """Если известная башня накрывает вообще всё пространство между врагом
-    и базой, разведчик не должен биться о границу её радиуса - он должен
-    отступить, а не пытаться прорваться."""
+    """Если известная башня накрывает всё пространство до базы, разведчик отступает."""
     game_map = Map(width=4000, height=4000)
     game_map.base_position = Coordinate(2000, 2000)
-    tower = LaserTurret(Coordinate(2000, 2000), range_radius=6000)  # накрывает всё
+    tower = LaserTurret(Coordinate(2000, 2000), range_radius=6000)
     game_map.modules.append(tower)
     game_map.faction_intel[Faction.CORPORATION].reveal(tower)
 
@@ -184,7 +167,5 @@ def test_avoiding_enemy_gives_up_and_retreats_when_no_safe_route_exists():
     for _ in range(20):
         game_map.update(0.1)
 
-    # Corporation после высадки не имеет фиксированных точек спавна -
-    # отступление идёт по прямой прочь от базы, а не к точке спавна.
     assert scout.position.distance_to(game_map.base_position) > initial_distance, \
         "без честного маршрута враг должен отступать прочь от базы, а не топтаться на месте"

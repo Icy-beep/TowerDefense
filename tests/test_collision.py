@@ -1,13 +1,13 @@
 """Корректность определения противников, находящихся
 в зоне действия башни (DefenseModule.find_target)"""
 from src.core.coordinate import Coordinate
-from src.entities.turrets import BulletTurret  # range_radius = 150
+from src.entities.turrets import BulletTurret
 from src.entities.enemies import DroneWalker
 
 
 def test_enemy_inside_radius_is_detected():
     turret = BulletTurret(Coordinate(0, 0))
-    enemy = DroneWalker(Coordinate(100, 0))  # дистанция 100 < 150
+    enemy = DroneWalker(Coordinate(100, 0))
 
     target = turret.find_target([enemy])
 
@@ -16,7 +16,7 @@ def test_enemy_inside_radius_is_detected():
 
 def test_enemy_outside_radius_is_not_detected():
     turret = BulletTurret(Coordinate(0, 0))
-    enemy = DroneWalker(Coordinate(300, 0))  # дистанция 300 > 150
+    enemy = DroneWalker(Coordinate(300, 0))
 
     target = turret.find_target([enemy])
 
@@ -25,7 +25,7 @@ def test_enemy_outside_radius_is_not_detected():
 
 def test_enemy_exactly_on_radius_edge_is_detected():
     turret = BulletTurret(Coordinate(0, 0))
-    enemy = DroneWalker(Coordinate(150, 0))  # дистанция == range_radius
+    enemy = DroneWalker(Coordinate(150, 0))
 
     target = turret.find_target([enemy])
 

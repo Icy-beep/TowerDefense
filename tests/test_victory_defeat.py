@@ -1,7 +1,4 @@
-"""
-- корректность уменьшения прочности базы при достижении её противником
-- корректность определения состояний победы и поражения
-"""
+"""Уменьшение прочности базы врагами и определение состояний победы/поражения."""
 from src.core.game_state import GameStateManager
 from src.core.game_session import GameSession
 from src.core.coordinate import Coordinate
@@ -9,14 +6,11 @@ from src.entities.enemies import DroneWalker
 from src.enums import GameState
 
 
-# ---------------------------------------------------------------------
-# Урон базе при достижении противником конца маршрута
-# ---------------------------------------------------------------------
 
 def _enemy_that_reached_base():
     enemy = DroneWalker(Coordinate(0, 0))
     enemy.set_path([Coordinate(0, 0)])
-    enemy.path_index = 1  # индекс уже за пределами пути — противник "дошёл"
+    enemy.path_index = 1
     return enemy
 
 
@@ -43,9 +37,6 @@ def test_multiple_enemies_reaching_base_stack_damage():
     assert session.base_health == 70
 
 
-# ---------------------------------------------------------------------
-# GameStateManager — правила определения победы/поражения
-# ---------------------------------------------------------------------
 
 def test_check_defeat_true_when_base_health_zero_or_below():
     gsm = GameStateManager()
@@ -64,9 +55,6 @@ def test_check_victory_true_once_target_duration_reached():
         "победа не должна засчитываться раньше целевого времени"
 
 
-# ---------------------------------------------------------------------
-# Полный переход состояния через GameSession
-# ---------------------------------------------------------------------
 
 def test_game_session_transitions_to_game_over_on_defeat():
     session = GameSession()
@@ -106,7 +94,7 @@ def test_defeat_takes_priority_when_both_conditions_true_simultaneously():
     session.setup_game()
     session.base_health = 5
     session.elapsed_time = session.survive_duration_target
-    session.map.enemies = [_enemy_that_reached_base()]  # снимет ещё 10 хп -> уйдёт в минус
+    session.map.enemies = [_enemy_that_reached_base()]
 
     session.update(delta_time=0.016)
 

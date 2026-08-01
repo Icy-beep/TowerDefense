@@ -1,7 +1,4 @@
-"""Снаряды по типу оружия вместо единого "хоминга": лазер бьёт мгновенно,
-пуля летит по прямой и может промазать, мортира летает по параболе и по
-приземлении разлетается шрапнелью. Урон — по факту столкновения с любым
-живым врагом из списка, а не гарантированно по исходной цели."""
+"""Снаряды по типу оружия: лазер мгновенный, пуля летит по прямой, мортира по параболе."""
 import math
 import pytest
 
@@ -19,15 +16,10 @@ def _enemy(x, y, health=1000):
     e = DroneWalker(Coordinate(x, y))
     e.health = health
     e.max_health = health
-    # Без пути Map.update() сочтёт врага "уже дошедшим до базы"
-    # (path_index (0) >= len(path) (0)) и уберёт его до того, как башни
-    # успеют выстрелить. Далёкая точка держит врага "в пути" на все
-    # тики, которые прогоняют тесты этого модуля.
     e.set_path([Coordinate(x + 100000, y)])
     return e
 
 
-# ---------------------------------------------------------------- HitscanBeam
 
 def test_hitscan_beam_damages_target_immediately_on_creation():
     target = _enemy(100, 0)
@@ -56,7 +48,7 @@ def test_hitscan_beam_does_not_damage_already_dead_target():
 
     beam.update(0.016, [target])
 
-    assert target.health == 0  # не ушёл в минус, take_damage не вызывался повторно
+    assert target.health == 0
 
 
 def test_laser_turret_fire_returns_hitscan_beam():
@@ -68,13 +60,12 @@ def test_laser_turret_fire_returns_hitscan_beam():
     assert isinstance(projectile, HitscanBeam)
 
 
-# ------------------------------------------------------------ BulletProjectile
 
 def test_bullet_direction_fixed_at_creation_ignores_later_target_movement():
     target = _enemy(100, 0)
     bullet = BulletProjectile(Coordinate(0, 0), target, damage=10, damage_type=DamageType.KINETIC, speed=50)
 
-    target.position = Coordinate(100, 500)  # цель "увернулась" после выстрела
+    target.position = Coordinate(100, 500)
     bullet.update(1.0, [])
 
     assert bullet.position.y == pytest.approx(0.0), "пуля не должна доворачивать за целью"
@@ -83,7 +74,7 @@ def test_bullet_direction_fixed_at_creation_ignores_later_target_movement():
 
 def test_bullet_hits_any_enemy_in_path_not_only_original_target():
     original_target = _enemy(1000, 0)
-    decoy = _enemy(50, 0)  # оказался на линии полёта раньше исходной цели
+    decoy = _enemy(50, 0)
     bullet = BulletProjectile(Coordinate(0, 0), original_target, damage=40,
                                damage_type=DamageType.KINETIC, speed=100)
 
@@ -99,7 +90,7 @@ def test_bullet_misses_if_nothing_in_path_and_expires_past_max_distance():
     bullet = BulletProjectile(Coordinate(0, 0), target, damage=10, damage_type=DamageType.KINETIC,
                                speed=1000, max_distance=50)
 
-    alive = bullet.update(1.0, [])  # улетел на 1000, но max_distance=50
+    alive = bullet.update(1.0, [])
 
     assert alive is False
 
@@ -142,9 +133,7 @@ def test_bullet_projectile_applies_random_spread_within_bounds():
 
 
 def test_bullet_turret_fire_applies_spread_degrees_constant():
-    """Повторные выстрелы по одной и той же неподвижной цели должны давать
-    слегка разные направления (разброс), но никогда не выходить за
-    пределы ±SPREAD_DEGREES/2."""
+    """Повторные выстрелы дают разброс направления, но не выходят за ±SPREAD_DEGREES/2."""
     turret = BulletTurret(Coordinate(0, 0))
     target = _enemy(1000, 0)
 
@@ -158,7 +147,6 @@ def test_bullet_turret_fire_applies_spread_degrees_constant():
     assert len(angles) > 1, "повторные выстрелы должны давать разные направления из-за разброса"
 
 
-# ---------------------------------------------------------------- MortarShell
 
 def test_mortar_shell_interpolates_position_toward_target():
     target = _enemy(1000, 0)
@@ -249,7 +237,6 @@ def test_shrapnel_pellet_damages_enemy_in_path_and_expires():
     assert alive is False
 
 
-# --------------------------------------------------------- Map.update() wiring
 
 def test_map_update_passes_enemies_and_bullet_can_hit_nontarget():
     game_map = Map(width=4000, height=4000)
@@ -258,10 +245,10 @@ def test_map_update_passes_enemies_and_bullet_can_hit_nontarget():
     game_map.modules.append(turret)
 
     decoy = _enemy(60, 0)
-    far_target = _enemy(140, 0)  # ровно на границе range_radius=150
+    far_target = _enemy(140, 0)
     game_map.enemies.extend([decoy, far_target])
 
-    game_map.update(0.1)  # башня стреляет, снаряд появляется в map.projectiles
+    game_map.update(0.1)
     assert len(game_map.projectiles) == 1
 
     for _ in range(20):
@@ -271,11 +258,7 @@ def test_map_update_passes_enemies_and_bullet_can_hit_nontarget():
 
 
 def test_map_update_keeps_laser_beam_visible_for_a_couple_of_frames():
-    """Раньше HitscanBeam.update() наносил урон и в тот же вызов возвращал
-    False - луч добавлялся в map.projectiles и тут же убирался внутри
-    одного Map.update(), так что рендер никогда его не видел (лазер был
-    невидим на экране). Теперь луч должен пережить хотя бы один полный
-    Map.update() и попасть в список снарядов на следующем кадре."""
+    """Луч должен пережить хотя бы один полный Map.update(), а не исчезать тем же кадром."""
     game_map = Map(width=4000, height=4000)
     turret = LaserTurret(Coordinate(0, 0))
     turret.cooldown_timer = 0
@@ -284,7 +267,7 @@ def test_map_update_keeps_laser_beam_visible_for_a_couple_of_frames():
     target = _enemy(50, 0)
     game_map.enemies.append(target)
 
-    game_map.update(0.01)  # башня стреляет лазером
+    game_map.update(0.01)
 
     beams = [p for p in game_map.projectiles if isinstance(p, HitscanBeam)]
     assert beams, "луч должен оставаться в map.projectiles хотя бы один кадр после выстрела"

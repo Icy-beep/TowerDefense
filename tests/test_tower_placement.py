@@ -1,7 +1,4 @@
-"""
-- корректность списания ресурсов при размещении башни
-- корректность запрета на размещение башни при недостатке ресурсов
-"""
+"""Списание ресурсов при размещении башни и запрет при недостатке средств."""
 import pytest
 from src.core.game_session import GameSession
 from src.entities.turrets import LaserTurret, BulletTurret
@@ -18,20 +15,18 @@ def session():
 def test_place_turret_deducts_resources(session):
     credits_before = session.resources.credits
     cost = LaserTurret(Coordinate(0, 0)).cost
-    pos = Coordinate(2300, 2000)  # свободная точка рядом с базой (2000, 2000)
+    pos = Coordinate(2300, 2000)
 
     success = session.place_turret("laser", pos)
 
     assert success is True
     assert session.resources.credits == credits_before - cost
     assert len(session.map.modules) == 1
-    # позиция привязывается к клетке сетки (Map.snap_to_grid), а не
-    # ставится ровно там, где кликнул игрок
     assert session.map.modules[0].position == session.map.snap_to_grid(pos)
 
 
 def test_place_turret_rejected_when_not_enough_resources(session):
-    session.resources.credits = 10  # меньше стоимости любой из трёх башен
+    session.resources.credits = 10
     modules_before = len(session.map.modules)
 
     success = session.place_turret("laser", Coordinate(2300, 2000))
@@ -57,7 +52,7 @@ def test_place_turret_fails_exactly_at_boundary_of_available_credits():
     session = GameSession()
     session.setup_game()
     cost = LaserTurret(Coordinate(0, 0)).cost
-    session.resources.credits = cost - 1  # ровно на 1 меньше стоимости
+    session.resources.credits = cost - 1
 
     success = session.place_turret("laser", Coordinate(2300, 2000))
 

@@ -1,11 +1,4 @@
-"""Раньше Corporation и Fauna физически не замечали друг друга — каждый
-враг взаимодействовал только с башнями и своим маршрутом к базе, даже
-если рядом стоял враг противоположной фракции. Map._find_enemy_combat_
-target ищет ближайшего живого врага чужой фракции в радиусе обзора
-(HostileEntity.vision_radius); если он в пределах ATTACK_RANGE — начинается
-бой (HostileEntity.attack_enemy), иначе враг идёт на сближение. Бой имеет
-приоритет над охотой на башню (см. Map._update_group_targets) и движением
-к базе — это касается любого врага, а не только сформированных эскортов."""
+"""Бой между Corporation и Fauna при встрече в радиусе обзора, приоритет над охотой на башню."""
 import pytest
 
 from src.core.coordinate import Coordinate
@@ -30,7 +23,6 @@ class _NeverFormRng:
         return seq[0]
 
 
-# --------------------------------------------------- _find_enemy_combat_target
 
 def test_finds_nearest_opposing_enemy_in_vision_range():
     game_map = Map(width=4000, height=4000)
@@ -80,7 +72,6 @@ def test_picks_the_closest_of_several_opposing_enemies():
     assert game_map._find_enemy_combat_target(corp) is near_fauna
 
 
-# ------------------------------------------------------------------- Map.update()
 
 def test_opposing_enemies_in_attack_range_damage_each_other():
     game_map = Map(width=4000, height=4000)

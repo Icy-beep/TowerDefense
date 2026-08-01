@@ -1,5 +1,5 @@
 import math
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 from src.core.coordinate import Coordinate
 from src.entities.defense_module import DefenseModule
 from src.entities.hostile_entity import HostileEntity
@@ -12,10 +12,11 @@ from src.enums import Faction
 class Map:
     """Игровая карта: башни, враги, снаряды, разведка и пути."""
 
-    def __init__(self, width=4000, height=4000, group_formation=None):
+    def __init__(self, width=4000, height=4000, group_formation=None, on_event=None):
         """Создаёт пустую карту заданного размера."""
         self.width = width
         self.height = height
+        self.on_event: Optional[Callable[[str], None]] = on_event
 
         self.modules: List[DefenseModule] = []
         self.enemies: List[HostileEntity] = []
@@ -38,6 +39,11 @@ class Map:
     def add_module(self, module: DefenseModule):
         """Добавляет башню на карту."""
         self.modules.append(module)
+
+    def _emit(self, event_name: str, **data):
+        """Уведомляет подписчика (например, звуковую систему) об игровом событии."""
+        if self.on_event:
+            self.on_event(event_name, **data)
 
     def spawn_points_for(self, faction: Faction) -> List[Coordinate]:
         """Возвращает точки спавна фракции."""
@@ -564,6 +570,7 @@ class Map:
             projectile = module.update(delta_time, self.enemies)
             if projectile:
                 self.projectiles.append(projectile)
+                self._emit("tower_fired", tower_type=getattr(module, "type_name", None), position=module.position)
 
         surviving_projectiles = []
         spawned_projectiles = []

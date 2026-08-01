@@ -1,7 +1,4 @@
-"""Визуальное различие типов врагов на карте (MapRenderer). Раньше все
-враги рисовались одинаковым красным кружком — из-за этого поведение
-патрулирующих периметр врагов было неотличимо от любого другого врага,
-который просто пока не подошёл."""
+"""Визуальное различие типов врагов на карте (MapRenderer)."""
 import types
 from src.ui.map_renderer import MapRenderer, ENEMY_COLORS, DEFAULT_ENEMY_COLOR
 from src.factories.enemy_factory import EnemyFactory
@@ -28,9 +25,7 @@ def test_unknown_enemy_type_falls_back_to_default_color():
 
 
 def test_render_enemies_smoke_scouting_and_selected(monkeypatch):
-    """Прогоняет реальный render() через все состояния (обычный враг,
-    патрулирующий периметр враг, враг вне патруля, выбранный враг) —
-    не падает и не требует реального SDL-окна (стаб pygame)."""
+    """Прогоняет render() через все состояния врагов без реального окна SDL."""
     session = GameSession()
     session.setup_game()
 

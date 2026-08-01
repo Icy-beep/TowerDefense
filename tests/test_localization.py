@@ -1,6 +1,4 @@
-"""Loc — единая точка хранения текста интерфейса (data/locale/*.json),
-вместо строковых литералов вперемешку с отрисовкой в hud_renderer/
-menu_screen/game_over_screen."""
+"""Loc — единая точка хранения текста интерфейса (data/locale/*.json)."""
 import json
 import pytest
 
@@ -15,7 +13,7 @@ def test_loc_reads_real_ru_strings():
 
 def test_loc_substitutes_placeholders():
     text = loc.get("hud.money", credits=250)
-    assert "250" in text  # текст формулировки в ru.json может меняться, число — нет
+    assert "250" in text
 
 
 def test_loc_supports_format_spec_in_template():
@@ -31,7 +29,7 @@ def test_loc_falls_back_to_template_when_placeholder_missing():
     """Не должно падать посреди рендера, если забыли передать аргумент —
     в худшем случае строка останется с {плейсхолдером} как есть."""
     result = Loc().get("hud.money")
-    assert "hud.money" not in result  # это не ключ, а либо шаблон, либо результат
+    assert "hud.money" not in result
 
 
 def test_loc_returns_empty_dict_gracefully_when_locale_dir_missing(tmp_path):
@@ -47,9 +45,7 @@ def test_loc_uses_custom_locale_dir(tmp_path):
 
 
 def test_all_ru_json_keys_used_by_hud_menu_gameover_are_present():
-    """Страховка от опечатки в ключе на стороне UI-кода: берём реальный
-    ru.json и реальные ключи, которые дергают hud_renderer/menu_screen/
-    game_over_screen, и убеждаемся, что все они там есть."""
+    """Все ключи, которые дергают hud_renderer/menu_screen/game_over_screen, есть в ru.json."""
     from src.localization.loc import DEFAULT_LOCALE_DIR
     with open(DEFAULT_LOCALE_DIR / "ru.json", encoding="utf-8") as f:
         keys = set(json.load(f).keys())
