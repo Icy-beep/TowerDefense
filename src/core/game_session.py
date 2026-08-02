@@ -137,9 +137,9 @@ class GameSession:
         if turret is None:
             return False
         if self.resources.spend(turret.cost):
+            turret.start_landing()
             self.map.add_module(turret)
             self.map.replan_enemy_paths()
-            self._emit("tower_placed", tower_type=tower_type, position=position)
             return True
         return False
 

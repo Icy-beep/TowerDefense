@@ -321,7 +321,7 @@ def test_map_emits_tower_fired_event_when_a_tower_shoots():
     assert ("tower_fired", {"tower_type": "laser", "position": Coordinate(0, 0)}) in events
 
 
-def test_game_session_emits_tower_placed_event():
+def test_game_session_place_turret_does_not_emit_tower_placed_immediately():
     session = GameSession()
     session.setup_game()
     events = []
@@ -330,7 +330,23 @@ def test_game_session_emits_tower_placed_event():
     success = session.place_turret("laser", Coordinate(2300, 2000))
 
     assert success is True
+    assert not any(e[0] == "tower_placed" for e in events), (
+        "звук установки должен играть при приземлении башни, а не сразу при клике"
+    )
+
+
+def test_game_session_emits_tower_placed_event_once_the_tower_lands():
+    session = GameSession()
+    session.setup_game()
+    success = session.place_turret("laser", Coordinate(2300, 2000))
+    assert success is True
     placed_position = session.map.modules[-1].position
+
+    events = []
+    session.on_event = lambda name, **data: events.append((name, data))
+    for _ in range(50):
+        session.map.update(0.1)
+
     assert ("tower_placed", {"tower_type": "laser", "position": placed_position}) in events
 
 

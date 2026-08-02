@@ -127,6 +127,10 @@ class MapRenderer:
             if opt:
                 color = opt["color"]
 
+            if module.is_landing:
+                self._draw_landing_module(screen, camera, module, color)
+                continue
+
             sx, sy = camera.world_to_screen(module.position.x, module.position.y)
 
             if is_selected:
@@ -147,6 +151,18 @@ class MapRenderer:
                 pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 16, int(sy) - 28, 32, 5))
                 pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
                                   (int(sx) - 16, int(sy) - 28, int(32 * hp_ratio), 5))
+
+    def _draw_landing_module(self, screen, camera, module, color):
+        """Рисует падающую с орбиты башню: тень на земле, зону удара и опускающийся спрайт."""
+        sx, sy = camera.world_to_screen(module.position.x, module.position.y)
+        impact_radius = int(module.LANDING_IMPACT_RADIUS * camera.zoom)
+        pygame.draw.circle(screen, (255, 120, 0, 60), (int(sx), int(sy)), impact_radius, 1)
+        shadow_scale = max(0.3, 1.0 - module.landing_progress * 0.5)
+        pygame.draw.circle(screen, (20, 20, 20), (int(sx), int(sy)), int(10 * camera.zoom * shadow_scale))
+
+        pod_y = sy - module.landing_height * camera.zoom
+        pygame.draw.circle(screen, color, (int(sx), int(pod_y)), int(14 * camera.zoom))
+        pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(pod_y)), int(14 * camera.zoom), 2)
 
     def _draw_enemies(self, screen, camera, session, controller, width, height):
         """Рисует врагов, их полоски здоровья и линии эскорта к лидеру."""

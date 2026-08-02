@@ -569,6 +569,8 @@ class Map:
             if projectile:
                 self.projectiles.append(projectile)
                 self._emit("tower_fired", tower_type=getattr(module, "type_name", None), position=module.position)
+            if module.take_landing_event():
+                self._emit("tower_placed", tower_type=getattr(module, "type_name", None), position=module.position)
 
         surviving_projectiles = []
         spawned_projectiles = []
