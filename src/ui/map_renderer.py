@@ -29,6 +29,23 @@ DEFAULT_SPAWN_COLOR = (255, 140, 0)
 class MapRenderer:
     """Рисует игровое поле."""
 
+    def __init__(self, sprite_manager=None):
+        """Запоминает SpriteManager; без него (или без спрайта под ключ) рисует примитивами."""
+        self.sprite_manager = sprite_manager
+
+    def _sprite_for(self, key, elapsed_time):
+        """Возвращает текущий кадр спрайта для ключа, или None, если спрайтов нет/не подключены."""
+        if not self.sprite_manager:
+            return None
+        return self.sprite_manager.get_frame(key, elapsed_time)
+
+    def _blit_scaled(self, screen, sprite, sx, sy, target_size):
+        """Масштабирует спрайт под target_size (диаметр в пикселях) и рисует центром в (sx, sy)."""
+        target_size = max(1, int(target_size))
+        scaled = pygame.transform.smoothscale(sprite, (target_size, target_size))
+        rect = scaled.get_rect(center=(int(sx), int(sy)))
+        screen.blit(scaled, rect)
+
     def render(self, screen, camera, session, controller, tower_options, width, height):
         """Рисует все элементы карты за один кадр."""
         keys = pygame.key.get_pressed()
@@ -110,7 +127,11 @@ class MapRenderer:
         if session.base_position is None:
             return
         sx, sy = camera.world_to_screen(session.base_position.x, session.base_position.y)
-        pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 25)
+        sprite = self._sprite_for("base", getattr(session, "elapsed_time", 0.0))
+        if sprite:
+            self._blit_scaled(screen, sprite, sx, sy, target_size=50)
+        else:
+            pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 25)
         pygame.draw.circle(screen, (255, 200, 200), (int(sx), int(sy)), 30, 3)
         hp_ratio = session.base_health / session.max_base_health
         pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 20, int(sy) - 40, 40, 6))
@@ -140,7 +161,12 @@ class MapRenderer:
             if is_selected or alt_held:
                 pygame.draw.circle(screen, (*color[:3], 40),
                                    (int(sx), int(sy)), int(module.range_radius * camera.zoom), 1)
-            pygame.draw.circle(screen, color, (int(sx), int(sy)), int(14 * camera.zoom))
+
+            sprite = self._sprite_for(f"tower_{getattr(module, 'type_name', '')}", getattr(session, "elapsed_time", 0.0))
+            if sprite:
+                self._blit_scaled(screen, sprite, sx, sy, target_size=28 * camera.zoom)
+            else:
+                pygame.draw.circle(screen, color, (int(sx), int(sy)), int(14 * camera.zoom))
 
             for i in range(module.level):
                 pygame.draw.circle(screen, (255, 215, 0),
@@ -161,8 +187,12 @@ class MapRenderer:
         pygame.draw.circle(screen, (20, 20, 20), (int(sx), int(sy)), int(10 * camera.zoom * shadow_scale))
 
         pod_y = sy - module.landing_height * camera.zoom
-        pygame.draw.circle(screen, color, (int(sx), int(pod_y)), int(14 * camera.zoom))
-        pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(pod_y)), int(14 * camera.zoom), 2)
+        sprite = self._sprite_for("landing_pod", module.landing_elapsed)
+        if sprite:
+            self._blit_scaled(screen, sprite, sx, pod_y, target_size=28 * camera.zoom)
+        else:
+            pygame.draw.circle(screen, color, (int(sx), int(pod_y)), int(14 * camera.zoom))
+            pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(pod_y)), int(14 * camera.zoom), 2)
 
     def _draw_enemies(self, screen, camera, session, controller, width, height):
         """Рисует врагов, их полоски здоровья и линии эскорта к лидеру."""
@@ -191,8 +221,13 @@ class MapRenderer:
                                  (int(sx) - 12, int(sy) - 18, 24, 4))
                 pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
                                  (int(sx) - 12, int(sy) - 18, int(24 * hp_ratio), 4))
-                color = ENEMY_COLORS.get(getattr(enemy, "type_name", None), DEFAULT_ENEMY_COLOR)
-                pygame.draw.circle(screen, color, (int(sx), int(sy)), 10)
+
+                sprite = self._sprite_for(f"enemy_{getattr(enemy, 'type_name', None)}", getattr(session, "elapsed_time", 0.0))
+                if sprite:
+                    self._blit_scaled(screen, sprite, sx, sy, target_size=20)
+                else:
+                    color = ENEMY_COLORS.get(getattr(enemy, "type_name", None), DEFAULT_ENEMY_COLOR)
+                    pygame.draw.circle(screen, color, (int(sx), int(sy)), 10)
 
     def _draw_projectiles(self, screen, camera, session):
         """Рисует все снаряды на карте, каждый тип по-своему."""

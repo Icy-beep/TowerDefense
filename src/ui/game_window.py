@@ -11,6 +11,7 @@ from src.ui.game_over_screen import GameOverScreen
 from src.ui.menu_screen import MenuScreen
 from src.ui.sound_manager import SoundManager
 from src.ui.music_manager import MusicManager
+from src.ui.sprite_manager import SpriteManager
 from src.systems.spatial_audio import volume_for_position
 
 
@@ -62,22 +63,30 @@ class GameView:
             {"key": pygame.K_3, "type": "mortar", "name": "Mortar (200)", "color": (255, 100, 0)},
         ]
 
-        self.map_renderer = MapRenderer()
         self.hud_renderer = HudRenderer()
         self.game_over_screen = GameOverScreen()
         self.menu_screen = MenuScreen()
 
         self._show_loading_screen("Loading sounds...")
         self.sound_manager = SoundManager(on_progress=self._on_sound_loading_progress)
+        self._show_loading_screen("Loading sprites...")
+        self.sprite_manager = SpriteManager(on_progress=self._on_sprite_loading_progress)
         self._show_loading_screen("Loading music...")
         self.music_manager = MusicManager()
         self._menu_music_pending = True
+
+        self.map_renderer = MapRenderer(self.sprite_manager)
 
     def _on_sound_loading_progress(self, done: int, total: int):
         """Перерисовывает экран загрузки и откачивает события после каждого загруженного звука —
         расчёт вариаций питча небыстрый, и без этого ОС считает окно зависшим на время загрузки."""
         percent = int(done / total * 100) if total else 100
         self._show_loading_screen(f"Loading sounds... {percent}%")
+
+    def _on_sprite_loading_progress(self, done: int, total: int):
+        """Перерисовывает экран загрузки и откачивает события после каждого загруженного спрайта."""
+        percent = int(done / total * 100) if total else 100
+        self._show_loading_screen(f"Loading sprites... {percent}%")
 
     def _show_loading_screen(self, text_line: str = "Loading..."):
         """Рисует кадр загрузки с текстом и откачивает очередь событий — вызывается регулярно
