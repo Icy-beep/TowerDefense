@@ -5,22 +5,26 @@ from src.localization.loc import loc
 
 BUTTON_WIDTH = 260
 BUTTON_HEIGHT = 60
+BUTTON_GAP = 20
 
 
 class MenuScreen:
-    """Главное меню с кнопками "Начать игру" и "Выйти"."""
+    """Главное меню с кнопками "Начать игру", "Настройки" и "Выйти"."""
 
     def __init__(self):
         """Создаёт меню с пустой раскладкой кнопок."""
         self._start_rect = (0, 0, 0, 0)
+        self._settings_rect = (0, 0, 0, 0)
         self._exit_rect = (0, 0, 0, 0)
 
     def _layout(self, width, height):
         """Рассчитывает положение кнопок под размер окна."""
         cx = width // 2
-        self._start_rect = (cx - BUTTON_WIDTH // 2, height // 2 - BUTTON_HEIGHT - 10,
-                             BUTTON_WIDTH, BUTTON_HEIGHT)
-        self._exit_rect = (cx - BUTTON_WIDTH // 2, height // 2 + 10,
+        top = height // 2 - (BUTTON_HEIGHT * 3 + BUTTON_GAP * 2) // 2
+        self._start_rect = (cx - BUTTON_WIDTH // 2, top, BUTTON_WIDTH, BUTTON_HEIGHT)
+        self._settings_rect = (cx - BUTTON_WIDTH // 2, top + BUTTON_HEIGHT + BUTTON_GAP,
+                                BUTTON_WIDTH, BUTTON_HEIGHT)
+        self._exit_rect = (cx - BUTTON_WIDTH // 2, top + (BUTTON_HEIGHT + BUTTON_GAP) * 2,
                             BUTTON_WIDTH, BUTTON_HEIGHT)
 
     def render(self, screen, width, height, font, title_font):
@@ -33,6 +37,7 @@ class MenuScreen:
         screen.blit(title, ((width - tw) // 2, height // 2 - 160))
 
         self._draw_button(screen, self._start_rect, loc.get("menu.start"), font, (60, 160, 90))
+        self._draw_button(screen, self._settings_rect, loc.get("menu.settings"), font, (60, 100, 150))
         self._draw_button(screen, self._exit_rect, loc.get("menu.exit"), font, (160, 60, 60))
 
     def _draw_button(self, screen, rect, text, font, color):
@@ -49,6 +54,8 @@ class MenuScreen:
         self._layout(width, height)
         if self._point_in(pos, self._start_rect):
             return "start"
+        if self._point_in(pos, self._settings_rect):
+            return "settings"
         if self._point_in(pos, self._exit_rect):
             return "exit"
         return None

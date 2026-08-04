@@ -44,6 +44,50 @@ def test_loc_uses_custom_locale_dir(tmp_path):
     assert custom_loc.get("menu.start") == "ИГРАТЬ"
 
 
+def test_en_json_has_exactly_the_same_keys_as_ru_json():
+    """Защита от расхождения переводов: у en.json должен быть тот же набор ключей, что у ru.json."""
+    from src.localization.loc import DEFAULT_LOCALE_DIR
+    with open(DEFAULT_LOCALE_DIR / "ru.json", encoding="utf-8") as f:
+        ru_keys = set(json.load(f).keys())
+    with open(DEFAULT_LOCALE_DIR / "en.json", encoding="utf-8") as f:
+        en_keys = set(json.load(f).keys())
+
+    assert ru_keys == en_keys
+
+
+def test_available_languages_lists_all_locale_files(tmp_path):
+    (tmp_path / "ru.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "en.json").write_text("{}", encoding="utf-8")
+    custom_loc = Loc(locale_dir=tmp_path)
+
+    assert custom_loc.available_languages() == ["en", "ru"]
+
+
+def test_available_languages_falls_back_to_current_language_when_dir_missing(tmp_path):
+    from src.localization.loc import DEFAULT_LANGUAGE
+    broken_loc = Loc(locale_dir=tmp_path / "does_not_exist")
+    assert broken_loc.available_languages() == [DEFAULT_LANGUAGE]
+
+
+def test_set_language_switches_active_strings(tmp_path):
+    (tmp_path / "ru.json").write_text(json.dumps({"menu.start": "ИГРАТЬ"}), encoding="utf-8")
+    (tmp_path / "en.json").write_text(json.dumps({"menu.start": "PLAY"}), encoding="utf-8")
+    multilingual_loc = Loc(locale_dir=tmp_path)
+
+    assert multilingual_loc.get("menu.start") == "ИГРАТЬ"
+    multilingual_loc.set_language("en")
+    assert multilingual_loc.get("menu.start") == "PLAY"
+
+
+def test_language_name_returns_friendly_name_for_known_languages():
+    assert loc.language_name("ru") == "Русский"
+    assert loc.language_name("en") == "English"
+
+
+def test_language_name_falls_back_to_code_for_unknown_language():
+    assert loc.language_name("xx") == "xx"
+
+
 def test_all_ru_json_keys_used_by_hud_menu_gameover_are_present():
     """Все ключи, которые дергают hud_renderer/menu_screen/game_over_screen, есть в ru.json."""
     from src.localization.loc import DEFAULT_LOCALE_DIR

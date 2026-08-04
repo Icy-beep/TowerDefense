@@ -4,11 +4,17 @@ import sys
 
 from src.core.game_session import GameSession
 from src.core.game_controller import GameController
+from src.core.settings import (
+    DISPLAY_MODE_BORDERLESS, DISPLAY_MODE_FULLSCREEN, DISPLAY_MODE_WINDOWED,
+    RESOLUTIONS, Settings, VOLUME_STEP,
+)
 from src.enums import GameState
+from src.localization.loc import loc
 from src.ui.map_renderer import MapRenderer
 from src.ui.hud_renderer import HudRenderer
 from src.ui.game_over_screen import GameOverScreen
 from src.ui.menu_screen import MenuScreen
+from src.ui.settings_screen import SettingsScreen
 from src.ui.sound_manager import SoundManager
 from src.ui.music_manager import MusicManager
 from src.ui.sprite_manager import SpriteManager
@@ -42,20 +48,28 @@ class GameView:
     }
     ALWAYS_AUDIBLE_EVENTS = {"base_hit"}
 
-    def __init__(self, session: GameSession):
-        """Создаёт окно и рендереры для заданной игровой сессии."""
+    def __init__(self, session: GameSession, settings: Settings | None = None):
+        """Создаёт окно и рендереры для заданной игровой сессии.
+        Параметр settings позволяет тестам подставить свой объект настроек, не трогая
+        settings.json в корне проекта."""
         self.session = session
         self.controller: GameController | None = None
 
         pygame.init()
-        self.width, self.height = 900, 600
-        self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+        self.settings = settings if settings is not None else Settings.load()
+        loc.set_language(self.settings.language)
+
+        self.width, self.height = self.settings.resolution
+        self.screen = None
+        self._apply_display_mode()
         pygame.display.set_caption("Tower Defense - Camera & Zoom")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("Arial", 18)
         self.small_font = pygame.font.SysFont("Arial", 14)
         self.title_font = pygame.font.SysFont("Arial", 40, bold=True)
         self.running = True
+
+        self.menu_view = "main"
 
         self.tower_options = [
             {"key": pygame.K_1, "type": "laser", "name": "Laser (50)", "color": (0, 255, 255)},
@@ -66,13 +80,16 @@ class GameView:
         self.hud_renderer = HudRenderer()
         self.game_over_screen = GameOverScreen()
         self.menu_screen = MenuScreen()
+        self.settings_screen = SettingsScreen()
 
         self._show_loading_screen("Loading sounds...")
         self.sound_manager = SoundManager(on_progress=self._on_sound_loading_progress)
+        self.sound_manager.set_volume(self.settings.sfx_volume)
         self._show_loading_screen("Loading sprites...")
         self.sprite_manager = SpriteManager(on_progress=self._on_sprite_loading_progress)
         self._show_loading_screen("Loading music...")
         self.music_manager = MusicManager()
+        self.music_manager.set_volume(self.settings.music_volume)
         self._menu_music_pending = True
 
         self.map_renderer = MapRenderer(self.sprite_manager)
@@ -125,31 +142,101 @@ class GameView:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == pygame.VIDEORESIZE:
+            elif event.type == pygame.VIDEORESIZE and self.settings.display_mode == DISPLAY_MODE_WINDOWED:
                 self._handle_resize(event.w, event.h)
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                self.running = False
+                self._handle_escape()
             elif self.session.state == GameState.MENU:
                 self._handle_menu_input(event)
             elif self.controller:
                 self.controller.handle_input(event)
 
+    def _handle_escape(self):
+        """ESC возвращает из настроек в меню, а не закрывает игру, если открыты настройки."""
+        if self.session.state == GameState.MENU and self.menu_view == "settings":
+            self.menu_view = "main"
+        else:
+            self.running = False
+
     def _handle_resize(self, width, height):
-        """Пересоздаёт поверхность экрана под новый размер окна и подстраивает камеру."""
+        """Пересоздаёт поверхность экрана под новый размер окна, подстраивает камеру и сохраняет разрешение."""
         self.width = max(self.MIN_WIDTH, width)
         self.height = max(self.MIN_HEIGHT, height)
         self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+        self.settings.resolution = (self.width, self.height)
+        self.settings.save()
         if self.controller:
             self.controller.camera.resize(self.width, self.height)
 
+    def _apply_display_mode(self):
+        """Применяет текущий self.settings.display_mode/resolution к окну pygame."""
+        if self.settings.display_mode == DISPLAY_MODE_FULLSCREEN:
+            self.screen = pygame.display.set_mode(self.settings.resolution, pygame.FULLSCREEN)
+        elif self.settings.display_mode == DISPLAY_MODE_BORDERLESS:
+            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        else:
+            self.screen = pygame.display.set_mode(self.settings.resolution, pygame.RESIZABLE)
+        self.width, self.height = self.screen.get_size()
+        if self.controller:
+            self.controller.camera.resize(self.width, self.height)
+
+    def _apply_settings_action(self, action):
+        """Применяет действие, полученное от SettingsScreen.handle_click, и сохраняет настройки."""
+        kind, value = action
+        if kind == "display_mode":
+            self.settings.display_mode = value
+            self._apply_display_mode()
+        elif kind == "resolution":
+            self._cycle_resolution(value)
+            if self.settings.display_mode != DISPLAY_MODE_BORDERLESS:
+                self._apply_display_mode()
+        elif kind == "music_volume":
+            self.settings.music_volume += value * VOLUME_STEP
+            self.settings.clamp_volumes()
+            self.music_manager.set_volume(self.settings.music_volume)
+        elif kind == "sfx_volume":
+            self.settings.sfx_volume += value * VOLUME_STEP
+            self.settings.clamp_volumes()
+            self.sound_manager.set_volume(self.settings.sfx_volume)
+        elif kind == "language":
+            self._cycle_language(value)
+        elif kind == "back":
+            self.menu_view = "main"
+        self.settings.save()
+
+    def _cycle_resolution(self, direction):
+        """Переключает разрешение на следующее/предыдущее из списка поддерживаемых."""
+        try:
+            index = RESOLUTIONS.index(tuple(self.settings.resolution))
+        except ValueError:
+            index = -1
+        self.settings.resolution = RESOLUTIONS[(index + direction) % len(RESOLUTIONS)]
+
+    def _cycle_language(self, direction):
+        """Переключает язык интерфейса на следующий/предыдущий из доступных locale-файлов."""
+        languages = loc.available_languages()
+        index = languages.index(self.settings.language) if self.settings.language in languages else -1
+        self.settings.language = languages[(index + direction) % len(languages)]
+        loc.set_language(self.settings.language)
+
     def _handle_menu_input(self, event):
-        """Обрабатывает клики по кнопкам главного меню."""
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            action = self.menu_screen.handle_click(event.pos, self.width, self.height)
-            if action == "start":
-                self._start_game()
-            elif action == "exit":
-                self.running = False
+        """Обрабатывает клики по кнопкам главного меню и экрана настроек."""
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return
+
+        if self.menu_view == "settings":
+            action = self.settings_screen.handle_click(event.pos, self.width, self.height, self.settings)
+            if action:
+                self._apply_settings_action(action)
+            return
+
+        action = self.menu_screen.handle_click(event.pos, self.width, self.height)
+        if action == "start":
+            self._start_game()
+        elif action == "settings":
+            self.menu_view = "settings"
+        elif action == "exit":
+            self.running = False
 
     def _start_game(self):
         """Настраивает новую игру и создаёт контроллер."""
@@ -176,7 +263,11 @@ class GameView:
     def render(self):
         """Рисует текущий кадр игры."""
         if self.session.state == GameState.MENU:
-            self.menu_screen.render(self.screen, self.width, self.height, self.font, self.title_font)
+            if self.menu_view == "settings":
+                self.settings_screen.render(self.screen, self.width, self.height,
+                                             self.font, self.small_font, self.title_font, self.settings)
+            else:
+                self.menu_screen.render(self.screen, self.width, self.height, self.font, self.title_font)
             return
 
         self.screen.fill((20, 24, 28))

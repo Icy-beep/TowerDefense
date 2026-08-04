@@ -1,4 +1,4 @@
-"""Главное меню: клики по кнопкам "Начать игру"/"Выйти"."""
+"""Главное меню: клики по кнопкам "Начать игру"/"Настройки"/"Выйти"."""
 from src.ui.menu_screen import MenuScreen
 
 
@@ -10,6 +10,16 @@ def test_click_inside_start_button_returns_start():
     center = (x + w // 2, y + h // 2)
 
     assert menu.handle_click(center, width, height) == "start"
+
+
+def test_click_inside_settings_button_returns_settings():
+    menu = MenuScreen()
+    width, height = 900, 600
+    menu._layout(width, height)
+    x, y, w, h = menu._settings_rect
+    center = (x + w // 2, y + h // 2)
+
+    assert menu.handle_click(center, width, height) == "settings"
 
 
 def test_click_inside_exit_button_returns_exit():
@@ -31,9 +41,11 @@ def test_buttons_do_not_overlap():
     menu = MenuScreen()
     menu._layout(900, 600)
     _, start_y, _, start_h = menu._start_rect
+    _, settings_y, _, settings_h = menu._settings_rect
     _, exit_y, _, _ = menu._exit_rect
 
-    assert start_y + start_h <= exit_y, "кнопки не должны перекрываться"
+    assert start_y + start_h <= settings_y, "кнопки не должны перекрываться"
+    assert settings_y + settings_h <= exit_y, "кнопки не должны перекрываться"
 
 
 def test_layout_adapts_to_window_size():
