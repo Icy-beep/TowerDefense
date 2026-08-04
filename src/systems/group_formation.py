@@ -35,6 +35,14 @@ class GroupFormationSystem:
         self._rng = rng or random
         self._next_group_id = 1
 
+    def allocate_group_id(self) -> int:
+        """Выделяет новый уникальный id группы из общего счётчика - используется
+        также отложенной атакой (Map._commit_staging_group), чтобы её группы не
+        пересекались по id с группами, сформированными этой системой на ходу."""
+        group_id = self._next_group_id
+        self._next_group_id += 1
+        return group_id
+
     def _profile_for(self, faction: Faction) -> dict:
         """Возвращает профиль группового поведения для фракции."""
         override = self.FACTION_OVERRIDES.get(faction, {})
@@ -51,6 +59,9 @@ class GroupFormationSystem:
         """Обновляет формирование групп на один кадр."""
         for enemy in enemies:
             if not enemy.is_alive():
+                continue
+
+            if getattr(enemy, "is_staging", False):
                 continue
 
             profile = self._profile_for(enemy.faction)
@@ -72,6 +83,7 @@ class GroupFormationSystem:
                 and other.is_alive()
                 and other.group_id is None
                 and other.faction == enemy.faction
+                and not getattr(other, "is_staging", False)
                 and getattr(other, "type_name", None) not in profile["solo_types"]
                 and enemy.position.distance_to(other.position) <= profile["group_radius"]
             ]
@@ -81,8 +93,7 @@ class GroupFormationSystem:
             recruit = self._rng.choice(candidates)
 
             if enemy.group_id is None:
-                enemy.group_id = self._next_group_id
-                self._next_group_id += 1
+                enemy.group_id = self.allocate_group_id()
                 enemy.is_group_leader = True
 
             angle = (2 * math.pi / profile["max_escort_size"]) * escort_count

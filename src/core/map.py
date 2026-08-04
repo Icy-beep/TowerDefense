@@ -1,4 +1,5 @@
 import math
+import random
 from typing import Callable, Dict, List, Optional, Set, Tuple
 from src.core.coordinate import Coordinate
 from src.entities.defense_module import DefenseModule
@@ -12,11 +13,13 @@ from src.enums import Faction
 class Map:
     """Игровая карта: башни, враги, снаряды, разведка и пути."""
 
-    def __init__(self, width=4000, height=4000, group_formation=None, on_event=None):
+    def __init__(self, width=4000, height=4000, group_formation=None, on_event=None, rng=None):
         """Создаёт пустую карту заданного размера."""
         self.width = width
         self.height = height
         self.on_event: Optional[Callable[[str], None]] = on_event
+        self._rng = rng or random
+        self._avoid_danger_searches_this_frame = 0
 
         self.modules: List[DefenseModule] = []
         self.enemies: List[HostileEntity] = []
@@ -35,6 +38,7 @@ class Map:
         self.spawn_points = []
         self.spawn_points_by_faction: Dict[Faction, List[Coordinate]] = {}
         self.towers_lost_count = 0
+        self._staging_anchor: Dict[Faction, Coordinate] = {}
 
     def add_module(self, module: DefenseModule):
         """Добавляет башню на карту."""
@@ -127,14 +131,34 @@ class Map:
             path = self.nav_grid.find_path(start_pos, self.base_position, extra_blocked=blocked_nodes)
         return path
 
+    MAX_AVOID_DANGER_SEARCHES_PER_FRAME = 1
+
+    def path_to_base_within_budget(self, start_pos: Coordinate, faction: Faction,
+                                    avoid_danger: bool = False) -> List[Coordinate]:
+        """Как path_to_base, но дорогие avoid_danger=True поиски (жёсткий обход ВСЕХ
+        известных башен) дополнительно делят один общий бюджет
+        MAX_AVOID_DANGER_SEARCHES_PER_FRAME на кадр между всеми вызывающими местами
+        (спавн врага, массовый replan_enemy_paths при раскрытии башни, и собственный
+        повтор _advance_honestly_or_give_up) - иначе несколько таких поисков могут
+        совпасть в одном кадре и дать заметный фриз. При исчерпанном бюджете просто
+        возвращает пустой путь, как будто честного пути сейчас нет - вызывающий код и
+        так рассчитан на этот случай и попробует снова позже."""
+        if avoid_danger:
+            if self._avoid_danger_searches_this_frame >= self.MAX_AVOID_DANGER_SEARCHES_PER_FRAME:
+                return []
+            self._avoid_danger_searches_this_frame += 1
+        return self.path_to_base(start_pos, faction, avoid_danger=avoid_danger)
+
     def replan_enemy_paths(self, factions: Optional[set] = None):
-        """Пересчитывает путь живых врагов до базы."""
+        """Пересчитывает путь живых врагов до базы (в рамках общего бюджета дорогих
+        поисков на кадр - см. path_to_base_within_budget)."""
         for enemy in self.enemies:
             if not enemy.is_alive():
                 continue
             if factions is not None and enemy.faction not in factions:
                 continue
-            new_path = self.path_to_base(enemy.position, enemy.faction, avoid_danger=enemy.avoids_danger())
+            new_path = self.path_to_base_within_budget(enemy.position, enemy.faction,
+                                                         avoid_danger=enemy.avoids_danger())
             if new_path:
                 enemy.set_path(new_path)
 
@@ -234,17 +258,42 @@ class Map:
         enemy.move_along_path(delta_time)
 
     GIVE_UP_RETREAT_STEP = 400.0
+    GIVE_UP_REPLAN_COOLDOWN = 2.0
+    GIVE_UP_REPLAN_COOLDOWN_MAX = 16.0
+    GIVE_UP_REPLAN_JITTER = 0.5
 
     def _advance_honestly_or_give_up(self, enemy: HostileEntity, delta_time: float):
-        """Ведёт избегающего опасности врага в обход известных башен;
-        если маршрута нет - отступает вместо прорыва."""
+        """Ведёт избегающего опасности врага в обход известных башен; если маршрута нет -
+        отступает вместо прорыва. Повторный дорогой поиск с avoid_danger=True не пробуется
+        каждый кадр, а со всё увеличивающимся кулдауном (2с, 4с, 8с... до потолка в
+        GIVE_UP_REPLAN_COOLDOWN_MAX) - если враг уже несколько раз подряд не нашёл честного
+        пути, он почти наверняка застрял надолго (известные башни не пропадают сами по
+        себе). К кулдауну добавляется случайный разброс. Число таких поисков за кадр
+        дополнительно ограничено общим бюджетом MAX_AVOID_DANGER_SEARCHES_PER_FRAME (см.
+        path_to_base_within_budget) - если бюджет уже потрачен другими врагами в этом
+        кадре, попытка просто откладывается без штрафа (кулдаун не растёт)."""
         enemy.is_patrolling = False
-        if not enemy.path or enemy.path_index >= len(enemy.path):
-            safe_path = self.path_to_base(enemy.position, enemy.faction, avoid_danger=True)
-            if not safe_path:
-                self._advance_giving_up(enemy, delta_time)
-                return
-            enemy.set_path(safe_path)
+        enemy.replan_retry_cooldown = max(0.0, enemy.replan_retry_cooldown - delta_time)
+        needs_path = not enemy.path or enemy.path_index >= len(enemy.path)
+
+        can_afford_search = self._avoid_danger_searches_this_frame < self.MAX_AVOID_DANGER_SEARCHES_PER_FRAME
+        if needs_path and enemy.replan_retry_cooldown <= 0.0 and can_afford_search:
+            safe_path = self.path_to_base_within_budget(enemy.position, enemy.faction, avoid_danger=True)
+            if safe_path:
+                enemy.set_path(safe_path)
+                enemy.replan_failure_streak = 0
+                needs_path = False
+            else:
+                enemy.replan_failure_streak += 1
+                base_cooldown = min(
+                    self.GIVE_UP_REPLAN_COOLDOWN * (2 ** (enemy.replan_failure_streak - 1)),
+                    self.GIVE_UP_REPLAN_COOLDOWN_MAX,
+                )
+                enemy.replan_retry_cooldown = base_cooldown * (1.0 + self._rng.random() * self.GIVE_UP_REPLAN_JITTER)
+
+        if needs_path:
+            self._advance_giving_up(enemy, delta_time)
+            return
         enemy.move_along_path(delta_time)
 
     def _advance_giving_up(self, enemy: HostileEntity, delta_time: float):
@@ -267,6 +316,71 @@ class Map:
         target = Coordinate(
             max(0.0, min(self.width, enemy.position.x + dx / dist * self.GIVE_UP_RETREAT_STEP)),
             max(0.0, min(self.height, enemy.position.y + dy / dist * self.GIVE_UP_RETREAT_STEP)),
+        )
+        enemy.move_towards_point(target, delta_time)
+
+    STAGING_GROUP_SIZE = 6
+    STAGING_ORBIT_RADIUS = 160.0
+    STAGING_ANGULAR_SPEED = 0.4
+    STAGING_FORMATION_RADIUS = 50.0
+
+    def _stage_eligible(self, enemy: HostileEntity) -> bool:
+        """Проверяет, ждёт ли враг сбора группы для отложенной атаки прямо сейчас."""
+        return enemy.is_staging and enemy.is_alive() and enemy.group_id is None
+
+    def _update_staging_groups(self, enemies: List[HostileEntity]):
+        """Раз в кадр собирает ожидающих врагов каждой фракции в один формирующийся
+        отряд (первый враг фракции без места сбора становится якорем - точкой, вокруг
+        которой кружат остальные) и, как только живых участников набирается
+        STAGING_GROUP_SIZE, разом снимает их со сбора и бросает в атаку на базу
+        единой массой (см. _commit_staging_group). Пока порог не набран, враги просто
+        кружат у якоря - см. _advance_staging."""
+        by_faction: Dict[Faction, List[HostileEntity]] = {}
+        for enemy in enemies:
+            if self._stage_eligible(enemy):
+                by_faction.setdefault(enemy.faction, []).append(enemy)
+
+        for faction, members in by_faction.items():
+            if faction not in self._staging_anchor:
+                first = members[0]
+                self._staging_anchor[faction] = Coordinate(first.position.x, first.position.y)
+
+            if len(members) >= self.STAGING_GROUP_SIZE:
+                self._commit_staging_group(members)
+                del self._staging_anchor[faction]
+
+    def _commit_staging_group(self, members: List[HostileEntity]):
+        """Снимает набранную группу со сбора и отправляет её всей массой к базе -
+        один участник становится лидером с маршрутом до базы, остальные пристраиваются
+        к нему ведомыми (как в обычной групповой атаке, см. GroupFormationSystem)."""
+        leader, *escorts = members
+        leader.is_staging = False
+        leader.is_group_leader = True
+        leader.group_id = self.group_formation.allocate_group_id()
+        path = self.path_to_base_within_budget(leader.position, leader.faction,
+                                                avoid_danger=leader.avoids_danger())
+        if path:
+            leader.set_path(path)
+
+        escort_count = max(len(escorts), 1)
+        for i, escort in enumerate(escorts):
+            escort.is_staging = False
+            angle = (2 * math.pi / escort_count) * i
+            offset = Coordinate(math.cos(angle) * self.STAGING_FORMATION_RADIUS,
+                                 math.sin(angle) * self.STAGING_FORMATION_RADIUS)
+            escort.join_group(leader.group_id, leader, offset)
+
+    def _advance_staging(self, enemy: HostileEntity, delta_time: float):
+        """Кружит врага у якоря сбора его фракции в ожидании, пока группа не наберёт
+        STAGING_GROUP_SIZE живых участников - см. _update_staging_groups."""
+        anchor = self._staging_anchor.get(enemy.faction) or enemy.position
+        if enemy.stage_angle is None:
+            enemy.stage_angle = math.atan2(enemy.position.y - anchor.y, enemy.position.x - anchor.x)
+            enemy.stage_direction = 1 if id(enemy) % 2 == 0 else -1
+        enemy.stage_angle += enemy.stage_direction * self.STAGING_ANGULAR_SPEED * delta_time
+        target = Coordinate(
+            anchor.x + math.cos(enemy.stage_angle) * self.STAGING_ORBIT_RADIUS,
+            anchor.y + math.sin(enemy.stage_angle) * self.STAGING_ORBIT_RADIUS,
         )
         enemy.move_towards_point(target, delta_time)
 
@@ -316,7 +430,7 @@ class Map:
     HEAL_RADIUS = 150.0
     HEAL_RATE_PER_SECOND = 0.15
     LOW_ENEMY_COUNT_NO_RETREAT = 4
-    MAX_RETREAT_HEALS = 2
+    MAX_RETREAT_HEALS = 1
 
     FACTIONS_WITHOUT_RETREAT_HEALING = {Faction.CORPORATION}
 
@@ -330,9 +444,11 @@ class Map:
         return enemy.retreat_heal_count < self.MAX_RETREAT_HEALS
 
     def _group_needs_healing(self, enemy: HostileEntity) -> bool:
-        """Проверяет, ранен ли сам враг или кто-то из его группы (тогда отступает вся группа)."""
+        """Проверяет, ранен ли кто-то в группе врага. Отступление на лечение доступно только
+        группам - одиночный враг вне группы теперь дерётся до конца вместо похода к спавну,
+        чтобы враги реже мотались туда-сюда от башни к базе фракции поодиночке."""
         if enemy.group_id is None:
-            return self._is_wounded(enemy)
+            return False
         members = [e for e in self.enemies if e.group_id == enemy.group_id and e.is_alive()]
         return any(self._is_wounded(member) for member in members)
 
@@ -438,14 +554,19 @@ class Map:
         blended_angle = original_angle + diff * self.SHIELD_BIAS
         return Coordinate(math.cos(blended_angle) * radius, math.sin(blended_angle) * radius)
 
+    ENEMY_COMBAT_DETECTION_RADIUS = 350.0
+
     def _find_enemy_combat_target(self, enemy: HostileEntity) -> Optional[HostileEntity]:
-        """Находит ближайшего живого врага чужой фракции в радиусе обзора."""
+        """Находит ближайшего живого врага чужой фракции в радиусе обнаружения.
+        Это отдельный (и заметно больший) радиус от vision_radius - тот отвечает
+        за туман войны над башнями, и если завязывать стычки между фракциями на
+        него же, они происходят слишком редко и почти незаметны в игре."""
         candidates = [
             other for other in self.enemies
             if other is not enemy
             and other.is_alive()
             and other.faction != enemy.faction
-            and enemy.position.distance_to(other.position) <= enemy.vision_radius
+            and enemy.position.distance_to(other.position) <= self.ENEMY_COMBAT_DETECTION_RADIUS
         ]
         if not candidates:
             return None
@@ -468,11 +589,13 @@ class Map:
 
     def update(self, delta_time: float) -> tuple[List[HostileEntity], List[HostileEntity]]:
         """Обновляет карту на один кадр."""
+        self._avoid_danger_searches_this_frame = 0
         destroyed_this_frame = sum(1 for module in self.modules if module.is_destroyed())
         self.towers_lost_count += destroyed_this_frame
         self.modules = [module for module in self.modules if not module.is_destroyed()]
 
         self._update_group_targets(self.enemies)
+        self._update_staging_groups(self.enemies)
 
         enemies_reached_base = []
         killed_enemies = []
@@ -544,6 +667,8 @@ class Map:
                         enemy.attack_tower(target_tower, delta_time)
                     else:
                         enemy.move_towards_point(target_tower.position, delta_time)
+                elif enemy.is_staging:
+                    self._advance_staging(enemy, delta_time)
                 elif enemy.avoids_danger() and self._in_flee_danger(enemy, in_danger, was_fleeing):
                     threatening_towers = self._covering_towers(enemy.position, margin=self.FLEE_EXIT_MARGIN)
                     if threatening_towers:
@@ -573,8 +698,8 @@ class Map:
                             self._advance_healer_seeking(enemy, delta_time)
                         else:
                             if was_fleeing:
-                                new_path = self.path_to_base(enemy.position, enemy.faction,
-                                                              avoid_danger=enemy.avoids_danger())
+                                new_path = self.path_to_base_within_budget(
+                                    enemy.position, enemy.faction, avoid_danger=enemy.avoids_danger())
                                 if new_path:
                                     enemy.set_path(new_path)
                                 elif enemy.avoids_danger():

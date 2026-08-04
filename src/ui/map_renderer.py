@@ -107,6 +107,7 @@ class MapRenderer:
         self._draw_placement_grid(screen, camera, session, controller, width, height)
         self._draw_base(screen, camera, session)
         self._draw_spawn_points(screen, camera, session)
+        self._draw_pending_landings(screen, camera, session)
         self._draw_modules(screen, camera, session, controller, tower_options, alt_held)
         self._draw_enemies(screen, camera, session, controller, width, height)
         self._draw_projectiles(screen, camera, session)
@@ -173,6 +174,36 @@ class MapRenderer:
         ]
         pygame.draw.polygon(screen, color, triangle)
         pygame.draw.polygon(screen, (255, 255, 255), triangle, 2)
+
+    LANDING_WARNING_MAX_RADIUS = 55.0
+
+    def _draw_pending_landings(self, screen, camera, session):
+        """Рисует маркеры высадки Corporation - место на границе карты, где через
+        time_remaining секунд материализуется отряд (ShipLandingStrategy.pending_landings).
+        Раньше нигде не отображались, хотя предупреждение по игровой логике уже было."""
+        threat_strategies = getattr(session, "threat_strategies", {}) or {}
+        for faction, strategy in threat_strategies.items():
+            if not isinstance(strategy, ShipLandingStrategy):
+                continue
+            color = FACTION_SPAWN_COLORS.get(faction, DEFAULT_SPAWN_COLOR)
+            for landing in strategy.pending_landings:
+                self._draw_pending_landing_marker(screen, camera, landing, strategy.warning_time, color)
+
+    def _draw_pending_landing_marker(self, screen, camera, landing, warning_time, color):
+        """Рисует одну точку высадки: внешнее кольцо цвета фракции и стягивающееся к
+        центру белое кольцо-обратный отсчёт, наглядно показывающее, сколько времени
+        осталось до появления отряда."""
+        sx, sy = camera.world_to_screen(landing.position.x, landing.position.y)
+        progress = 1.0 - max(0.0, landing.time_remaining) / warning_time if warning_time > 0 else 1.0
+        progress = min(1.0, max(0.0, progress))
+
+        outer_radius = max(10, int(self.LANDING_WARNING_MAX_RADIUS * camera.zoom))
+        inner_radius = max(4, int(outer_radius * (1.0 - progress)))
+
+        pygame.draw.line(screen, color, (sx - outer_radius, sy), (sx + outer_radius, sy), 1)
+        pygame.draw.line(screen, color, (sx, sy - outer_radius), (sx, sy + outer_radius), 1)
+        pygame.draw.circle(screen, color, (int(sx), int(sy)), outer_radius, 2)
+        pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(sy)), inner_radius, 3)
 
     def _draw_base(self, screen, camera, session):
         """Рисует базу и полоску её здоровья."""

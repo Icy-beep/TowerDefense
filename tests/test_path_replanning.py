@@ -113,6 +113,23 @@ def test_path_to_base_avoid_danger_returns_empty_when_fully_boxed_in():
     assert path == [], "с полной блокировкой честного пути быть не должно - вызывающий код должен отступить"
 
 
+def test_path_to_base_avoid_danger_finds_a_detour_around_a_single_realistic_tower():
+    """Регрессия: с MAX_EXPANSIONS=400 честный объезд даже одной башни с боевым радиусом
+    (600, как у миномёта) регулярно не укладывался в лимит A* и path_to_base возвращал
+    пустой путь, хотя объезд в обе стороны по карте существовал - из-за этого избегающие
+    враги (разведчик) массово уходили в _advance_giving_up и "прилипали" к краю карты."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+    tower = LaserTurret(Coordinate(2000, 1200), range_radius=600)
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.CORPORATION].reveal(tower)
+
+    path = game_map.path_to_base(Coordinate(2000, 200), Faction.CORPORATION, avoid_danger=True)
+
+    assert path, "честный объезд одной башни должен находиться, а не упираться в лимит поиска"
+    assert all(point.distance_to(tower.position) > tower.range_radius for point in path)
+
+
 def test_path_to_base_default_does_not_hard_block_tower_coverage():
     """Без avoid_danger поведение должно остаться прежним - боевые фракции
     по-прежнему вольны срезать через мягко штрафуемую зону."""

@@ -43,10 +43,10 @@ def test_ignores_same_faction_enemies():
     assert game_map._find_enemy_combat_target(corp_a) is None
 
 
-def test_ignores_opposing_enemy_outside_vision_range():
+def test_ignores_opposing_enemy_outside_combat_detection_range():
     game_map = Map(width=4000, height=4000)
     corp = _tagged(DroneWalker(Coordinate(0, 0)), "drone_walker")
-    fauna = _tagged(GiantRoach(Coordinate(corp.vision_radius + 50, 0)), "giant_roach")
+    fauna = _tagged(GiantRoach(Coordinate(Map.ENEMY_COMBAT_DETECTION_RADIUS + 50, 0)), "giant_roach")
     game_map.enemies = [corp, fauna]
 
     assert game_map._find_enemy_combat_target(corp) is None

@@ -159,10 +159,16 @@ class GameSession:
         if enemy is None:
             raise ValueError(f"Неизвестный тип врага: '{enemy_type}'")
 
-        path = self.map.path_to_base(pos, enemy.faction, avoid_danger=enemy.avoids_danger())
-        if path:
-            enemy.set_path(path)
-        elif not enemy.avoids_danger():
-            print(f"Ошибка пути! Враг застрянет.")
+        if enemy.stages_before_attacking():
+            # Отложенная атака: враг сначала кружит у точки появления, дожидаясь
+            # сбора группы (см. Map._update_staging_groups), и получает маршрут
+            # к базе только когда группа наберётся и атакует всей массой.
+            enemy.is_staging = True
+        else:
+            path = self.map.path_to_base_within_budget(pos, enemy.faction, avoid_danger=enemy.avoids_danger())
+            if path:
+                enemy.set_path(path)
+            elif not enemy.avoids_danger():
+                print(f"Ошибка пути! Враг застрянет.")
 
         return enemy

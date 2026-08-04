@@ -84,7 +84,9 @@ def _spawn_fillers(game_map, count=4, faction=Faction.FAUNA, far_away=Coordinate
         game_map.spawn_enemy(filler)
 
 
-def test_solo_wounded_enemy_retreats_towards_its_spawn_point():
+def test_solo_wounded_enemy_does_not_retreat_and_keeps_advancing():
+    """Отступление на лечение теперь доступно только группам - одиночный враг
+    дерётся до конца вместо похода к спавну."""
     game_map = Map(width=4000, height=4000)
     game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
     _spawn_fillers(game_map)
@@ -99,8 +101,8 @@ def test_solo_wounded_enemy_retreats_towards_its_spawn_point():
     for _ in range(20):
         game_map.update(0.1)
 
-    assert enemy.is_healing is True
-    assert enemy.position.distance_to(Coordinate(200, 200)) < initial_distance
+    assert enemy.is_healing is False
+    assert enemy.position.distance_to(Coordinate(200, 200)) >= initial_distance
 
 
 def test_healthy_solo_enemy_does_not_retreat():
@@ -116,23 +118,31 @@ def test_healthy_solo_enemy_does_not_retreat():
     assert enemy.is_healing is False
 
 
-def test_wounded_enemy_heals_near_spawn_and_resumes_path_to_base():
+def test_wounded_group_heals_near_spawn_and_resumes_path_to_base():
     game_map = Map(width=4000, height=4000)
     game_map.base_position = Coordinate(2000, 2000)
     game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
     _spawn_fillers(game_map)
 
-    enemy = GiantRoach(Coordinate(210, 210))
-    enemy.health = 50
-    enemy.set_path([Coordinate(2000, 2000)])
-    game_map.spawn_enemy(enemy)
+    leader = GiantRoach(Coordinate(210, 210))
+    leader.health = 50
+    leader.is_group_leader = True
+    leader.group_id = 1
+    leader.set_path([Coordinate(2000, 2000)])
+
+    follower = GiantRoach(Coordinate(230, 210))
+    follower.set_path([Coordinate(2000, 2000)])
+    follower.join_group(1, leader, Coordinate(20, 0))
+
+    game_map.spawn_enemy(leader)
+    game_map.spawn_enemy(follower)
 
     for _ in range(80):
         game_map.update(0.1)
 
-    assert enemy.health == pytest.approx(enemy.max_health)
-    assert enemy.is_healing is False
-    assert len(enemy.path) > 0, "после лечения враг должен получить новый маршрут к базе"
+    assert leader.health == pytest.approx(leader.max_health)
+    assert leader.is_healing is False
+    assert len(leader.path) > 0, "после лечения враг должен получить новый маршрут к базе"
 
 
 def test_group_retreats_when_a_follower_is_wounded():
@@ -163,7 +173,7 @@ def test_group_retreats_when_a_follower_is_wounded():
     assert follower.group_leader is leader, "ведомый не бросает группу, а просто следует за лидером"
 
 
-def test_retreating_enemy_ignores_a_nearby_opposing_enemy_instead_of_fighting():
+def test_retreating_group_ignores_a_nearby_opposing_enemy_instead_of_fighting():
     """Отступление должно иметь приоритет выше боя, иначе решение будет дёргаться каждый кадр."""
     game_map = Map(width=4000, height=4000)
     game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
@@ -171,8 +181,16 @@ def test_retreating_enemy_ignores_a_nearby_opposing_enemy_instead_of_fighting():
 
     wounded = GiantRoach(Coordinate(2000, 2000))
     wounded.health = 50
+    wounded.is_group_leader = True
+    wounded.group_id = 1
     wounded.set_path([Coordinate(2500, 2000)])
+
+    follower = GiantRoach(Coordinate(2020, 2000))
+    follower.set_path([Coordinate(2500, 2000)])
+    follower.join_group(1, wounded, Coordinate(20, 0))
+
     game_map.spawn_enemy(wounded)
+    game_map.spawn_enemy(follower)
 
     pest = DroneWalker(Coordinate(2030, 2000))
     game_map.spawn_enemy(pest)
@@ -184,7 +202,7 @@ def test_retreating_enemy_ignores_a_nearby_opposing_enemy_instead_of_fighting():
 
     assert wounded.is_healing is True
     assert wounded.position.distance_to(Coordinate(200, 200)) < initial_distance, \
-        "раненый враг должен непрерывно отступать к спавну, не отвлекаясь на бой"
+        "раненый лидер группы должен непрерывно отступать к спавну, не отвлекаясь на бой"
 
 
 def test_corporation_enemies_never_use_retreat_to_heal_even_when_wounded():
@@ -225,23 +243,32 @@ def test_is_near_own_spawn_heals_passively_over_time():
 
 
 
-def _make_wounded_solo(position, health=50):
-    enemy = GiantRoach(position)
-    enemy.health = health
-    enemy.set_path([Coordinate(position.x + 500, position.y)])
-    return enemy
+def _make_wounded_group_leader(position, health=50):
+    """Раненый лидер группы (плюс здоровый ведомый), чтобы отступление было доступно -
+    одиночные враги больше не отступают лечиться (см. _group_needs_healing)."""
+    leader = GiantRoach(position)
+    leader.health = health
+    leader.is_group_leader = True
+    leader.group_id = 1
+    leader.set_path([Coordinate(position.x + 500, position.y)])
+
+    follower = GiantRoach(Coordinate(position.x + 20, position.y))
+    follower.set_path([Coordinate(position.x + 500, position.y)])
+    follower.join_group(1, leader, Coordinate(20, 0))
+    return leader, follower
 
 
-def test_wounded_enemy_does_not_retreat_when_wave_is_down_to_the_last_few():
+def test_wounded_group_does_not_retreat_when_wave_is_down_to_the_last_few():
     game_map = Map(width=4000, height=4000)
     game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
 
-    wounded = _make_wounded_solo(Coordinate(2000, 2000))
+    wounded, follower = _make_wounded_group_leader(Coordinate(2000, 2000))
     ally_1 = GiantRoach(Coordinate(2100, 2000))
     ally_2 = GiantRoach(Coordinate(2200, 2000))
     for e in (ally_1, ally_2):
         e.set_path([Coordinate(2500, 2000)])
     game_map.spawn_enemy(wounded)
+    game_map.spawn_enemy(follower)
     game_map.spawn_enemy(ally_1)
     game_map.spawn_enemy(ally_2)
 
@@ -256,12 +283,13 @@ def test_wounded_enemy_does_not_retreat_when_wave_is_down_to_the_last_few():
         "раненый должен продолжать двигаться вперёд, а не отступать к спавну"
 
 
-def test_wounded_enemy_retreats_when_plenty_of_enemies_remain():
+def test_wounded_group_retreats_when_plenty_of_enemies_remain():
     game_map = Map(width=4000, height=4000)
     game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
 
-    wounded = _make_wounded_solo(Coordinate(2000, 2000))
+    wounded, follower = _make_wounded_group_leader(Coordinate(2000, 2000))
     game_map.spawn_enemy(wounded)
+    game_map.spawn_enemy(follower)
     allies = [GiantRoach(Coordinate(2100 + i * 30, 2000)) for i in range(5)]
     for a in allies:
         a.set_path([Coordinate(2500, 2000)])
@@ -273,51 +301,68 @@ def test_wounded_enemy_retreats_when_plenty_of_enemies_remain():
     assert wounded.is_healing is True
 
 
-def test_retreat_heal_count_increments_once_per_completed_retreat():
+def test_retreat_heal_count_increments_once_then_stays_capped():
+    """С MAX_RETREAT_HEALS=1 группа отступает лечиться ровно один раз за игру -
+    повторное ранение больше не отправляет её обратно к спавну."""
     game_map = Map(width=4000, height=4000)
     game_map.base_position = Coordinate(2000, 2000)
     game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
     _spawn_fillers(game_map)
 
-    enemy = GiantRoach(Coordinate(210, 210))
-    enemy.health = 50
-    enemy.set_path([Coordinate(2000, 2000)])
-    game_map.spawn_enemy(enemy)
+    leader = GiantRoach(Coordinate(210, 210))
+    leader.health = 50
+    leader.is_group_leader = True
+    leader.group_id = 1
+    leader.set_path([Coordinate(2000, 2000)])
+    follower = GiantRoach(Coordinate(230, 210))
+    follower.set_path([Coordinate(2000, 2000)])
+    follower.join_group(1, leader, Coordinate(20, 0))
+
+    game_map.spawn_enemy(leader)
+    game_map.spawn_enemy(follower)
 
     for _ in range(80):
         game_map.update(0.1)
 
-    assert enemy.is_healing is False
-    assert enemy.retreat_heal_count == 1, "после первого полного цикла лечения счётчик должен вырасти на 1"
+    assert leader.is_healing is False
+    assert leader.retreat_heal_count == 1, "после первого полного цикла лечения счётчик должен вырасти на 1"
 
-    enemy.health = 50
+    leader.health = 50
     for _ in range(80):
         game_map.update(0.1)
 
-    assert enemy.retreat_heal_count == 2, "второй цикл лечения должен увеличить счётчик ещё раз"
+    assert leader.is_healing is False, "лимит MAX_RETREAT_HEALS=1 исчерпан - повторного отступления быть не должно"
+    assert leader.retreat_heal_count == 1, "счётчик не должен расти сверх лимита"
 
 
-def test_wounded_enemy_keeps_fighting_after_reaching_retreat_heal_cap():
-    """После исчерпания лимита отступлений (MAX_RETREAT_HEALS) раненый враг больше не
-    убегает лечиться - фауна не должна бесконечно ходить туда-обратно к своей базе."""
+def test_wounded_group_keeps_fighting_after_reaching_retreat_heal_cap():
+    """После исчерпания лимита отступлений (MAX_RETREAT_HEALS) раненая группа больше не
+    убегает лечиться - фракция не должна бесконечно ходить туда-обратно к своей базе."""
     game_map = Map(width=4000, height=4000)
     game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
     _spawn_fillers(game_map)
 
-    enemy = GiantRoach(Coordinate(2000, 2000))
-    enemy.health = 50
-    enemy.retreat_heal_count = Map.MAX_RETREAT_HEALS
-    enemy.set_path([Coordinate(2500, 2000)])
-    game_map.spawn_enemy(enemy)
+    leader = GiantRoach(Coordinate(2000, 2000))
+    leader.health = 50
+    leader.is_group_leader = True
+    leader.group_id = 1
+    leader.retreat_heal_count = Map.MAX_RETREAT_HEALS
+    leader.set_path([Coordinate(2500, 2000)])
+    follower = GiantRoach(Coordinate(2020, 2000))
+    follower.set_path([Coordinate(2500, 2000)])
+    follower.join_group(1, leader, Coordinate(20, 0))
 
-    initial_distance = enemy.position.distance_to(Coordinate(200, 200))
+    game_map.spawn_enemy(leader)
+    game_map.spawn_enemy(follower)
+
+    initial_distance = leader.position.distance_to(Coordinate(200, 200))
 
     for _ in range(20):
         game_map.update(0.1)
 
-    assert enemy.is_healing is False, \
-        "после исчерпания лимита отступлений раненый должен продолжать сражаться, а не отступать"
-    assert enemy.position.distance_to(Coordinate(200, 200)) >= initial_distance
+    assert leader.is_healing is False, \
+        "после исчерпания лимита отступлений раненая группа должна продолжать сражаться, а не отступать"
+    assert leader.position.distance_to(Coordinate(200, 200)) >= initial_distance
 
 
 def test_retreat_already_in_progress_is_not_interrupted_by_reaching_the_cap():
@@ -327,19 +372,26 @@ def test_retreat_already_in_progress_is_not_interrupted_by_reaching_the_cap():
     game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
     _spawn_fillers(game_map)
 
-    enemy = GiantRoach(Coordinate(2000, 2000))
-    enemy.health = 50
-    enemy.is_healing = True
-    enemy.retreat_heal_count = Map.MAX_RETREAT_HEALS
-    enemy.set_path([Coordinate(2500, 2000)])
-    game_map.spawn_enemy(enemy)
+    leader = GiantRoach(Coordinate(2000, 2000))
+    leader.health = 50
+    leader.is_group_leader = True
+    leader.group_id = 1
+    leader.is_healing = True
+    leader.retreat_heal_count = Map.MAX_RETREAT_HEALS
+    leader.set_path([Coordinate(2500, 2000)])
+    follower = GiantRoach(Coordinate(2020, 2000))
+    follower.set_path([Coordinate(2500, 2000)])
+    follower.join_group(1, leader, Coordinate(20, 0))
 
-    initial_distance = enemy.position.distance_to(Coordinate(200, 200))
+    game_map.spawn_enemy(leader)
+    game_map.spawn_enemy(follower)
+
+    initial_distance = leader.position.distance_to(Coordinate(200, 200))
 
     game_map.update(0.1)
 
-    assert enemy.is_healing is True, "уже начатое отступление не должно прерываться лимитом"
-    assert enemy.position.distance_to(Coordinate(200, 200)) < initial_distance
+    assert leader.is_healing is True, "уже начатое отступление не должно прерываться лимитом"
+    assert leader.position.distance_to(Coordinate(200, 200)) < initial_distance
 
 
 def test_group_retreat_spends_the_leaders_retreat_budget_even_when_only_a_follower_is_wounded():
@@ -373,8 +425,9 @@ def test_retreat_stops_once_wave_thins_out_to_the_threshold():
     game_map = Map(width=4000, height=4000)
     game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
 
-    wounded = _make_wounded_solo(Coordinate(2000, 2000))
+    wounded, follower = _make_wounded_group_leader(Coordinate(2000, 2000))
     game_map.spawn_enemy(wounded)
+    game_map.spawn_enemy(follower)
     allies = [GiantRoach(Coordinate(2100 + i * 30, 2000)) for i in range(5)]
     for a in allies:
         a.set_path([Coordinate(2500, 2000)])
