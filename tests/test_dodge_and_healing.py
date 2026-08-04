@@ -273,6 +273,102 @@ def test_wounded_enemy_retreats_when_plenty_of_enemies_remain():
     assert wounded.is_healing is True
 
 
+def test_retreat_heal_count_increments_once_per_completed_retreat():
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
+    _spawn_fillers(game_map)
+
+    enemy = GiantRoach(Coordinate(210, 210))
+    enemy.health = 50
+    enemy.set_path([Coordinate(2000, 2000)])
+    game_map.spawn_enemy(enemy)
+
+    for _ in range(80):
+        game_map.update(0.1)
+
+    assert enemy.is_healing is False
+    assert enemy.retreat_heal_count == 1, "после первого полного цикла лечения счётчик должен вырасти на 1"
+
+    enemy.health = 50
+    for _ in range(80):
+        game_map.update(0.1)
+
+    assert enemy.retreat_heal_count == 2, "второй цикл лечения должен увеличить счётчик ещё раз"
+
+
+def test_wounded_enemy_keeps_fighting_after_reaching_retreat_heal_cap():
+    """После исчерпания лимита отступлений (MAX_RETREAT_HEALS) раненый враг больше не
+    убегает лечиться - фауна не должна бесконечно ходить туда-обратно к своей базе."""
+    game_map = Map(width=4000, height=4000)
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
+    _spawn_fillers(game_map)
+
+    enemy = GiantRoach(Coordinate(2000, 2000))
+    enemy.health = 50
+    enemy.retreat_heal_count = Map.MAX_RETREAT_HEALS
+    enemy.set_path([Coordinate(2500, 2000)])
+    game_map.spawn_enemy(enemy)
+
+    initial_distance = enemy.position.distance_to(Coordinate(200, 200))
+
+    for _ in range(20):
+        game_map.update(0.1)
+
+    assert enemy.is_healing is False, \
+        "после исчерпания лимита отступлений раненый должен продолжать сражаться, а не отступать"
+    assert enemy.position.distance_to(Coordinate(200, 200)) >= initial_distance
+
+
+def test_retreat_already_in_progress_is_not_interrupted_by_reaching_the_cap():
+    """Лимит запрещает НАЧАТЬ новое отступление, но не должен обрывать уже начатое -
+    иначе враг будет брошен раненым посреди пути к спавну."""
+    game_map = Map(width=4000, height=4000)
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
+    _spawn_fillers(game_map)
+
+    enemy = GiantRoach(Coordinate(2000, 2000))
+    enemy.health = 50
+    enemy.is_healing = True
+    enemy.retreat_heal_count = Map.MAX_RETREAT_HEALS
+    enemy.set_path([Coordinate(2500, 2000)])
+    game_map.spawn_enemy(enemy)
+
+    initial_distance = enemy.position.distance_to(Coordinate(200, 200))
+
+    game_map.update(0.1)
+
+    assert enemy.is_healing is True, "уже начатое отступление не должно прерываться лимитом"
+    assert enemy.position.distance_to(Coordinate(200, 200)) < initial_distance
+
+
+def test_group_retreat_spends_the_leaders_retreat_budget_even_when_only_a_follower_is_wounded():
+    """Ведомые не отступают самостоятельно - маршрут ведёт лидер, поэтому именно его
+    счётчик должен расти при групповом отступлении, даже если ранен не он сам."""
+    game_map = Map(width=4000, height=4000)
+    game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}
+    _spawn_fillers(game_map)
+
+    leader = GiantRoach(Coordinate(2000, 2000))
+    leader.is_group_leader = True
+    leader.group_id = 1
+    leader.set_path([Coordinate(2500, 2000)])
+
+    wounded_follower = GiantRoach(Coordinate(2020, 2000))
+    wounded_follower.health = 30
+    wounded_follower.set_path([Coordinate(2500, 2000)])
+    wounded_follower.join_group(1, leader, Coordinate(20, 0))
+
+    game_map.spawn_enemy(leader)
+    game_map.spawn_enemy(wounded_follower)
+
+    game_map.update(0.1)
+
+    assert leader.retreat_heal_count == 1
+    assert wounded_follower.retreat_heal_count == 0, \
+        "ведомый не выполняет собственное отступление - у него нет отдельного счётчика"
+
+
 def test_retreat_stops_once_wave_thins_out_to_the_threshold():
     game_map = Map(width=4000, height=4000)
     game_map.spawn_points_by_faction = {Faction.FAUNA: [Coordinate(200, 200)]}

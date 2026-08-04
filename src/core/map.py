@@ -316,12 +316,18 @@ class Map:
     HEAL_RADIUS = 150.0
     HEAL_RATE_PER_SECOND = 0.15
     LOW_ENEMY_COUNT_NO_RETREAT = 4
+    MAX_RETREAT_HEALS = 2
 
     FACTIONS_WITHOUT_RETREAT_HEALING = {Faction.CORPORATION}
 
     def _is_wounded(self, enemy: HostileEntity) -> bool:
         """Проверяет, ранен ли враг настолько, что ему пора отступать лечиться."""
         return enemy.health < enemy.max_health * self.WOUNDED_HEALTH_RATIO
+
+    def _can_start_new_retreat(self, enemy: HostileEntity) -> bool:
+        """Проверяет, не исчерпал ли враг лимит отступлений на лечение (MAX_RETREAT_HEALS) -
+        после лимита он продолжает сражаться раненым вместо очередного похода к спавну."""
+        return enemy.retreat_heal_count < self.MAX_RETREAT_HEALS
 
     def _group_needs_healing(self, enemy: HostileEntity) -> bool:
         """Проверяет, ранен ли сам враг или кто-то из его группы (тогда отступает вся группа)."""
@@ -490,8 +496,9 @@ class Map:
             in_combat = combat_target is not None
 
             uses_retreat_healing = enemy.faction not in self.FACTIONS_WITHOUT_RETREAT_HEALING
+            can_start_retreat = self._can_start_new_retreat(enemy) and self._group_needs_healing(enemy)
             retreating_now = (allow_retreat and uses_retreat_healing and enemy.group_leader is None
-                               and (enemy.is_healing or self._group_needs_healing(enemy)))
+                               and (enemy.is_healing or can_start_retreat))
 
             if (not hunting_tower and not in_combat and not retreating_now
                     and enemy.path and enemy.path_index >= len(enemy.path)):
@@ -514,6 +521,8 @@ class Map:
                 enemy.is_fleeing = False
 
                 if retreating_now:
+                    if not enemy.is_healing:
+                        enemy.retreat_heal_count += 1
                     enemy.is_healing = True
                     if self._group_fully_healed(enemy):
                         enemy.is_healing = False
@@ -538,6 +547,9 @@ class Map:
                 elif enemy.avoids_danger() and self._in_flee_danger(enemy, in_danger, was_fleeing):
                     threatening_towers = self._covering_towers(enemy.position, margin=self.FLEE_EXIT_MARGIN)
                     if threatening_towers:
+                        intel = self.faction_intel.setdefault(enemy.faction, FactionIntel())
+                        for tower in threatening_towers:
+                            intel.reveal(tower)
                         enemy.is_fleeing = True
                         enemy.is_patrolling = False
                         flee_point = self._flee_target_from_towers(enemy.position, threatening_towers)

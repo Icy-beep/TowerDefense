@@ -202,7 +202,9 @@ def test_flee_target_pushes_away_from_all_covering_towers_combined():
 
 
 def test_scout_does_not_repeatedly_walk_back_into_the_same_tower_on_its_way_to_base():
-    """После бегства путь должен строиться заново с жёстким запретом простреливаемых клеток."""
+    """После первого же бегства башня должна стать известной разведке и намертво
+    блокироваться в path_to_base(avoid_danger=True) - разведчик не должен заходить
+    в её радиус повторно."""
     game_map = Map(width=4000, height=4000)
     game_map.base_position = Coordinate(2000, 200)
     tower = LaserTurret(Coordinate(2000, 1000))
@@ -220,8 +222,28 @@ def test_scout_does_not_repeatedly_walk_back_into_the_same_tower_on_its_way_to_b
             flee_transitions += 1
         was_fleeing = scout.is_fleeing
 
-    assert flee_transitions <= 4, \
-        f"разведчик не должен заходить в радиус одной и той же башни снова и снова (было {flee_transitions} раз)"
+    assert flee_transitions <= 1, \
+        f"после первого бегства башня уже известна и должна намертво блокироваться на пути (было {flee_transitions} раз)"
+
+
+def test_scout_flee_trigger_immediately_reveals_the_threatening_tower():
+    """Бегство от ещё неизвестной башни должно сразу же раскрывать её разведке фракции -
+    иначе избегающий враг не сможет обойти её на обратном пути и будет заходить снова
+    (см. test_scout_does_not_repeatedly_walk_back_into_the_same_tower_on_its_way_to_base)."""
+    game_map = Map(width=4000, height=4000)
+    tower = LaserTurret(Coordinate(1000, 1000))
+    game_map.modules.append(tower)
+
+    scout = ScoutDrone(Coordinate(1000 + 50, 1000))
+    scout.set_path([Coordinate(2000, 1000)])
+    game_map.spawn_enemy(scout)
+
+    intel = game_map.faction_intel[scout.faction]
+    assert not intel.knows(tower), "до первого срабатывания бегства башня ещё не должна быть известна"
+
+    game_map.update(0.1)
+
+    assert intel.knows(tower), "башня, от которой убегает разведчик, должна сразу стать известной"
 
 
 def test_scout_is_fleeing_flag_tracks_flee_state():

@@ -48,7 +48,7 @@ class GiantRoach(HostileEntity):
 class ScoutDrone(HostileEntity):
     """Дрон-разведчик корпорации: только разведка, убегает от башен, не участвует в группах."""
 
-    VISION_RADIUS = 260.0
+    VISION_RADIUS = 300.0
 
     def __init__(self, position: Coordinate, max_health: float = 100, speed: float = 70,
                  armor: ArmorType = ArmorType.ENERGY_SHIELDED, reward: int = 60,

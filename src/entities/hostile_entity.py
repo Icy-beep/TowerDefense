@@ -41,6 +41,7 @@ class HostileEntity(Entity, ABC):
 
         self.is_healing: bool = False
         self.is_fleeing: bool = False
+        self.retreat_heal_count: int = 0
 
         self.dodge_timer: float = 0.0
         self._dodge_offset: float = 0.0
