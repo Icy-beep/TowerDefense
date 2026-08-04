@@ -44,7 +44,19 @@
 
   "menu.title": "Tower Defense",
   "menu.start": "Начать игру",
+  "menu.settings": "Настройки",
   "menu.exit": "Выйти",
+
+  "settings.title": "Настройки",
+  "settings.display_mode": "Экран",
+  "settings.display_windowed": "Оконный",
+  "settings.display_borderless": "Полный экран в окне",
+  "settings.display_fullscreen": "Полноэкранный",
+  "settings.resolution": "Разрешение",
+  "settings.music_volume": "Музыка",
+  "settings.sfx_volume": "Звуки",
+  "settings.language": "Язык",
+  "settings.back": "Назад",
 
   "game_over.defeat": "ПОРАЖЕНИЕ",
   "game_over.victory": "ПОБЕДА",
