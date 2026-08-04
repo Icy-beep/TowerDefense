@@ -1,0 +1,69 @@
+{
+  "hud.money": "Credits: {credits}",
+  "hud.base_health": "Base integrity: {hp}/{max_hp}",
+  "hud.survive_progress": "Survive: {current}/{target} s",
+  "hud.survive_remaining": "Remaining: {seconds:.1f} s",
+
+  "hud.camera_info": "Camera position: {x}, {y} | Zoom: {zoom}%",
+  "hud.controls_move": "WASD: Move camera (+SHIFT: speed up) | SCROLL: Zoom",
+  "hud.controls_drag": "LMB on empty space: drag camera | R: Camera to base",
+  "hud.controls_build": "1-3: Select tower",
+  "hud.controls_select": "LMB: Place/Select | RMB: Deselect",
+  "hud.controls_misc": "U: Upgrade tower | P: Pause | ESC: Close game",
+  "hud.controls_alt": "ALT (hold): show all tower ranges",
+
+  "hud.build_label": "Building: {name}",
+  "hud.build_hint": "LMB: Place | RMB: Cancel",
+  "hud.tower_level": "Tower level {level} / {max_level}",
+  "hud.upgrade_cost": "Upgrade: {cost} cr {status}",
+  "hud.upgrade_yes": "YES",
+  "hud.upgrade_no": "NO",
+  "hud.max_level": "Max level",
+
+  "hud.enemy_label": "Enemy: {name}",
+  "hud.enemy_faction": "Faction: {faction}",
+  "hud.enemy_hp": "HP: {hp} / {max_hp}",
+  "hud.enemy_stats": "Armor: {armor} | Speed: {speed}",
+  "hud.enemy_reward": "Kill reward: {reward} cr",
+  "hud.nothing_selected": "Nothing selected",
+
+  "enemy.drone_walker": "Light drone",
+  "enemy.giant_roach": "Giant roach",
+  "enemy.scout_drone": "Scout drone",
+  "enemy.heavy_assault_drone": "Heavy assault drone",
+  "enemy.bio_titan": "Bio-titan",
+  "enemy.medic_drone": "Medic drone",
+
+  "armor.light": "Light",
+  "armor.heavy": "Heavy",
+  "armor.energy_shielded": "Energy-shielded",
+  "armor.organic": "Organic",
+
+  "faction.corporation": "Corporation",
+  "faction.fauna": "Planet fauna",
+
+  "menu.title": "Tower Defense",
+  "menu.start": "Start game",
+  "menu.settings": "Settings",
+  "menu.exit": "Exit",
+
+  "settings.title": "Settings",
+  "settings.display_mode": "Display",
+  "settings.display_windowed": "Windowed",
+  "settings.display_borderless": "Borderless fullscreen",
+  "settings.display_fullscreen": "Fullscreen",
+  "settings.resolution": "Resolution",
+  "settings.music_volume": "Music",
+  "settings.sfx_volume": "Sound",
+  "settings.language": "Language",
+  "settings.back": "Back",
+
+  "game_over.defeat": "DEFEAT",
+  "game_over.victory": "VICTORY",
+
+  "mission.title": "Objectives",
+  "mission.survive_duration": "Survive {target} sec: {current}/{target}",
+  "mission.protect_towers": "Don't lose any towers (lost: {lost})",
+  "mission.status_completed": "Completed",
+  "mission.status_failed": "Failed"
+}
