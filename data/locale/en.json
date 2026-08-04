@@ -9,7 +9,7 @@
   "hud.controls_drag": "LMB on empty space: drag camera | R: Camera to base",
   "hud.controls_build": "1-3: Select tower",
   "hud.controls_select": "LMB: Place/Select | RMB: Deselect",
-  "hud.controls_misc": "U: Upgrade tower | P: Pause | ESC: Close game",
+  "hud.controls_misc": "U: Upgrade tower | P: Pause | ESC: Pause menu",
   "hud.controls_alt": "ALT (hold): show all tower ranges",
 
   "hud.build_label": "Building: {name}",
