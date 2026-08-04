@@ -58,6 +58,13 @@
   "settings.language": "Language",
   "settings.back": "Back",
 
+  "pause.title": "Paused",
+  "pause.resume": "Resume",
+  "pause.save": "Save",
+  "pause.load": "Load",
+  "pause.main_menu": "Main menu",
+  "pause.not_implemented": "Not implemented yet",
+
   "game_over.defeat": "DEFEAT",
   "game_over.victory": "VICTORY",
 

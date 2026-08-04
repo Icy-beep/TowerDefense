@@ -14,6 +14,7 @@ from src.ui.map_renderer import MapRenderer
 from src.ui.hud_renderer import HudRenderer
 from src.ui.game_over_screen import GameOverScreen
 from src.ui.menu_screen import MenuScreen
+from src.ui.pause_menu_screen import PauseMenuScreen
 from src.ui.settings_screen import SettingsScreen
 from src.ui.sound_manager import SoundManager
 from src.ui.music_manager import MusicManager
@@ -70,6 +71,10 @@ class GameView:
         self.running = True
 
         self.menu_view = "main"
+        self.pause_menu_open = False
+        self.pause_view = "menu"
+        self._pause_notice = ""
+        self._pause_notice_timer = 0.0
 
         self.tower_options = [
             {"key": pygame.K_1, "type": "laser", "name": "Laser (50)", "color": (0, 255, 255)},
@@ -81,6 +86,7 @@ class GameView:
         self.game_over_screen = GameOverScreen()
         self.menu_screen = MenuScreen()
         self.settings_screen = SettingsScreen()
+        self.pause_menu_screen = PauseMenuScreen()
 
         self._show_loading_screen("Loading sounds...")
         self.sound_manager = SoundManager(on_progress=self._on_sound_loading_progress)
@@ -125,6 +131,7 @@ class GameView:
         while self.running:
             dt = self.clock.tick(60) / 1000.0
             self.handle_events()
+            self._pause_notice_timer = max(0.0, self._pause_notice_timer - dt)
             if self.session.state != GameState.MENU and self.controller:
                 self.controller.update(dt)
                 self.session.update(dt)
@@ -148,15 +155,87 @@ class GameView:
                 self._handle_escape()
             elif self.session.state == GameState.MENU:
                 self._handle_menu_input(event)
+            elif self.session.state == GameState.PAUSED and self.pause_menu_open:
+                self._handle_pause_menu_input(event)
             elif self.controller:
                 self.controller.handle_input(event)
 
     def _handle_escape(self):
-        """ESC возвращает из настроек в меню, а не закрывает игру, если открыты настройки."""
-        if self.session.state == GameState.MENU and self.menu_view == "settings":
-            self.menu_view = "main"
+        """ESC: из настроек — назад в меню; во время игры — открыть/закрыть меню паузы; иначе — выход."""
+        state = self.session.state
+        if state == GameState.MENU:
+            if self.menu_view == "settings":
+                self.menu_view = "main"
+            else:
+                self.running = False
+        elif state in (GameState.PLAYING, GameState.PAUSED):
+            self._toggle_pause_menu()
         else:
             self.running = False
+
+    def _toggle_pause_menu(self):
+        """Открывает меню паузы (ставя игру на паузу), возвращает из настроек в меню паузы,
+        либо закрывает меню паузы и снимает игру с паузы."""
+        if self.session.state == GameState.PLAYING:
+            self.session.state = GameState.PAUSED
+            self.pause_menu_open = True
+            self.pause_view = "menu"
+        elif self.pause_view == "settings":
+            self.pause_view = "menu"
+        elif self.pause_menu_open:
+            self._resume_game()
+        else:
+            self.pause_menu_open = True
+            self.pause_view = "menu"
+
+    def _resume_game(self):
+        """Закрывает меню паузы и снимает игру с паузы."""
+        self.pause_menu_open = False
+        self.pause_view = "menu"
+        if self.session.state == GameState.PAUSED:
+            self.session.state = GameState.PLAYING
+
+    def _handle_pause_menu_input(self, event):
+        """Обрабатывает клики по меню паузы (и по настройкам, открытым из него)."""
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return
+
+        if self.pause_view == "settings":
+            action = self.settings_screen.handle_click(event.pos, self.width, self.height, self.settings)
+            if action:
+                self._apply_settings_action(action)
+            return
+
+        action = self.pause_menu_screen.handle_click(event.pos, self.width, self.height)
+        self._apply_pause_action(action)
+
+    def _apply_pause_action(self, action):
+        """Применяет действие, полученное от PauseMenuScreen.handle_click."""
+        if action == "resume":
+            self._resume_game()
+        elif action in ("save", "load"):
+            self._show_pause_notice(loc.get("pause.not_implemented"))
+        elif action == "settings":
+            self.pause_view = "settings"
+        elif action == "main_menu":
+            self._exit_to_main_menu()
+        elif action == "exit":
+            self.running = False
+
+    def _show_pause_notice(self, text: str):
+        """Показывает временную подсказку в меню паузы (например, для заглушек сохранения/загрузки)."""
+        self._pause_notice = text
+        self._pause_notice_timer = 1.6
+
+    def _exit_to_main_menu(self):
+        """Прерывает текущую партию и возвращает в главное меню."""
+        self.controller = None
+        self.session.on_event = None
+        self.session.state = GameState.MENU
+        self.pause_menu_open = False
+        self.pause_view = "menu"
+        self.menu_view = "main"
+        self.music_manager.play_category("menu")
 
     def _handle_resize(self, width, height):
         """Пересоздаёт поверхность экрана под новый размер окна, подстраивает камеру и сохраняет разрешение."""
@@ -281,3 +360,12 @@ class GameView:
             self.tower_options, self.width, self.height, self.font, self.small_font
         )
         self.game_over_screen.render(self.screen, self.session, self.width, self.height)
+
+        if self.session.state == GameState.PAUSED and self.pause_menu_open:
+            if self.pause_view == "settings":
+                self.settings_screen.render(self.screen, self.width, self.height,
+                                             self.font, self.small_font, self.title_font, self.settings)
+            else:
+                notice = self._pause_notice if self._pause_notice_timer > 0 else ""
+                self.pause_menu_screen.render(self.screen, self.width, self.height,
+                                               self.font, self.small_font, self.title_font, notice)

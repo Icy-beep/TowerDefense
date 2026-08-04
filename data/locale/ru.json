@@ -58,6 +58,13 @@
   "settings.language": "Язык",
   "settings.back": "Назад",
 
+  "pause.title": "Пауза",
+  "pause.resume": "Продолжить",
+  "pause.save": "Сохранить",
+  "pause.load": "Загрузить",
+  "pause.main_menu": "Главное меню",
+  "pause.not_implemented": "Пока не реализовано",
+
   "game_over.defeat": "ПОРАЖЕНИЕ",
   "game_over.victory": "ПОБЕДА",
 
