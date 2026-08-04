@@ -48,6 +48,7 @@ class HostileEntity(Entity, ABC):
         self.is_staging: bool = False
         self.stage_angle: Optional[float] = None
         self.stage_direction: int = 1
+        self.stage_anchor: Optional[Coordinate] = None
 
         self.dodge_timer: float = 0.0
         self._dodge_offset: float = 0.0

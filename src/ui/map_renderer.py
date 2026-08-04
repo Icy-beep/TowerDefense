@@ -17,6 +17,7 @@ ENEMY_COLORS = {
     "heavy_assault_drone": (150, 60, 200),
     "bio_titan": (40, 140, 40),
     "medic_drone": (80, 255, 220),
+    "sniper_drone": (255, 210, 60),
 }
 DEFAULT_ENEMY_COLOR = (220, 50, 50)
 

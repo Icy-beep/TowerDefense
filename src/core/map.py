@@ -38,7 +38,9 @@ class Map:
         self.spawn_points = []
         self.spawn_points_by_faction: Dict[Faction, List[Coordinate]] = {}
         self.towers_lost_count = 0
-        self._staging_anchor: Dict[Faction, Coordinate] = {}
+        self._elapsed_time = 0.0
+        self._staging_anchor: Dict[Faction, List[Coordinate]] = {}
+        self._staging_anchor_created_at: Dict[int, float] = {}
 
     def add_module(self, module: DefenseModule):
         """Добавляет башню на карту."""
@@ -162,10 +164,16 @@ class Map:
             if new_path:
                 enemy.set_path(new_path)
 
-    TOWER_HUNT_RADIUS = 300.0
+    # Раньше было 300 - меньше боевого радиуса почти всех башен первого уровня (350-400),
+    # из-за чего группа узнавала о башне и назначала её целью, уже фактически стоя внутри
+    # её обстрела. Для SniperDrone (ATTACK_RANGE 430) это означало, что он почти никогда не
+    # успевал открыть огонь снаружи чужого радиуса - поднято, чтобы отряд начинал реагировать
+    # на известную башню ещё на подходе, оставляя дальнобойным юнитам реальный шанс отстреливаться
+    # издалека.
+    TOWER_HUNT_RADIUS = 420.0
 
     TOWER_HUNT_RADIUS_OVERRIDES = {
-        Faction.FAUNA: 450.0,
+        Faction.FAUNA: 500.0,
     }
 
     def _hunt_radius_for(self, faction: Faction) -> float:
@@ -323,31 +331,72 @@ class Map:
     STAGING_ORBIT_RADIUS = 160.0
     STAGING_ANGULAR_SPEED = 0.4
     STAGING_FORMATION_RADIUS = 50.0
+    STAGING_JOIN_RADIUS = 300.0
+    STAGING_MAX_WAIT = 30.0
 
     def _stage_eligible(self, enemy: HostileEntity) -> bool:
         """Проверяет, ждёт ли враг сбора группы для отложенной атаки прямо сейчас."""
         return enemy.is_staging and enemy.is_alive() and enemy.group_id is None
 
+    def _find_or_create_anchor(self, faction: Faction, position: Coordinate) -> Coordinate:
+        """Возвращает существующий якорь сбора этой фракции рядом с position (в пределах
+        STAGING_JOIN_RADIUS), иначе создаёт новый прямо на месте - враги на разных
+        концах карты (например, разные точки спавна Fauna или далёкие друг от друга
+        высадки Corporation) не должны тянуться к одному общему месту сбора."""
+        anchors = self._staging_anchor.setdefault(faction, [])
+        for anchor in anchors:
+            if anchor.distance_to(position) <= self.STAGING_JOIN_RADIUS:
+                return anchor
+        new_anchor = Coordinate(position.x, position.y)
+        anchors.append(new_anchor)
+        self._staging_anchor_created_at[id(new_anchor)] = self._elapsed_time
+        return new_anchor
+
     def _update_staging_groups(self, enemies: List[HostileEntity]):
-        """Раз в кадр собирает ожидающих врагов каждой фракции в один формирующийся
-        отряд (первый враг фракции без места сбора становится якорем - точкой, вокруг
-        которой кружат остальные) и, как только живых участников набирается
-        STAGING_GROUP_SIZE, разом снимает их со сбора и бросает в атаку на базу
-        единой массой (см. _commit_staging_group). Пока порог не набран, враги просто
-        кружат у якоря - см. _advance_staging."""
+        """Раз в кадр распределяет ожидающих врагов каждой фракции по якорям сбора -
+        каждый якорь - это отдельная формирующаяся группа рядом с тем местом, где её
+        участники появились (см. _find_or_create_anchor), а не одна общая точка на всю
+        фракцию. Как только у якоря набирается STAGING_GROUP_SIZE живых участников, вся
+        его группа разом снимается со сбора и бросается в атаку на базу единой массой
+        (см. _commit_staging_group). Пока порог не набран, враги кружат у своего якоря -
+        см. _advance_staging. Изолированная кучка (например, отряд Corporation, высадившийся
+        далеко от всех остальных) может никогда не набрать STAGING_GROUP_SIZE сама по себе -
+        чтобы она не кружила вечно, по истечении STAGING_MAX_WAIT она тоже выступает, каким
+        бы малым ни был её состав."""
         by_faction: Dict[Faction, List[HostileEntity]] = {}
         for enemy in enemies:
             if self._stage_eligible(enemy):
                 by_faction.setdefault(enemy.faction, []).append(enemy)
 
-        for faction, members in by_faction.items():
-            if faction not in self._staging_anchor:
-                first = members[0]
-                self._staging_anchor[faction] = Coordinate(first.position.x, first.position.y)
+        for faction in list(self._staging_anchor.keys()):
+            if faction not in by_faction:
+                self._staging_anchor[faction] = []
 
-            if len(members) >= self.STAGING_GROUP_SIZE:
-                self._commit_staging_group(members)
-                del self._staging_anchor[faction]
+        live_anchor_ids = set()
+        for faction, members in by_faction.items():
+            for enemy in members:
+                if enemy.stage_anchor is None:
+                    enemy.stage_anchor = self._find_or_create_anchor(faction, enemy.position)
+
+            clusters: Dict[int, List[HostileEntity]] = {}
+            for enemy in members:
+                clusters.setdefault(id(enemy.stage_anchor), []).append(enemy)
+
+            live_anchors = []
+            for cluster_members in clusters.values():
+                anchor = cluster_members[0].stage_anchor
+                waited = self._elapsed_time - self._staging_anchor_created_at.get(id(anchor), self._elapsed_time)
+                if len(cluster_members) >= self.STAGING_GROUP_SIZE or waited >= self.STAGING_MAX_WAIT:
+                    self._commit_staging_group(cluster_members)
+                else:
+                    live_anchors.append(anchor)
+                    live_anchor_ids.add(id(anchor))
+            self._staging_anchor[faction] = live_anchors
+
+        self._staging_anchor_created_at = {
+            anchor_id: created_at for anchor_id, created_at in self._staging_anchor_created_at.items()
+            if anchor_id in live_anchor_ids
+        }
 
     def _commit_staging_group(self, members: List[HostileEntity]):
         """Снимает набранную группу со сбора и отправляет её всей массой к базе -
@@ -371,9 +420,9 @@ class Map:
             escort.join_group(leader.group_id, leader, offset)
 
     def _advance_staging(self, enemy: HostileEntity, delta_time: float):
-        """Кружит врага у якоря сбора его фракции в ожидании, пока группа не наберёт
+        """Кружит врага у его якоря сбора в ожидании, пока группа не наберёт
         STAGING_GROUP_SIZE живых участников - см. _update_staging_groups."""
-        anchor = self._staging_anchor.get(enemy.faction) or enemy.position
+        anchor = enemy.stage_anchor or enemy.position
         if enemy.stage_angle is None:
             enemy.stage_angle = math.atan2(enemy.position.y - anchor.y, enemy.position.x - anchor.x)
             enemy.stage_direction = 1 if id(enemy) % 2 == 0 else -1
@@ -589,6 +638,7 @@ class Map:
 
     def update(self, delta_time: float) -> tuple[List[HostileEntity], List[HostileEntity]]:
         """Обновляет карту на один кадр."""
+        self._elapsed_time += delta_time
         self._avoid_danger_searches_this_frame = 0
         destroyed_this_frame = sum(1 for module in self.modules if module.is_destroyed())
         self.towers_lost_count += destroyed_this_frame

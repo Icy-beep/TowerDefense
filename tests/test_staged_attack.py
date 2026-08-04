@@ -90,6 +90,56 @@ def test_group_commits_and_rushes_the_base_once_threshold_is_reached():
     assert all(f.group_id == leader.group_id for f in followers)
 
 
+def test_distant_same_faction_groups_stay_local_instead_of_merging_across_the_map():
+    """Регрессия: враги одной фракции, появившиеся в разных концах карты (например,
+    у разных точек спавна Fauna), не должны тянуться к одному общему месту сбора -
+    у каждой локальной кучки должен быть свой якорь рядом с тем, где она появилась."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+
+    near_corner = [_staged_enemy(Coordinate(100 + i * 10, 100)) for i in range(3)]
+    far_corner = [_staged_enemy(Coordinate(3900 - i * 10, 3900)) for i in range(3)]
+    for e in near_corner + far_corner:
+        game_map.spawn_enemy(e)
+
+    for _ in range(20):
+        game_map.update(0.1)
+
+    for e in near_corner:
+        assert e.position.distance_to(Coordinate(100, 100)) < 500, \
+            "враг у ближнего угла не должен уходить к дальней группе своей же фракции"
+    for e in far_corner:
+        assert e.position.distance_to(Coordinate(3900, 3900)) < 500, \
+            "враг у дальнего угла не должен уходить к ближней группе своей же фракции"
+
+    near_anchors = {id(e.stage_anchor) for e in near_corner}
+    far_anchors = {id(e.stage_anchor) for e in far_corner}
+    assert len(near_anchors) == 1 and len(far_anchors) == 1, "враги рядом друг с другом должны делить один якорь"
+    assert near_anchors != far_anchors, "у далёких друг от друга кучек должны быть разные якоря"
+
+
+def test_isolated_group_still_commits_after_max_wait_even_below_threshold():
+    """Изолированная кучка (например, отряд Corporation, высадившийся далеко ото всех)
+    может никогда не набрать STAGING_GROUP_SIZE сама по себе - она не должна кружить
+    вечно, а обязана выступить по истечении STAGING_MAX_WAIT."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+
+    enemies = [_staged_enemy(Coordinate(100 + i * 10, 100)) for i in range(3)]
+    for e in enemies:
+        game_map.spawn_enemy(e)
+
+    game_map.update(0.1)  # якорь создаётся здесь, отсчёт таймаута идёт от этого момента
+    assert all(e.is_staging for e in enemies)
+
+    game_map.update(Map.STAGING_MAX_WAIT - 0.2)
+    assert all(e.is_staging for e in enemies), "до истечения таймаута кучка ещё ждёт"
+
+    game_map.update(1.0)
+    assert all(e.is_staging is False for e in enemies), \
+        "по истечении STAGING_MAX_WAIT изолированная кучка должна выступить, даже не набрав порог"
+
+
 def test_staging_groups_are_tracked_separately_per_faction():
     game_map = Map(width=4000, height=4000)
     game_map.base_position = Coordinate(2000, 2000)

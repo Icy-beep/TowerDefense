@@ -82,6 +82,25 @@ def test_ship_landing_spawns_squad_once_warning_time_elapses():
     assert len(game_map.enemies) == 3
 
 
+def test_ship_landing_eventually_spawns_every_registered_type_even_with_small_squads():
+    """Регрессия: если типов больше, чем максимальный размер отряда, индекс типа внутри
+    одного отряда (i % len) никогда не доходил до последних типов - счётчик спавна теперь
+    общий и не сбрасывается на каждый отряд, так что рано или поздно выпадают все типы."""
+    types = ["a", "b", "c", "d", "e"]
+    strategy = ShipLandingStrategy(enemy_types=types, squad_size_range=(2, 4),
+                                    base_interval=1.0, warning_time=0.0, rng=random.Random(0))
+    game_map = _FakeMap()
+    calls = []
+    spawn_factory = _spawn_factory_spy(calls)
+
+    for _ in range(20):
+        strategy.update(1.0, game_map, spawn_factory)
+
+    spawned_types = {c[0] for c in calls}
+    assert spawned_types == set(types), \
+        f"не все зарегистрированные типы когда-либо выпали: {spawned_types}"
+
+
 def test_ship_landing_squad_spawns_at_the_landing_position():
     strategy = ShipLandingStrategy(enemy_types=["drone_walker"], squad_size_range=(1, 1),
                                     base_interval=1.0, warning_time=1.0)

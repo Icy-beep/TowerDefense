@@ -40,5 +40,12 @@
     "armor": "EnergyShielded",
     "reward": 50,
     "faction": "Corporation"
+  },
+  "sniper_drone": {
+    "max_health": 70,
+    "speed": 40,
+    "armor": "Light",
+    "reward": 55,
+    "faction": "Corporation"
   }
 }

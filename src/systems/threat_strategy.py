@@ -48,6 +48,7 @@ class ShipLandingStrategy(ThreatStrategy):
         self.elapsed = 0.0
         self.timer = base_interval
         self.pending_landings: List[PendingLanding] = []
+        self._spawn_count = 0
 
     def _current_interval(self) -> float:
         """Интервал до следующей высадки, сокращающийся по ходу партии."""
@@ -67,10 +68,14 @@ class ShipLandingStrategy(ThreatStrategy):
         return Coordinate(max_x, self.rng.uniform(0, max_y))
 
     def _spawn_squad(self, position: Coordinate, game_map, spawn_factory: Callable) -> None:
-        """Спавнит отряд случайного размера в указанной точке."""
+        """Спавнит отряд случайного размера в указанной точке. Тип каждого юнита берётся
+        по общему счётчику высадок (не сбрасывается на каждый отряд) - иначе при
+        squad_size_range с потолком меньше числа зарегистрированных типов часть типов
+        (например, последний в списке) вообще никогда бы не выпадала."""
         squad_size = self.rng.randint(*self.squad_size_range)
-        for i in range(squad_size):
-            enemy_type = self.enemy_types[i % len(self.enemy_types)]
+        for _ in range(squad_size):
+            enemy_type = self.enemy_types[self._spawn_count % len(self.enemy_types)]
+            self._spawn_count += 1
             enemy = spawn_factory(enemy_type, position)
             if enemy is not None:
                 game_map.spawn_enemy(enemy)

@@ -65,6 +65,25 @@ class ScoutDrone(HostileEntity):
         """Разведчик всегда убегает от простреливаемых зон вместо боя."""
         return True
 
+class SniperDrone(HostileEntity):
+    """Дрон-снайпер корпорации: бьёт башню издалека своим увеличенным ATTACK_RANGE,
+    не заходя в радиус большинства турелей первого уровня - чтобы его достать,
+    игроку нужна прокачанная башня или миномёт."""
+
+    ATTACK_RANGE = 430.0
+    ATTACK_DAMAGE_PER_SECOND = 10.0
+
+    def __init__(self, position: Coordinate, max_health: float = 70, speed: float = 40,
+                 armor: ArmorType = ArmorType.LIGHT, reward: int = 55,
+                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
+        """Создаёт дрона-снайпера."""
+        super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
+                          vision_radius=vision_radius)
+
+    def act(self, delta_time: float, in_danger: bool = False):
+        """Не выполняет особых действий - дальнобойность реализована через ATTACK_RANGE."""
+        pass
+
 class MedicDrone(HostileEntity):
     """Дрон-медик корпорации: не атакует, ищет ближайшую группу союзников,
     присоединяется к ней и лечит - пока не в группе, избегает башен."""
