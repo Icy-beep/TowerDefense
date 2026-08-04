@@ -1,3 +1,4 @@
+import math
 from abc import ABC, abstractmethod
 from typing import Optional, List
 from .entity import Entity
@@ -43,6 +44,8 @@ class DefenseModule(Entity, ABC):
         self.landing_height = 0.0
         self._pending_landed_event = False
 
+        self.facing_angle = 0.0
+
     def start_landing(self):
         """Запускает высадку с орбиты: башня неуязвима и не стреляет, пока не приземлится."""
         self.is_landing = True
@@ -70,16 +73,29 @@ class DefenseModule(Entity, ABC):
         if self.status in (ModuleStatus.OVERHEATED, ModuleStatus.OFFLINE):
             return None
 
+        target = self.find_target(enemies)
+        if target:
+            self._face_towards(target.position)
+
         if self.cooldown_timer > 0:
             self.cooldown_timer -= delta_time
             return None
 
-        target = self.find_target(enemies)
         if target:
             self.cooldown_timer = 1.0 / self.attack_speed
             return self.fire(target)
 
         return None
+
+    def _face_towards(self, point: Coordinate):
+        """Обновляет facing_angle — азимут (0° = вверх/север, растёт по часовой стрелке) на
+        текущую цель, чтобы спрайт с направленными кадрами (см. SpriteManager.get_frame_for_angle)
+        мог развернуться к ней. Если цели нет, башня сохраняет последнее направление."""
+        dx = point.x - self.position.x
+        dy = point.y - self.position.y
+        if dx == 0 and dy == 0:
+            return
+        self.facing_angle = math.degrees(math.atan2(dx, -dy)) % 360.0
 
     def _advance_landing(self, delta_time: float, enemies: List['HostileEntity']):
         """Двигает башню вниз по высоте и наносит урон при приземлении."""

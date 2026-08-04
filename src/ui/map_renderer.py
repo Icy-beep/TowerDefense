@@ -36,6 +36,9 @@ class MapRenderer:
     TOWER_SPRITE_FOOTPRINT_MARGIN = 8
     TOWER_SPRITE_MIN_SCREEN_SIZE = 30
 
+    ENEMY_SPRITE_WORLD_SIZE = 20
+    ENEMY_SPRITE_MIN_SCREEN_SIZE = 20
+
     def __init__(self, sprite_manager=None):
         """Запоминает SpriteManager; без него (или без спрайта под ключ) рисует примитивами."""
         self.sprite_manager = sprite_manager
@@ -45,6 +48,13 @@ class MapRenderer:
         if not self.sprite_manager:
             return None
         return self.sprite_manager.get_frame(key, elapsed_time)
+
+    def _sprite_for_angle(self, key, angle_degrees):
+        """Возвращает кадр, ближайший к азимуту (для направленных спрайтов вроде поворота
+        башни), или None, если спрайтов нет/не подключены."""
+        if not self.sprite_manager:
+            return None
+        return self.sprite_manager.get_frame_for_angle(key, angle_degrees)
 
     def _blit_scaled(self, screen, sprite, sx, sy, target_size):
         """Масштабирует спрайт под target_size (диаметр в пикселях) и рисует центром в (sx, sy)."""
@@ -59,6 +69,12 @@ class MapRenderer:
         сливались друг с другом на глаз), но не мельче TOWER_SPRITE_MIN_SCREEN_SIZE при отдалении камеры."""
         world_size = DefenseModule.FOOTPRINT_CELLS * cell_size - self.TOWER_SPRITE_FOOTPRINT_MARGIN
         return max(world_size * camera.zoom, self.TOWER_SPRITE_MIN_SCREEN_SIZE)
+
+    def _enemy_screen_size(self, camera):
+        """Диаметр спрайта врага в пикселях: растёт вместе с зумом камеры (раньше был жёстко
+        зафиксирован, из-за чего при приближении враг визуально становился мельче на фоне
+        выросшей остальной карты), но не мельче ENEMY_SPRITE_MIN_SCREEN_SIZE при отдалении."""
+        return max(self.ENEMY_SPRITE_WORLD_SIZE * camera.zoom, self.ENEMY_SPRITE_MIN_SCREEN_SIZE)
 
     def _draw_background(self, screen, camera, width, height):
         """Рисует фон карты под всеми объектами: тайлит спрайт грунта, иначе — заливка цветом,
@@ -201,7 +217,8 @@ class MapRenderer:
                                    (int(sx), int(sy)), int(module.range_radius * camera.zoom), 1)
 
             tower_size = self._tower_screen_size(camera, cell_size)
-            sprite = self._sprite_for(f"tower_{getattr(module, 'type_name', '')}", getattr(session, "elapsed_time", 0.0))
+            sprite = self._sprite_for_angle(f"tower_{getattr(module, 'type_name', '')}",
+                                             getattr(module, "facing_angle", 0.0))
             if sprite:
                 self._blit_scaled(screen, sprite, sx, sy, target_size=tower_size)
             else:
@@ -262,12 +279,13 @@ class MapRenderer:
                 pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
                                  (int(sx) - 12, int(sy) - 18, int(24 * hp_ratio), 4))
 
+                enemy_size = self._enemy_screen_size(camera)
                 sprite = self._sprite_for(f"enemy_{getattr(enemy, 'type_name', None)}", getattr(session, "elapsed_time", 0.0))
                 if sprite:
-                    self._blit_scaled(screen, sprite, sx, sy, target_size=20)
+                    self._blit_scaled(screen, sprite, sx, sy, target_size=enemy_size)
                 else:
                     color = ENEMY_COLORS.get(getattr(enemy, "type_name", None), DEFAULT_ENEMY_COLOR)
-                    pygame.draw.circle(screen, color, (int(sx), int(sy)), 10)
+                    pygame.draw.circle(screen, color, (int(sx), int(sy)), int(enemy_size / 2))
 
     def _draw_projectiles(self, screen, camera, session):
         """Рисует все снаряды на карте, каждый тип по-своему."""

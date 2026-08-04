@@ -56,28 +56,44 @@ class SpriteManager:
             for path in paths:
                 try:
                     image = pygame.image.load(path).convert_alpha()
-                    loaded.append(self._autocrop(image))
                 except pygame.error:
                     continue
+                loaded.append(image)
                 loaded_files += 1
                 if on_progress:
                     on_progress(loaded_files, total_files)
             if loaded:
-                self._frames[key] = loaded
+                self._frames[key] = self._autocrop_group(loaded)
 
-    def _autocrop(self, image: pygame.Surface) -> pygame.Surface:
-        """Обрезает прозрачные поля вокруг рисунка: если в PNG вокруг турели/врага/т.п.
-        осталось пустое место, оно иначе съедает часть итогового размера при масштабировании
-        под фиксированный target_size — рисунок выглядит мельче, чем должен."""
+    def _autocrop_group(self, frames: List[pygame.Surface]) -> List[pygame.Surface]:
+        """Обрезает все кадры одной папки по ОДНОЙ общей рамке — объединению непрозрачных
+        областей всех кадров, а не каждый кадр по своей собственной. Если обрезать каждый кадр
+        индивидуально, у кадров с разной формой силуэта (например, башня повёрнута под разными
+        углами — по диагонали силуэт шире, чем по вертикали/горизонтали) получатся разные
+        пропорции обрезки, и после масштабирования всех кадров под общий target_size они будут
+        визуально отличаться по размеру, хотя на исходных холстах занимали одну и ту же область."""
         try:
-            bounds = image.get_bounding_rect(min_alpha=1)
+            bounds_list = [frame.get_bounding_rect(min_alpha=1) for frame in frames]
         except Exception:
-            return image
-        if bounds.width <= 0 or bounds.height <= 0:
-            return image
-        if bounds.width == image.get_width() and bounds.height == image.get_height():
-            return image
-        return image.subsurface(bounds).copy()
+            return frames
+        bounds_list = [b for b in bounds_list if b.width > 0 and b.height > 0]
+        if not bounds_list:
+            return frames
+
+        min_x = min(b.x for b in bounds_list)
+        min_y = min(b.y for b in bounds_list)
+        max_x = max(b.x + b.width for b in bounds_list)
+        max_y = max(b.y + b.height for b in bounds_list)
+
+        first = frames[0]
+        if min_x == 0 and min_y == 0 and max_x == first.get_width() and max_y == first.get_height():
+            return frames
+
+        union_rect = (min_x, min_y, max_x - min_x, max_y - min_y)
+        try:
+            return [frame.subsurface(union_rect).copy() for frame in frames]
+        except Exception:
+            return frames
 
     def has_sprite_for(self, key: str) -> bool:
         """Проверяет, загружен ли хотя бы один спрайт для данного ключа."""
@@ -94,4 +110,18 @@ class SpriteManager:
         if len(frames) == 1:
             return frames[0]
         frame_index = int(elapsed_time * self.ANIMATION_FPS) % len(frames)
+        return frames[frame_index]
+
+    def get_frame_for_angle(self, key: str, angle_degrees: float = 0.0) -> Optional[pygame.Surface]:
+        """Возвращает кадр, ближайший к заданному азимуту (0° = кадр frame_01, "вверх/север",
+        дальше по часовой стрелке) — для спрайтов, где несколько файлов в папке означают не
+        кадры анимации, а вид объекта под разными углами поворота (например, направленные
+        кадры башни). Шаг между кадрами вычисляется как 360° / количество файлов."""
+        frames = self._frames.get(key)
+        if not frames:
+            return None
+        if len(frames) == 1:
+            return frames[0]
+        step = 360.0 / len(frames)
+        frame_index = round((angle_degrees % 360.0) / step) % len(frames)
         return frames[frame_index]

@@ -56,8 +56,12 @@ class _FakeSurface:
         return self.content_rect
 
     def subsurface(self, rect):
-        cropped = _FakeSurface(self.path, size=(rect.width, rect.height))
-        cropped.cropped_to = (rect.x, rect.y, rect.width, rect.height)
+        if isinstance(rect, tuple):
+            x, y, w, h = rect
+        else:
+            x, y, w, h = rect.x, rect.y, rect.width, rect.height
+        cropped = _FakeSurface(self.path, size=(w, h))
+        cropped.cropped_to = (x, y, w, h)
         return cropped
 
     def copy(self):
@@ -70,6 +74,10 @@ class _FakeImageModule:
             raise _FakeError("не удалось загрузить изображение")
         if "padded" in path:
             return _FakeSurface(path, size=(10, 10), content_rect=_FakeRect(2, 2, 4, 4))
+        if "shape_tall" in path:
+            return _FakeSurface(path, size=(20, 20), content_rect=_FakeRect(5, 2, 10, 16))
+        if "shape_wide" in path:
+            return _FakeSurface(path, size=(20, 20), content_rect=_FakeRect(2, 5, 16, 10))
         return _FakeSurface(path)
 
 
@@ -169,3 +177,55 @@ def test_sprite_manager_does_not_crop_when_content_fills_canvas(tmp_path, monkey
 
     frame = manager.get_frame("base")
     assert frame.cropped_to is None
+
+
+def test_sprite_manager_crops_multi_frame_group_to_one_shared_box(tmp_path, monkeypatch):
+    """Регрессия: раньше каждый кадр обрезался по своей собственной рамке, из-за чего у
+    кадров с разной формой силуэта (например, повёрнутая по диагонали башня против
+    повёрнутой прямо) получались разные пропорции — и после масштабирования под общий
+    target_size они визуально отличались по размеру. Теперь у всех кадров одной папки
+    общая рамка обрезки."""
+    root = _make_sprite_root(tmp_path, "tower_laser", ["shape_tall.png", "shape_wide.png"])
+    monkeypatch.setattr("src.ui.sprite_manager.pygame", _FakePygame())
+
+    manager = SpriteManager(sprites_root=root)
+    frames = manager._frames["tower_laser"]
+
+    assert frames[0].size == frames[1].size == (16, 16)
+    assert frames[0].cropped_to == (2, 2, 16, 16)
+    assert frames[1].cropped_to == (2, 2, 16, 16)
+
+
+def test_get_frame_for_angle_single_file_ignores_angle(tmp_path, monkeypatch):
+    root = _make_sprite_root(tmp_path, "tower_laser", ["only.png"])
+    monkeypatch.setattr("src.ui.sprite_manager.pygame", _FakePygame())
+
+    manager = SpriteManager(sprites_root=root)
+
+    at_zero = manager.get_frame_for_angle("tower_laser", 0.0)
+    at_180 = manager.get_frame_for_angle("tower_laser", 180.0)
+    assert at_zero is at_180
+    assert at_zero.path.endswith("only.png")
+
+
+def test_get_frame_for_angle_picks_nearest_directional_frame(tmp_path, monkeypatch):
+    root = _make_sprite_root(tmp_path, "tower_laser",
+                              ["dir_00.png", "dir_01.png", "dir_02.png", "dir_03.png"])
+    monkeypatch.setattr("src.ui.sprite_manager.pygame", _FakePygame())
+
+    manager = SpriteManager(sprites_root=root)
+
+    assert manager.get_frame_for_angle("tower_laser", 10.0).path.endswith("dir_00.png")
+    assert manager.get_frame_for_angle("tower_laser", 100.0).path.endswith("dir_01.png")
+    assert manager.get_frame_for_angle("tower_laser", 200.0).path.endswith("dir_02.png")
+
+
+def test_get_frame_for_angle_wraps_around_360_degrees(tmp_path, monkeypatch):
+    root = _make_sprite_root(tmp_path, "tower_laser",
+                              ["dir_00.png", "dir_01.png", "dir_02.png", "dir_03.png"])
+    monkeypatch.setattr("src.ui.sprite_manager.pygame", _FakePygame())
+
+    manager = SpriteManager(sprites_root=root)
+
+    assert manager.get_frame_for_angle("tower_laser", 350.0).path.endswith("dir_00.png")
+    assert manager.get_frame_for_angle("tower_laser", -10.0).path.endswith("dir_00.png")
