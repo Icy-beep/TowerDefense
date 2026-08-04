@@ -55,8 +55,8 @@ class SpriteManager:
             loaded = []
             for path in paths:
                 try:
-                    image = pygame.image.load(path)
-                    loaded.append(image.convert_alpha())
+                    image = pygame.image.load(path).convert_alpha()
+                    loaded.append(self._autocrop(image))
                 except pygame.error:
                     continue
                 loaded_files += 1
@@ -64,6 +64,20 @@ class SpriteManager:
                     on_progress(loaded_files, total_files)
             if loaded:
                 self._frames[key] = loaded
+
+    def _autocrop(self, image: pygame.Surface) -> pygame.Surface:
+        """Обрезает прозрачные поля вокруг рисунка: если в PNG вокруг турели/врага/т.п.
+        осталось пустое место, оно иначе съедает часть итогового размера при масштабировании
+        под фиксированный target_size — рисунок выглядит мельче, чем должен."""
+        try:
+            bounds = image.get_bounding_rect(min_alpha=1)
+        except Exception:
+            return image
+        if bounds.width <= 0 or bounds.height <= 0:
+            return image
+        if bounds.width == image.get_width() and bounds.height == image.get_height():
+            return image
+        return image.subsurface(bounds).copy()
 
     def has_sprite_for(self, key: str) -> bool:
         """Проверяет, загружен ли хотя бы один спрайт для данного ключа."""

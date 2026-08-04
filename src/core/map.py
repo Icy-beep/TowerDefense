@@ -1,5 +1,5 @@
 import math
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Set, Tuple
 from src.core.coordinate import Coordinate
 from src.entities.defense_module import DefenseModule
 from src.entities.hostile_entity import HostileEntity
@@ -51,11 +51,29 @@ class Map:
             return self.spawn_points_by_faction[faction]
         return self.spawn_points
 
-    def can_place_module(self, position: Coordinate, min_distance: float = 30.0) -> bool:
-        """Проверяет, можно ли поставить башню в этой точке."""
+    def _footprint_cells(self, position: Coordinate) -> Set[Tuple[int, int]]:
+        """Возвращает клетки сетки (DefenseModule.FOOTPRINT_CELLS x FOOTPRINT_CELLS),
+        которые займёт башня с центром в position."""
+        node = self.nav_grid.get_node(position.x, position.y)
+        if node is None:
+            return set()
+        radius = DefenseModule.FOOTPRINT_CELLS // 2
+        return {
+            (node.x + dx, node.y + dy)
+            for dx in range(-radius, radius + 1)
+            for dy in range(-radius, radius + 1)
+        }
+
+    def can_place_module(self, position: Coordinate) -> bool:
+        """Проверяет, можно ли поставить башню в этой точке: в пределах карты и без
+        пересечения её footprint (3x3 клетки) с уже стоящими башнями, чтобы спрайты
+        соседних башен не наезжали друг на друга."""
         if not (0 <= position.x <= self.width and 0 <= position.y <= self.height):
             return False
-        return all(position.distance_to(m.position) >= min_distance for m in self.modules)
+        footprint = self._footprint_cells(position)
+        if not footprint:
+            return False
+        return all(not footprint & self._footprint_cells(module.position) for module in self.modules)
 
     def snap_to_grid(self, position: Coordinate) -> Coordinate:
         """Привязывает точку к центру ближайшей клетки сетки."""
@@ -88,7 +106,7 @@ class Map:
             node = self.nav_grid.get_node(tower.position.x, tower.position.y)
             if node is None:
                 continue
-            blocked_nodes.add((node.x, node.y))
+            blocked_nodes |= self._footprint_cells(tower.position)
 
             radius_cells = int(tower.range_radius / self.nav_grid.cell_size) + 1
             for dx in range(-radius_cells, radius_cells + 1):

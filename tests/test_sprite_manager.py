@@ -23,11 +23,44 @@ class _FakeError(Exception):
     pass
 
 
+class _FakeRect:
+    def __init__(self, x, y, w, h):
+        self.x, self.y, self.w, self.h = x, y, w, h
+
+    @property
+    def width(self):
+        return self.w
+
+    @property
+    def height(self):
+        return self.h
+
+
 class _FakeSurface:
-    def __init__(self, path):
+    def __init__(self, path, size=(10, 10), content_rect=None):
         self.path = path
+        self.size = size
+        self.content_rect = content_rect or _FakeRect(0, 0, size[0], size[1])
+        self.cropped_to = None
 
     def convert_alpha(self):
+        return self
+
+    def get_width(self):
+        return self.size[0]
+
+    def get_height(self):
+        return self.size[1]
+
+    def get_bounding_rect(self, min_alpha=1):
+        return self.content_rect
+
+    def subsurface(self, rect):
+        cropped = _FakeSurface(self.path, size=(rect.width, rect.height))
+        cropped.cropped_to = (rect.x, rect.y, rect.width, rect.height)
+        return cropped
+
+    def copy(self):
         return self
 
 
@@ -35,6 +68,8 @@ class _FakeImageModule:
     def load(self, path):
         if "broken" in path:
             raise _FakeError("не удалось загрузить изображение")
+        if "padded" in path:
+            return _FakeSurface(path, size=(10, 10), content_rect=_FakeRect(2, 2, 4, 4))
         return _FakeSurface(path)
 
 
@@ -113,3 +148,24 @@ def test_sprite_manager_reports_progress_after_each_file(tmp_path, monkeypatch):
     SpriteManager(sprites_root=str(tmp_path), on_progress=lambda done, total: calls.append((done, total)))
 
     assert calls == [(1, 3), (2, 3), (3, 3)]
+
+
+def test_sprite_manager_autocrops_transparent_padding(tmp_path, monkeypatch):
+    root = _make_sprite_root(tmp_path, "tower_laser", ["padded.png"])
+    monkeypatch.setattr("src.ui.sprite_manager.pygame", _FakePygame())
+
+    manager = SpriteManager(sprites_root=root)
+
+    frame = manager.get_frame("tower_laser")
+    assert frame.size == (4, 4)
+    assert frame.cropped_to == (2, 2, 4, 4)
+
+
+def test_sprite_manager_does_not_crop_when_content_fills_canvas(tmp_path, monkeypatch):
+    root = _make_sprite_root(tmp_path, "base", ["only.png"])
+    monkeypatch.setattr("src.ui.sprite_manager.pygame", _FakePygame())
+
+    manager = SpriteManager(sprites_root=root)
+
+    frame = manager.get_frame("base")
+    assert frame.cropped_to is None

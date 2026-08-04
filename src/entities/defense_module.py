@@ -13,6 +13,8 @@ class DefenseModule(Entity, ABC):
     LANDING_START_HEIGHT = 600.0
     LANDING_IMPACT_RADIUS = 60.0
 
+    FOOTPRINT_CELLS = 3
+
     def __init__(self, position: Coordinate, range_radius: float, damage: float, cost: int, attack_speed: float = 1.0):
         """Создаёт башню с базовыми характеристиками."""
         super().__init__(position)
