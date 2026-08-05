@@ -174,7 +174,7 @@ class GameView:
             elif self.session.state == GameState.PAUSED and self.pause_menu_open:
                 self._handle_pause_menu_input(event)
             elif self.controller:
-                if not self._handle_build_panel_click(event):
+                if not self._handle_build_panel_click(event) and not self._handle_hud_toggle_click(event):
                     self.controller.handle_input(event)
 
     def _tick_autosave(self, delta_time: float):
@@ -200,6 +200,21 @@ class GameView:
         if tower_type is None:
             return False
         self.controller.select_tower(tower_type)
+        return True
+
+    def _handle_hud_toggle_click(self, event) -> bool:
+        """Перехватывает клик по кнопке-переключателю радиусов (энергосеть/атака
+        башен) в верхней HUD-панели раньше контроллера - тем же приёмом, что и
+        _handle_build_panel_click, чтобы клик по кнопке не долетал до карты под ней."""
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return False
+        key = self.hud_renderer.handle_toggle_click(event.pos, self.width)
+        if key is None:
+            return False
+        if key == "power_radii":
+            self.controller.toggle_power_radii()
+        elif key == "tower_ranges":
+            self.controller.toggle_tower_ranges()
         return True
 
     def _handle_escape(self):

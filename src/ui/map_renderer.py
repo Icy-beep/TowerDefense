@@ -119,6 +119,8 @@ class MapRenderer:
         """Рисует все элементы карты за один кадр."""
         keys = pygame.key.get_pressed()
         alt_held = bool(keys[pygame.K_LALT] or keys[pygame.K_RALT])
+        show_tower_ranges = getattr(controller, "show_tower_ranges", False)
+        show_power_radii = getattr(controller, "show_power_radii", False)
 
         self._draw_background(screen, camera, width, height)
         self._draw_sector_overlay(screen, camera, session, width, height)
@@ -127,7 +129,8 @@ class MapRenderer:
         self._draw_spawn_points(screen, camera, session)
         self._draw_pending_landings(screen, camera, session)
         self._draw_power_links(screen, camera, session)
-        self._draw_modules(screen, camera, session, controller, tower_options, alt_held)
+        self._draw_modules(screen, camera, session, controller, tower_options, alt_held,
+                            show_tower_ranges, show_power_radii)
         self._draw_enemies(screen, camera, session, controller, width, height)
         self._draw_projectiles(screen, camera, session)
         self._draw_placement_preview(screen, camera, session, controller, tower_options)
@@ -289,8 +292,13 @@ class MapRenderer:
             ex, ey = camera.world_to_screen(end.x, end.y)
             pygame.draw.line(screen, (255, 215, 0), (sx, sy), (ex, ey), 1)
 
-    def _draw_modules(self, screen, camera, session, controller, tower_options, alt_held=False):
-        """Рисует все башни, их уровень и радиус атаки при необходимости."""
+    def _draw_modules(self, screen, camera, session, controller, tower_options, alt_held=False,
+                       show_tower_ranges=False, show_power_radii=False):
+        """Рисует все башни, их уровень и радиус атаки при необходимости. Радиус
+        показывается: у выделенной постройки - всегда, у всех построек разом - пока
+        держишь ALT, а также постоянно у своей категории отдельно от ALT - у боевых
+        башен при show_tower_ranges, у энергосети (пилоны/генераторы, IS_COMBAT_TOWER=False -
+        см. power_infrastructure.py) при show_power_radii (кнопки/хоткеи T и G в HUD)."""
         for module in session.map.modules:
             color = (100, 100, 100)
             is_selected = (module == controller.selected_module)
@@ -311,11 +319,14 @@ class MapRenderer:
 
             sx, sy = camera.world_to_screen(module.position.x, module.position.y)
 
+            is_combat_tower = getattr(module, "IS_COMBAT_TOWER", True)
+            persistent_range = show_tower_ranges if is_combat_tower else show_power_radii
+
             if is_selected:
                 pygame.draw.circle(screen, (255, 255, 255),
                                    (int(sx), int(sy)), int(module.range_radius * camera.zoom) + 5, 2)
 
-            if is_selected or alt_held:
+            if is_selected or alt_held or persistent_range:
                 pygame.draw.circle(screen, (*color[:3], 40),
                                    (int(sx), int(sy)), int(module.range_radius * camera.zoom), 1)
 

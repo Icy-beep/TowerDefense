@@ -30,6 +30,8 @@ class OrbitalModeController(IGameModeController):
         self.selected_enemy = None
         self.dragging_camera = False
         self._last_mouse_pos = None
+        self.show_power_radii = False
+        self.show_tower_ranges = False
         super().__init__(session, screen_w, screen_h)
 
         if session.base_position is not None:
@@ -71,6 +73,10 @@ class OrbitalModeController(IGameModeController):
                 self.camera.zoom = 1.0
                 if self.session.base_position is not None:
                     self.camera.center_on(self.session.base_position)
+            elif event.key == pygame.K_g:
+                self.toggle_power_radii()
+            elif event.key == pygame.K_t:
+                self.toggle_tower_ranges()
             return True
 
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -155,6 +161,21 @@ class OrbitalModeController(IGameModeController):
             return True
         return False
 
+    def toggle_power_radii(self) -> bool:
+        """Переключает постоянный показ радиусов охвата энергосети (пилоны/генераторы -
+        см. MapRenderer._draw_modules). Раньше их радиус было видно только у выделенной
+        постройки или пока держишь ALT вместе со всеми башнями сразу - для энергосети
+        отдельно от боевых башен этого не хватало (см. запрос пользователя)."""
+        self.show_power_radii = not self.show_power_radii
+        return self.show_power_radii
+
+    def toggle_tower_ranges(self) -> bool:
+        """Переключает постоянный показ радиусов атаки боевых башен. ALT по-прежнему
+        временно показывает радиусы всех построек разом (см. MapRenderer._draw_modules) -
+        это отдельная, независимая от временного ALT постоянная подсветка."""
+        self.show_tower_ranges = not self.show_tower_ranges
+        return self.show_tower_ranges
+
     def deselect(self):
         """Снимает любое текущее выделение."""
         self.selected_module = None
@@ -179,6 +200,8 @@ class OrbitalModeController(IGameModeController):
             "endless": self.session.endless,
             "game_state": self.session.state,
             "selected_tower": self.selected_tower_type,
+            "show_power_radii": self.show_power_radii,
+            "show_tower_ranges": self.show_tower_ranges,
         }
 
     def _is_valid_position(self, position: Coordinate) -> bool:

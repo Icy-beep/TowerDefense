@@ -46,6 +46,11 @@ class HudRenderer:
     BUILD_ICON_SIZE = 64
     BUILD_ICON_GAP = 12
 
+    TOGGLE_BUTTON_SIZE = 40
+    TOGGLE_BUTTON_GAP = 8
+    # (ключ состояния, хоткей) - порядок и есть порядок отрисовки слева направо.
+    TOGGLE_BUTTONS = [("power_radii", "G"), ("tower_ranges", "T")]
+
     def __init__(self, sprite_manager=None):
         """Запоминает SpriteManager; без него (или без спрайта под ключ) иконки
         построек рисуются цветными плашками вместо картинки."""
@@ -63,6 +68,7 @@ class HudRenderer:
         state = controller.get_game_state()
 
         self._draw_top_bar(screen, state, font, width)
+        self._draw_toggle_buttons(screen, state, width, small_font)
         self._draw_missions_panel(screen, session, small_font, width)
         self._draw_bottom_bar(screen, state, controller, tower_options, camera, small_font, width, height)
 
@@ -155,6 +161,78 @@ class HudRenderer:
         pygame.draw.line(screen, (150, 190, 220), (x + r, cy), (x + r, cy - r + 2), 2)
         pygame.draw.line(screen, (150, 190, 220), (x + r, cy), (x + r + r - 3, cy), 2)
         return x + r * 2
+
+    # ------------------------------------------------------------------
+    # Кнопки-переключатели постоянного показа радиусов (энергосеть/атака башен) -
+    # см. запрос пользователя: не хватало способа держать радиусы включёнными без
+    # ALT, отдельно для энергосети и для боевых башен. Центр верхней панели между
+    # деньгами/здоровьем базы слева и таймером выживания справа обычно пустует.
+    # ------------------------------------------------------------------
+
+    def _layout_toggle_buttons(self, width):
+        """Считает прямоугольники кнопок-переключателей - используется и при
+        отрисовке, и при обработке клика (handle_toggle_click), чтобы раскладка
+        совпадала (тот же приём, что и в _layout_build_panel)."""
+        n = len(self.TOGGLE_BUTTONS)
+        total_w = n * self.TOGGLE_BUTTON_SIZE + (n - 1) * self.TOGGLE_BUTTON_GAP
+        start_x = (width - total_w) // 2
+        y = (self.TOP_BAR_HEIGHT - self.TOGGLE_BUTTON_SIZE) // 2
+
+        slots = []
+        x = start_x
+        for key, hotkey in self.TOGGLE_BUTTONS:
+            rect = pygame.Rect(x, y, self.TOGGLE_BUTTON_SIZE, self.TOGGLE_BUTTON_SIZE)
+            slots.append((rect, key, hotkey))
+            x += self.TOGGLE_BUTTON_SIZE + self.TOGGLE_BUTTON_GAP
+        return slots
+
+    def handle_toggle_click(self, pos, width) -> "str | None":
+        """Определяет, по какой кнопке-переключателю кликнули ('power_radii' /
+        'tower_ranges'), или None, если клик мимо. Раскладка та же, что и при
+        отрисовке (_layout_toggle_buttons)."""
+        for rect, key, _hotkey in self._layout_toggle_buttons(width):
+            if rect.collidepoint(pos):
+                return key
+        return None
+
+    def _draw_toggle_buttons(self, screen, state, width, small_font):
+        """Рисует кнопки постоянного показа радиусов: золотая рамка и зеленоватый фон,
+        когда включено, иначе - обычный вид иконки построек."""
+        active = {
+            "power_radii": state.get("show_power_radii", False),
+            "tower_ranges": state.get("show_tower_ranges", False),
+        }
+        for rect, key, hotkey in self._layout_toggle_buttons(width):
+            is_on = active.get(key, False)
+            bg_color = (55, 75, 40) if is_on else (34, 38, 48)
+            pygame.draw.rect(screen, bg_color, rect)
+
+            if key == "power_radii":
+                self._draw_power_toggle_icon(screen, rect)
+            else:
+                self._draw_range_toggle_icon(screen, rect)
+
+            border_color = self.HIGHLIGHT_COLOR if is_on else self.BORDER_COLOR
+            border_width = 3 if is_on else self.BORDER_WIDTH
+            pygame.draw.rect(screen, border_color, rect, border_width)
+
+            badge = small_font.render(hotkey, True, (255, 255, 255))
+            screen.blit(badge, (rect.x + 3, rect.y + 1))
+
+    def _draw_power_toggle_icon(self, screen, rect):
+        """Иконка кнопки радиусов энергосети - молния."""
+        cx, cy = rect.center
+        points = [(cx - 4, cy - 12), (cx + 4, cy - 2), (cx - 1, cy - 2),
+                  (cx + 5, cy + 12), (cx - 5, cy + 2), (cx, cy + 2)]
+        pygame.draw.polygon(screen, (255, 215, 0), points)
+
+    def _draw_range_toggle_icon(self, screen, rect):
+        """Иконка кнопки радиусов атаки башен - прицел."""
+        cx, cy = rect.center
+        r = 10
+        pygame.draw.circle(screen, (220, 90, 90), (cx, cy), r, 2)
+        pygame.draw.line(screen, (220, 90, 90), (cx - r - 3, cy), (cx + r + 3, cy), 2)
+        pygame.draw.line(screen, (220, 90, 90), (cx, cy - r - 3), (cx, cy + r + 3), 2)
 
     # ------------------------------------------------------------------
     # Панель заданий (справа сверху, под верхней панелью ресурсов)
@@ -360,6 +438,7 @@ class HudRenderer:
             (loc.get("hud.controls_select"), self.DIM_TEXT_COLOR),
             (loc.get("hud.controls_misc"), self.DIM_TEXT_COLOR),
             (loc.get("hud.controls_alt"), self.DIM_TEXT_COLOR),
+            (loc.get("hud.controls_ranges"), self.DIM_TEXT_COLOR),
         ]
         line_height = 16
         for i, (text, color) in enumerate(lines):

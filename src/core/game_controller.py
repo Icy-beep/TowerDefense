@@ -57,6 +57,23 @@ class GameController:
             return False
         return select(tower_type)
 
+    def toggle_power_radii(self) -> bool:
+        """Переключает постоянный показ радиусов энергосети в активном режиме (если тот
+        это поддерживает - см. OrbitalModeController.toggle_power_radii). Нужно
+        HUD-кнопке, чтобы клик работал так же, как хоткей G."""
+        toggle = getattr(self.active_mode, "toggle_power_radii", None)
+        if toggle is None:
+            return False
+        return toggle()
+
+    def toggle_tower_ranges(self) -> bool:
+        """Переключает постоянный показ радиусов атаки башен в активном режиме - клик
+        по HUD-кнопке работает так же, как хоткей T."""
+        toggle = getattr(self.active_mode, "toggle_tower_ranges", None)
+        if toggle is None:
+            return False
+        return toggle()
+
     def get_game_state(self) -> dict:
         """Возвращает состояние игры для HUD."""
         return self.active_mode.get_game_state()
