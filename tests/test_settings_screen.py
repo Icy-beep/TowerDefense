@@ -80,6 +80,16 @@ def test_language_stepper_returns_action(screen):
     assert screen.handle_click(_center(screen._language_next_rect), WIDTH, HEIGHT, settings) == ("language", 1)
 
 
+def test_autosave_interval_stepper_returns_action(screen):
+    settings = Settings()
+    screen._layout(WIDTH, HEIGHT)
+
+    assert screen.handle_click(_center(screen._autosave_up_rect), WIDTH, HEIGHT, settings) == \
+        ("autosave_interval", 1)
+    assert screen.handle_click(_center(screen._autosave_down_rect), WIDTH, HEIGHT, settings) == \
+        ("autosave_interval", -1)
+
+
 def test_layout_adapts_to_window_size(screen):
     screen._layout(1200, 800)
     x, _, w, _ = screen._back_rect
@@ -94,6 +104,18 @@ def test_rows_do_not_overlap(screen):
     resolution_y = screen._resolution_prev_rect[1]
 
     assert windowed_y + windowed_h <= resolution_y
+
+
+def test_autosave_row_sits_below_language_row_and_above_back_button(screen):
+    screen._layout(WIDTH, HEIGHT)
+    language_y = screen._language_prev_rect[1]
+    language_h = screen._language_prev_rect[3]
+    autosave_y = screen._autosave_down_rect[1]
+    autosave_h = screen._autosave_down_rect[3]
+    back_y = screen._back_rect[1]
+
+    assert language_y + language_h <= autosave_y
+    assert autosave_y + autosave_h <= back_y
 
 
 def test_render_does_not_crash(screen):

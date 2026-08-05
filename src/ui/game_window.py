@@ -5,7 +5,7 @@ import sys
 from src.core.game_session import GameSession
 from src.core.game_controller import GameController
 from src.core.settings import (
-    DISPLAY_MODE_BORDERLESS, DISPLAY_MODE_FULLSCREEN, DISPLAY_MODE_WINDOWED,
+    AUTOSAVE_STEP_SECONDS, DISPLAY_MODE_BORDERLESS, DISPLAY_MODE_FULLSCREEN, DISPLAY_MODE_WINDOWED,
     RESOLUTIONS, Settings, VOLUME_STEP,
 )
 from src.enums import GameState
@@ -16,10 +16,12 @@ from src.ui.game_over_screen import GameOverScreen
 from src.ui.menu_screen import MenuScreen
 from src.ui.mode_select_screen import ModeSelectScreen
 from src.ui.pause_menu_screen import PauseMenuScreen
+from src.ui.save_load_screen import SaveLoadScreen
 from src.ui.settings_screen import SettingsScreen
 from src.ui.sound_manager import SoundManager
 from src.ui.music_manager import MusicManager
 from src.ui.sprite_manager import SpriteManager
+from src.save_load.save_manager import SaveManager
 from src.systems.spatial_audio import volume_for_position
 
 
@@ -77,6 +79,10 @@ class GameView:
         self._pause_notice = ""
         self._pause_notice_timer = 0.0
 
+        self.save_manager = SaveManager()
+        self._save_load_mode = "save"
+        self._autosave_timer = 0.0
+
         self.tower_options = [
             {"key": pygame.K_1, "type": "laser", "name": "Laser (50)", "color": (0, 255, 255)},
             {"key": pygame.K_2, "type": "bullet", "name": "Bullet (100)", "color": (255, 255, 0)},
@@ -90,6 +96,7 @@ class GameView:
         self.mode_select_screen = ModeSelectScreen()
         self.settings_screen = SettingsScreen()
         self.pause_menu_screen = PauseMenuScreen()
+        self.save_load_screen = SaveLoadScreen()
 
         self._show_loading_screen("Loading sounds...")
         self.sound_manager = SoundManager(on_progress=self._on_sound_loading_progress)
@@ -140,6 +147,8 @@ class GameView:
                 self.controller.update(dt)
                 self.session.update(dt)
                 self.sound_manager.update(dt)
+                if self.session.state == GameState.PLAYING:
+                    self._tick_autosave(dt)
             self.render()
             pygame.display.flip()
             if self._menu_music_pending:
@@ -164,6 +173,18 @@ class GameView:
             elif self.controller:
                 if not self._handle_build_panel_click(event):
                     self.controller.handle_input(event)
+
+    def _tick_autosave(self, delta_time: float):
+        """Раз в settings.autosave_interval_seconds пишет быстрое сохранение поверх
+        одного и того же слота. 0 - автосохранение выключено (см. Settings)."""
+        interval = self.settings.autosave_interval_seconds
+        if interval <= 0:
+            return
+        self._autosave_timer += delta_time
+        if self._autosave_timer < interval:
+            return
+        self._autosave_timer = 0.0
+        self.save_manager.quicksave(self.session)
 
     def _handle_build_panel_click(self, event) -> bool:
         """Перехватывает клик по иконке постройки в нижней HUD-панели раньше, чем
@@ -198,7 +219,7 @@ class GameView:
             self.session.state = GameState.PAUSED
             self.pause_menu_open = True
             self.pause_view = "menu"
-        elif self.pause_view == "settings":
+        elif self.pause_view in ("settings", "save_load"):
             self.pause_view = "menu"
         elif self.pause_menu_open:
             self._resume_game()
@@ -224,6 +245,13 @@ class GameView:
                 self._apply_settings_action(action)
             return
 
+        if self.pause_view == "save_load":
+            slots = self._current_save_slots(self._save_load_mode)
+            action = self.save_load_screen.handle_click(event.pos, self.width, self.height,
+                                                          self._save_load_mode, slots)
+            self._apply_save_load_action(action)
+            return
+
         action = self.pause_menu_screen.handle_click(event.pos, self.width, self.height)
         self._apply_pause_action(action)
 
@@ -231,14 +259,69 @@ class GameView:
         """Применяет действие, полученное от PauseMenuScreen.handle_click."""
         if action == "resume":
             self._resume_game()
-        elif action in ("save", "load"):
-            self._show_pause_notice(loc.get("pause.not_implemented"))
+        elif action == "save":
+            self._save_load_mode = "save"
+            self.pause_view = "save_load"
+        elif action == "load":
+            self._save_load_mode = "load"
+            self.pause_view = "save_load"
         elif action == "settings":
             self.pause_view = "settings"
         elif action == "main_menu":
             self._exit_to_main_menu()
         elif action == "exit":
             self.running = False
+
+    def _current_save_slots(self, mode: str) -> list:
+        """Список слотов для SaveLoadScreen: именованные слоты от новых к старым, а
+        в режиме загрузки ещё и быстрое сохранение первой строкой, если оно есть."""
+        slots = self.save_manager.list_slots()
+        for info in slots:
+            info["is_quicksave"] = False
+        if mode == "load":
+            quicksave = self.save_manager.quicksave_info()
+            if quicksave:
+                quicksave = dict(quicksave)
+                quicksave["is_quicksave"] = True
+                slots = [quicksave] + slots
+        return slots
+
+    def _apply_save_load_action(self, action):
+        """Применяет действие, полученное от SaveLoadScreen.handle_click."""
+        if action is None:
+            return
+        kind, slot_id = action
+        if kind == "back":
+            self.pause_view = "menu"
+        elif kind == "new_save":
+            saved_id = self.save_manager.save_to_new_slot(self.session)
+            self._show_pause_notice(loc.get("pause.saved" if saved_id else "pause.save_failed"))
+        elif kind == "save_slot":
+            ok = self.save_manager.save_to_slot(self.session, slot_id)
+            self._show_pause_notice(loc.get("pause.saved" if ok else "pause.save_failed"))
+        elif kind == "load_slot":
+            self._load_slot_from_pause(slot_id)
+
+    def _load_slot_from_pause(self, slot_id: str):
+        """Загружает выбранный слот поверх текущей сессии и возвращается в игру."""
+        if not self.save_manager.load_slot(self.session, slot_id):
+            self._show_pause_notice(loc.get("pause.load_failed"))
+            return
+        self._clear_selection_after_load()
+        self.pause_view = "menu"
+        self._resume_game()
+
+    def _clear_selection_after_load(self):
+        """Снимает выделение башни/врага/типа постройки после загрузки - старые
+        объекты больше не существуют на новой карте, ссылка на них была бы битой."""
+        active_mode = getattr(self.controller, "active_mode", None)
+        if active_mode is None:
+            return
+        active_mode.selected_module = None
+        active_mode.selected_enemy = None
+        active_mode.selected_tower_type = None
+        if hasattr(active_mode, "camera") and self.session.base_position is not None:
+            active_mode.camera.center_on(self.session.base_position)
 
     def _show_pause_notice(self, text: str):
         """Показывает временную подсказку в меню паузы (например, для заглушек сохранения/загрузки)."""
@@ -297,6 +380,9 @@ class GameView:
             self.sound_manager.set_volume(self.settings.sfx_volume)
         elif kind == "language":
             self._cycle_language(value)
+        elif kind == "autosave_interval":
+            self.settings.autosave_interval_seconds += value * AUTOSAVE_STEP_SECONDS
+            self.settings.clamp_autosave_interval()
         elif kind == "back":
             self.menu_view = "main"
         self.settings.save()
@@ -335,8 +421,11 @@ class GameView:
                 self.menu_view = "main"
             return
 
-        action = self.menu_screen.handle_click(event.pos, self.width, self.height)
-        if action == "start":
+        has_continue = self.save_manager.has_any_save()
+        action = self.menu_screen.handle_click(event.pos, self.width, self.height, has_continue)
+        if action == "continue":
+            self._continue_game()
+        elif action == "start":
             self.menu_view = "mode_select"
         elif action == "settings":
             self.menu_view = "settings"
@@ -348,6 +437,20 @@ class GameView:
         self.session.setup_game(endless=endless)
         self.session.on_event = self._handle_game_event
         self.controller = GameController(self.session, self.width, self.height)
+        self._autosave_timer = 0.0
+        self.music_manager.play_category("gameplay")
+
+    def _continue_game(self):
+        """Загружает самое свежее сохранение (именованное или быстрое) и сразу
+        входит в игру - кнопка "Продолжить" в главном меню."""
+        slot_id = self.save_manager.most_recent_slot_id()
+        if slot_id is None or not self.save_manager.load_slot(self.session, slot_id):
+            return
+        self.session.on_event = self._handle_game_event
+        self.controller = GameController(self.session, self.width, self.height)
+        self._autosave_timer = 0.0
+        if self.session.base_position is not None:
+            self.controller.camera.center_on(self.session.base_position)
         self.music_manager.play_category("gameplay")
 
     def _handle_game_event(self, event_name, **data):
@@ -374,7 +477,9 @@ class GameView:
             elif self.menu_view == "mode_select":
                 self.mode_select_screen.render(self.screen, self.width, self.height, self.font, self.title_font)
             else:
-                self.menu_screen.render(self.screen, self.width, self.height, self.font, self.title_font)
+                has_continue = self.save_manager.has_any_save()
+                self.menu_screen.render(self.screen, self.width, self.height,
+                                         self.font, self.title_font, has_continue)
             return
 
         self.screen.fill((20, 24, 28))
@@ -393,6 +498,11 @@ class GameView:
             if self.pause_view == "settings":
                 self.settings_screen.render(self.screen, self.width, self.height,
                                              self.font, self.small_font, self.title_font, self.settings)
+            elif self.pause_view == "save_load":
+                slots = self._current_save_slots(self._save_load_mode)
+                self.save_load_screen.render(self.screen, self.width, self.height,
+                                              self.font, self.small_font, self.title_font,
+                                              self._save_load_mode, slots)
             else:
                 notice = self._pause_notice if self._pause_notice_timer > 0 else ""
                 self.pause_menu_screen.render(self.screen, self.width, self.height,

@@ -21,6 +21,10 @@ RESOLUTIONS = [
 
 VOLUME_STEP = 0.1
 
+AUTOSAVE_STEP_SECONDS = 30
+AUTOSAVE_MIN_SECONDS = 0  # 0 = автосохранение выключено
+AUTOSAVE_MAX_SECONDS = 300
+
 
 def default_settings_path() -> Path:
     """Путь к settings.json: рядом с исполняемым файлом при сборке PyInstaller,
@@ -42,6 +46,7 @@ class Settings:
     music_volume: float = 0.35
     sfx_volume: float = 0.45
     language: str = "ru"
+    autosave_interval_seconds: float = 60.0
 
     @classmethod
     def load(cls, path: Optional[Path] = None) -> "Settings":
@@ -82,3 +87,10 @@ class Settings:
         """Ограничивает громкости диапазоном 0.0-1.0 после ручного изменения."""
         self.music_volume = round(max(0.0, min(1.0, self.music_volume)), 2)
         self.sfx_volume = round(max(0.0, min(1.0, self.sfx_volume)), 2)
+
+    def clamp_autosave_interval(self):
+        """Ограничивает промежуток автосохранения диапазоном
+        [AUTOSAVE_MIN_SECONDS, AUTOSAVE_MAX_SECONDS] после ручного изменения. 0 -
+        автосохранение выключено (см. GameView._tick_autosave)."""
+        self.autosave_interval_seconds = max(AUTOSAVE_MIN_SECONDS,
+                                              min(AUTOSAVE_MAX_SECONDS, self.autosave_interval_seconds))

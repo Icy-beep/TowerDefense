@@ -72,23 +72,23 @@ def test_resume_button_resumes_game(view):
     assert view.pause_menu_open is False
 
 
-def test_save_button_shows_notice_stub(view):
+def test_save_button_opens_save_load_screen_in_save_mode(view):
     view._handle_escape()
 
     view._apply_pause_action("save")
 
-    assert view._pause_notice
-    assert view._pause_notice_timer > 0
+    assert view.pause_view == "save_load"
+    assert view._save_load_mode == "save"
     assert view.session.state == GameState.PAUSED
 
 
-def test_load_button_shows_notice_stub(view):
+def test_load_button_opens_save_load_screen_in_load_mode(view):
     view._handle_escape()
 
     view._apply_pause_action("load")
 
-    assert view._pause_notice
-    assert view._pause_notice_timer > 0
+    assert view.pause_view == "save_load"
+    assert view._save_load_mode == "load"
 
 
 def test_settings_button_switches_pause_view(view):

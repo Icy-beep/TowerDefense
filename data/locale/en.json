@@ -51,6 +51,7 @@
   "menu.mode_endless": "Endless mode",
   "menu.mode_story": "Story (Soon)",
   "menu.back": "Back",
+  "menu.continue": "Continue",
 
   "settings.title": "Settings",
   "settings.display_mode": "Display",
@@ -61,6 +62,9 @@
   "settings.music_volume": "Music",
   "settings.sfx_volume": "Sound",
   "settings.language": "Language",
+  "settings.autosave_interval": "Autosave",
+  "settings.autosave_off": "Off",
+  "settings.autosave_seconds": "Every {seconds}s",
   "settings.back": "Back",
 
   "pause.title": "Paused",
@@ -69,6 +73,16 @@
   "pause.load": "Load",
   "pause.main_menu": "Main menu",
   "pause.not_implemented": "Not implemented yet",
+  "pause.saved": "Game saved",
+  "pause.save_failed": "Failed to save",
+  "pause.loaded": "Game loaded",
+  "pause.load_failed": "Failed to load",
+
+  "save_load.title_save": "Save Game",
+  "save_load.title_load": "Load Game",
+  "save_load.new_save": "New Save",
+  "save_load.empty": "No saves yet",
+  "save_load.quicksave": "Quicksave",
 
   "game_over.defeat": "DEFEAT",
   "game_over.victory": "VICTORY",

@@ -51,6 +51,7 @@
   "menu.mode_endless": "Бесконечный режим",
   "menu.mode_story": "Сюжет (Скоро)",
   "menu.back": "Назад",
+  "menu.continue": "Продолжить",
 
   "settings.title": "Настройки",
   "settings.display_mode": "Экран",
@@ -61,6 +62,9 @@
   "settings.music_volume": "Музыка",
   "settings.sfx_volume": "Звуки",
   "settings.language": "Язык",
+  "settings.autosave_interval": "Автосохранение",
+  "settings.autosave_off": "Выкл",
+  "settings.autosave_seconds": "Каждые {seconds} с",
   "settings.back": "Назад",
 
   "pause.title": "Пауза",
@@ -69,6 +73,16 @@
   "pause.load": "Загрузить",
   "pause.main_menu": "Главное меню",
   "pause.not_implemented": "Пока не реализовано",
+  "pause.saved": "Игра сохранена",
+  "pause.save_failed": "Не удалось сохранить",
+  "pause.loaded": "Игра загружена",
+  "pause.load_failed": "Не удалось загрузить",
+
+  "save_load.title_save": "Сохранить игру",
+  "save_load.title_load": "Загрузить игру",
+  "save_load.new_save": "Новое сохранение",
+  "save_load.empty": "Нет сохранений",
+  "save_load.quicksave": "Быстрое сохранение",
 
   "game_over.defeat": "ПОРАЖЕНИЕ",
   "game_over.victory": "ПОБЕДА",

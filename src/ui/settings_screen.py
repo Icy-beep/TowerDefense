@@ -1,7 +1,7 @@
-"""Экран настроек, открывается из главного меню: экран, звук, язык."""
+"""Экран настроек, открывается из главного меню: экран, звук, язык, автосохранение."""
 import pygame
 
-from src.core.settings import DISPLAY_MODE_BORDERLESS, DISPLAY_MODES
+from src.core.settings import AUTOSAVE_STEP_SECONDS, DISPLAY_MODE_BORDERLESS, DISPLAY_MODES
 from src.localization.loc import loc
 
 PANEL_WIDTH = 560
@@ -34,6 +34,8 @@ class SettingsScreen:
         self._sfx_up_rect = (0, 0, 0, 0)
         self._language_prev_rect = (0, 0, 0, 0)
         self._language_next_rect = (0, 0, 0, 0)
+        self._autosave_down_rect = (0, 0, 0, 0)
+        self._autosave_up_rect = (0, 0, 0, 0)
         self._back_rect = (0, 0, 0, 0)
 
     def _layout(self, width, height):
@@ -43,7 +45,7 @@ class SettingsScreen:
         controls_left = panel_left + LABEL_WIDTH
         controls_width = PANEL_WIDTH - LABEL_WIDTH
 
-        row_count = 5
+        row_count = 6
         total_height = ROW_HEIGHT * row_count + ROW_GAP * (row_count - 1)
         y = height // 2 - total_height // 2 - 30
 
@@ -73,6 +75,11 @@ class SettingsScreen:
         self._language_prev_rect = (controls_left, y, STEPPER_ARROW_SIZE, ROW_HEIGHT)
         self._language_next_rect = (controls_left + controls_width - STEPPER_ARROW_SIZE, y,
                                      STEPPER_ARROW_SIZE, ROW_HEIGHT)
+
+        y += ROW_HEIGHT + ROW_GAP
+        self._autosave_down_rect = (controls_left, y, STEPPER_ARROW_SIZE, ROW_HEIGHT)
+        self._autosave_up_rect = (controls_left + controls_width - STEPPER_ARROW_SIZE, y,
+                                   STEPPER_ARROW_SIZE, ROW_HEIGHT)
 
         y += ROW_HEIGHT + ROW_GAP * 2
         self._back_rect = (cx - BACK_BUTTON_WIDTH // 2, y, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT)
@@ -111,6 +118,11 @@ class SettingsScreen:
         self._draw_stepper_row(screen, panel_left, self._language_prev_rect, self._language_next_rect,
                                 loc.get("settings.language"), loc.language_name(settings.language),
                                 font, small_font)
+
+        autosave_text = (loc.get("settings.autosave_off") if settings.autosave_interval_seconds <= 0
+                          else loc.get("settings.autosave_seconds", seconds=int(settings.autosave_interval_seconds)))
+        self._draw_stepper_row(screen, panel_left, self._autosave_down_rect, self._autosave_up_rect,
+                                loc.get("settings.autosave_interval"), autosave_text, font, small_font)
 
         self._draw_button(screen, self._back_rect, loc.get("settings.back"), font, (100, 100, 100))
 
@@ -172,6 +184,10 @@ class SettingsScreen:
             return ("language", -1)
         if self._point_in(pos, self._language_next_rect):
             return ("language", 1)
+        if self._point_in(pos, self._autosave_down_rect):
+            return ("autosave_interval", -1)
+        if self._point_in(pos, self._autosave_up_rect):
+            return ("autosave_interval", 1)
         if self._point_in(pos, self._back_rect):
             return ("back", None)
         return None
