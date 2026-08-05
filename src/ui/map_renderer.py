@@ -144,7 +144,7 @@ class MapRenderer:
         self._draw_background(screen, camera, width, height)
         self._draw_sector_overlay(screen, camera, session, width, height)
         self._draw_placement_grid(screen, camera, session, controller, width, height)
-        self._draw_base(screen, camera, session)
+        self._draw_base(screen, camera, session, show_power_radii)
         self._draw_spawn_points(screen, camera, session)
         self._draw_pending_landings(screen, camera, session)
         self._draw_power_links(screen, camera, session)
@@ -313,11 +313,17 @@ class MapRenderer:
         pygame.draw.circle(screen, color, (int(sx), int(sy)), outer_radius, 2)
         pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(sy)), inner_radius, 3)
 
-    def _draw_base(self, screen, camera, session):
+    BASE_POWER_RADIUS_RING_COLOR = (255, 215, 0)
+
+    def _draw_base(self, screen, camera, session, show_power_radii=False):
         """Рисует базу и полоску её здоровья."""
         if session.base_position is None:
             return
         sx, sy = camera.world_to_screen(session.base_position.x, session.base_position.y)
+
+        if show_power_radii:
+            self._draw_base_power_radius(screen, camera, session, sx, sy)
+
         sprite = self._sprite_for("base", getattr(session, "elapsed_time", 0.0))
         if sprite:
             self._blit_scaled(screen, sprite, sx, sy, target_size=self._base_screen_size(camera))
@@ -328,6 +334,27 @@ class MapRenderer:
         pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 20, int(sy) - 40, 40, 6))
         pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
                           (int(sx) - 20, int(sy) - 40, int(40 * hp_ratio), 6))
+
+    def _draw_base_power_radius(self, screen, camera, session, sx, sy):
+        """Рисует радиус бесплатного питания от базы (Map.BASE_POWER_RADIUS) - в его
+        пределах боевые башни и узлы энергосети запитаны без генератора/пилона (см.
+        Map._update_power_grid). Раньше кнопка/хоткей G показывала радиусы только у
+        пилонов/генераторов, но не у самой базы (см. запрос пользователя). Радиус
+        читается прямо с session.map.BASE_POWER_RADIUS, а не дублируется константой
+        здесь - иначе отрисовка могла бы разойтись с реальной механикой."""
+        if not getattr(session.map, "power_grid_enabled", False):
+            return
+        radius = getattr(session.map, "BASE_POWER_RADIUS", None)
+        if not radius:
+            return
+        screen_radius = int(radius * camera.zoom)
+        if screen_radius <= 0:
+            return
+        size = screen_radius * 2
+        overlay = pygame.Surface((size, size), pygame.SRCALPHA)
+        pygame.draw.circle(overlay, (*self.BASE_POWER_RADIUS_RING_COLOR, 90),
+                            (screen_radius, screen_radius), screen_radius, 2)
+        screen.blit(overlay, (int(sx) - screen_radius, int(sy) - screen_radius))
 
     def _draw_power_links(self, screen, camera, session):
         """Рисует линии энергосети между запитанными узлами (и от базы к ним) - чисто

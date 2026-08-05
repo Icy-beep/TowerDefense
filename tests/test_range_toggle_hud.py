@@ -447,3 +447,122 @@ def test_controls_zone_only_draws_help_button_when_closed(monkeypatch):
     # Камера (1 блит) + кнопка "?" (значок "?", 1 блит) - без открытой панели
     # никаких дополнительных строк подсказок рисоваться не должно.
     assert len(blit_calls) == 2
+
+
+# ---------------------------------------------------------------------------
+# Радиус бесплатного питания от базы (Map.BASE_POWER_RADIUS) - раньше кнопка/хоткей
+# G показывала радиусы только у пилонов/генераторов, но не у самой базы (см. запрос
+# пользователя).
+# ---------------------------------------------------------------------------
+
+def _session_with_power_grid(base_power_radius=550.0):
+    session = GameSession()
+    session.setup_game()
+    session.map.BASE_POWER_RADIUS = base_power_radius
+    return session
+
+
+def test_base_power_radius_not_drawn_when_toggle_is_off(monkeypatch):
+    session = _session_with_power_grid()
+    camera = _camera()
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    blitted = []
+    original_blit = screen.blit
+
+    def spy_blit(source, dest, *a, **k):
+        blitted.append(source)
+        return original_blit(source, dest, *a, **k)
+
+    monkeypatch.setattr(screen, "blit", spy_blit)
+
+    MapRenderer()._draw_base(screen, camera, session, show_power_radii=False)
+
+    assert not any(getattr(s, "get_flags", lambda: 0)() & pygame.SRCALPHA for s in blitted)
+
+
+def test_base_power_radius_drawn_when_toggle_is_on(monkeypatch):
+    session = _session_with_power_grid()
+    camera = _camera()
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    blitted = []
+    original_blit = screen.blit
+
+    def spy_blit(source, dest, *a, **k):
+        blitted.append(source)
+        return original_blit(source, dest, *a, **k)
+
+    monkeypatch.setattr(screen, "blit", spy_blit)
+
+    MapRenderer()._draw_base(screen, camera, session, show_power_radii=True)
+
+    assert any(getattr(s, "get_flags", lambda: 0)() & pygame.SRCALPHA for s in blitted), \
+        "радиус питания базы должен рисоваться через SRCALPHA-поверхность при включённом G"
+
+
+def test_base_power_radius_uses_maps_actual_constant(monkeypatch):
+    """Радиус должен читаться прямо с session.map.BASE_POWER_RADIUS, а не быть
+    захардкожен в рендерере - иначе отрисовка могла бы разойтись с реальной
+    механикой (см. Map._update_power_grid)."""
+    session = _session_with_power_grid(base_power_radius=777.0)
+    camera = _camera(zoom=1.0)
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    circle_calls = []
+    original_circle = pygame.draw.circle
+
+    def spy_circle(surf, color, pos, radius, width=0):
+        circle_calls.append(radius)
+        return original_circle(surf, color, pos, radius, width)
+
+    monkeypatch.setattr(pygame.draw, "circle", spy_circle)
+
+    MapRenderer()._draw_base(screen, camera, session, show_power_radii=True)
+
+    assert int(777.0 * camera.zoom) in circle_calls
+
+
+def test_base_power_radius_skipped_when_power_grid_disabled(monkeypatch):
+    """На картах/сессиях без включённой энергосети (power_grid_enabled=False) башни
+    и так всегда запитаны - показывать радиус базы там нечего и вводило бы в
+    заблуждение."""
+    session = _session_with_power_grid()
+    session.map.power_grid_enabled = False
+    camera = _camera()
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    blitted = []
+    original_blit = screen.blit
+
+    def spy_blit(source, dest, *a, **k):
+        blitted.append(source)
+        return original_blit(source, dest, *a, **k)
+
+    monkeypatch.setattr(screen, "blit", spy_blit)
+
+    MapRenderer()._draw_base(screen, camera, session, show_power_radii=True)
+
+    assert not any(getattr(s, "get_flags", lambda: 0)() & pygame.SRCALPHA for s in blitted)
+
+
+def test_end_to_end_toggle_power_radii_also_reveals_base_ring(monkeypatch):
+    """Полный путь: GameController.toggle_power_radii() -> MapRenderer.render должен
+    нарисовать и кольцо у базы, не только у пилонов/генераторов."""
+    session = _session_with_power_grid()
+    game_controller = GameController(session)
+    game_controller.toggle_power_radii()
+
+    blitted = []
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    original_blit = screen.blit
+
+    def spy_blit(source, dest, *a, **k):
+        blitted.append(source)
+        return original_blit(source, dest, *a, **k)
+
+    monkeypatch.setattr(screen, "blit", spy_blit)
+    camera = types.SimpleNamespace(
+        world_to_screen=lambda x, y: (x, y), screen_to_world=lambda x, y: (x, y),
+        x=0, y=0, zoom=1.0,
+    )
+
+    MapRenderer().render(screen, camera, session, game_controller, [], WIDTH, HEIGHT)
+
+    assert any(getattr(s, "get_flags", lambda: 0)() & pygame.SRCALPHA for s in blitted)
