@@ -33,7 +33,12 @@ class HeavyAssaultDrone(HostileEntity):
         pass
 
 class GiantRoach(HostileEntity):
-    """Медленный и живучий гигантский таракан фауны планеты."""
+    """Медленный и живучий гигантский таракан фауны планеты. При потере большей части
+    здоровья впадает в ярость - становится быстрее и бьёт сильнее (см. act)."""
+
+    ENRAGE_HEALTH_RATIO = 0.4
+    ENRAGE_SPEED_MULTIPLIER = 1.6
+    ENRAGE_DAMAGE_MULTIPLIER = 1.5
 
     def __init__(self, position: Coordinate, max_health: float = 250, speed: float = 25,
                  armor: ArmorType = ArmorType.HEAVY, reward: int = 40,
@@ -41,10 +46,21 @@ class GiantRoach(HostileEntity):
         """Создаёт гигантского таракана."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
                           vision_radius=vision_radius)
+        self._base_speed = speed
+        self.is_enraged = False
 
     def act(self, delta_time: float, in_danger: bool = False):
-        """Не выполняет особых действий."""
-        pass
+        """Проверяет порог ярости - разовый переход (обратно не снимается, даже если
+        таракана потом подлечат), как только здоровье падает до ENRAGE_HEALTH_RATIO
+        от максимума: скорость и урон в ближнем бою умножаются на постоянные
+        множители."""
+        if self.is_enraged or not self.is_alive():
+            return
+        if self.health > self.max_health * self.ENRAGE_HEALTH_RATIO:
+            return
+        self.is_enraged = True
+        self.speed = self._base_speed * self.ENRAGE_SPEED_MULTIPLIER
+        self.ATTACK_DAMAGE_PER_SECOND = self.ATTACK_DAMAGE_PER_SECOND * self.ENRAGE_DAMAGE_MULTIPLIER
 
 class ScoutDrone(HostileEntity):
     """Дрон-разведчик корпорации: только разведка, убегает от башен, не участвует в группах."""
@@ -133,7 +149,9 @@ class MedicDrone(HostileEntity):
         return self.group_leader is None
 
 class BioTitan(HostileEntity):
-    """Огромный и живучий органический титан фауны планеты."""
+    """Огромный и живучий органический титан фауны планеты - пробивной юнит: не
+    выжидает брешь в обороне (Map._advance_towards_base) и не отступает на лечение
+    (Map.update), пока жив - см. breaks_through."""
 
     def __init__(self, position: Coordinate, max_health: float = 400, speed: float = 20,
                  armor: ArmorType = ArmorType.ORGANIC, reward: int = 70,
@@ -145,3 +163,9 @@ class BioTitan(HostileEntity):
     def act(self, delta_time: float, in_danger: bool = False):
         """Не выполняет особых действий."""
         pass
+
+    def breaks_through(self) -> bool:
+        """Титан прёт напролом: не патрулирует границу известных башен в ожидании
+        бреши и не отступает лечиться, пока жив (см. Map._advance_towards_base,
+        Map.update)."""
+        return True

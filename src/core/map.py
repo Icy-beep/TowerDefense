@@ -207,7 +207,12 @@ class Map:
         return self.TOWER_HUNT_RADIUS_OVERRIDES.get(faction, self.TOWER_HUNT_RADIUS)
 
     def _update_group_targets(self, enemies: List[HostileEntity]):
-        """Назначает лидерам групп ближайшую известную башню в радиусе охоты."""
+        """Назначает лидерам групп известную башню в радиусе охоты - боевые башни
+        приоритетнее инфраструктуры энергосети (генератор/пилон не могут ответить
+        огнём, см. DefenseModule.IS_COMBAT_TOWER), а среди равных по приоритету
+        выбирается ближайшая. Раньше выбор шёл чисто по расстоянию, из-за чего группа
+        могла застрять, разнося безобидный пилон в двух шагах, вместо того чтобы
+        добить турель, которая её реально обстреливает."""
         for enemy in enemies:
             if not enemy.is_alive() or not enemy.is_group_leader:
                 continue
@@ -224,8 +229,10 @@ class Map:
                 if not tower.is_destroyed()
                 and enemy.position.distance_to(tower.position) <= hunt_radius
             ]
-            enemy.target_tower = min(candidates, key=lambda t: enemy.position.distance_to(t.position)) \
-                if candidates else None
+            enemy.target_tower = min(
+                candidates,
+                key=lambda t: (0 if t.IS_COMBAT_TOWER else 1, enemy.position.distance_to(t.position)),
+            ) if candidates else None
 
     PATROL_ANGULAR_SPEED = 0.5
     PATROL_RADIUS_PADDING = 150.0
@@ -259,13 +266,20 @@ class Map:
 
     def _advance_towards_base(self, enemy: HostileEntity, delta_time: float):
         """Движение к базе: патрулирует периметр, если известная башня
-        перекрывает направление, иначе идёт по маршруту."""
+        перекрывает направление, иначе идёт по маршруту. Пробивные юниты
+        (enemy.breaks_through(), см. BioTitan) это патрулирование полностью
+        игнорируют - просто идут по маршруту, не выжидая брешь."""
         if self.base_position is None:
             enemy.move_along_path(delta_time)
             return
 
         if enemy.avoids_danger():
             self._advance_honestly_or_give_up(enemy, delta_time)
+            return
+
+        if enemy.breaks_through():
+            enemy.is_patrolling = False
+            enemy.move_along_path(delta_time)
             return
 
         intel = self.faction_intel.setdefault(enemy.faction, FactionIntel())
@@ -758,7 +772,8 @@ class Map:
             combat_target = self._find_enemy_combat_target(enemy) if enemy.is_combatant() else None
             in_combat = combat_target is not None
 
-            uses_retreat_healing = enemy.faction not in self.FACTIONS_WITHOUT_RETREAT_HEALING
+            uses_retreat_healing = (enemy.faction not in self.FACTIONS_WITHOUT_RETREAT_HEALING
+                                     and not enemy.breaks_through())
             can_start_retreat = self._can_start_new_retreat(enemy) and self._group_needs_healing(enemy)
             retreating_now = (allow_retreat and uses_retreat_healing and enemy.group_leader is None
                                and (enemy.is_healing or can_start_retreat))
