@@ -120,6 +120,32 @@ def test_game_controller_proxies_toggle_tower_ranges():
     assert game_controller.active_mode.show_tower_ranges is True
 
 
+def test_game_controller_exposes_show_power_radii_from_active_mode():
+    """Регрессия: MapRenderer.render читает show_power_radii/show_tower_ranges прямо
+    с controller (getattr(controller, ...)), а не через get_game_state() - GameController
+    проксировал только toggle-методы, но не сами свойства, так что радиусы включались
+    в HUD (рамка кнопки золотела - она читает через get_game_state()), но никогда не
+    рисовались на карте, потому что render() всегда видел GameController.show_power_radii
+    как отсутствующий атрибут (default False)."""
+    session = GameSession()
+    session.setup_game()
+    game_controller = GameController(session)
+
+    game_controller.toggle_power_radii()
+
+    assert game_controller.show_power_radii is True
+
+
+def test_game_controller_exposes_show_tower_ranges_from_active_mode():
+    session = GameSession()
+    session.setup_game()
+    game_controller = GameController(session)
+
+    game_controller.toggle_tower_ranges()
+
+    assert game_controller.show_tower_ranges is True
+
+
 def test_game_controller_toggle_is_safe_without_support():
     """Если у активного режима нет метода переключения (например, урезанный
     тестовый двойник), GameController не должен падать - просто вернуть False."""
@@ -244,6 +270,37 @@ def test_render_passes_controller_toggle_state_into_draw_modules(monkeypatch):
     screen = pygame.Surface((WIDTH, HEIGHT))
 
     MapRenderer().render(screen, camera, session, controller, [], WIDTH, HEIGHT)
+
+
+def test_end_to_end_game_controller_toggle_actually_renders_ring(monkeypatch):
+    """Полный путь как в игре: GameController.toggle_tower_ranges() -> MapRenderer.render(screen,
+    ..., controller=game_controller, ...) должен реально нарисовать кольцо радиуса, а не
+    только подсветить рамку кнопки в HUD (см. предыдущий тест на суть регрессии)."""
+    session = GameSession()
+    session.setup_game()
+    session.map.modules.append(LaserTurret(Coordinate(session.base_position.x + 300,
+                                                        session.base_position.y)))
+    game_controller = GameController(session)
+    game_controller.toggle_tower_ranges()
+
+    blitted = []
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    original_blit = screen.blit
+
+    def spy_blit(source, dest, *a, **k):
+        blitted.append(source)
+        return original_blit(source, dest, *a, **k)
+
+    monkeypatch.setattr(screen, "blit", spy_blit)
+    camera = types.SimpleNamespace(
+        world_to_screen=lambda x, y: (x, y), screen_to_world=lambda x, y: (x, y),
+        x=0, y=0, zoom=1.0,
+    )
+
+    MapRenderer().render(screen, camera, session, game_controller, [], WIDTH, HEIGHT)
+
+    assert any(getattr(s, "get_flags", lambda: 0)() & pygame.SRCALPHA for s in blitted), \
+        "включённый через реальный GameController show_tower_ranges должен приводить к блиту кольца"
 
 
 def test_range_ring_is_blitted_to_screen_via_alpha_overlay(monkeypatch):

@@ -40,6 +40,18 @@ class GameController:
         """Выбранный враг."""
         return getattr(self.active_mode, "selected_enemy", None)
 
+    @property
+    def show_power_radii(self):
+        """Включён ли постоянный показ радиусов энергосети - нужно MapRenderer.render,
+        который читает это прямо с controller, а не через get_game_state()."""
+        return getattr(self.active_mode, "show_power_radii", False)
+
+    @property
+    def show_tower_ranges(self):
+        """Включён ли постоянный показ радиусов атаки боевых башен - нужно
+        MapRenderer.render по той же причине, что и show_power_radii выше."""
+        return getattr(self.active_mode, "show_tower_ranges", False)
+
     def update(self, delta_time: float):
         """Обновляет активный режим на один кадр."""
         self.active_mode.update(delta_time)
