@@ -4,7 +4,9 @@ import types
 import pytest
 
 from src.core.coordinate import Coordinate
-from src.systems.spatial_audio import volume_for_distance, volume_for_position
+from src.systems.spatial_audio import (
+    ZOOM_FALLOFF_MIN_VOLUME, ZOOM_FALLOFF_START, volume_for_distance, volume_for_position, volume_for_zoom,
+)
 
 
 def test_volume_for_distance_is_full_at_zero_and_zero_beyond_falloff():
@@ -61,3 +63,60 @@ def test_volume_for_position_falloff_margin_shrinks_in_world_units_when_zoomed_i
     point_past_edge = Coordinate(950, 300)
 
     assert volume_for_position(zoomed_in, point_past_edge) < volume_for_position(zoomed_out, point_past_edge)
+
+
+# ---------------------------------------------------------------------------
+# volume_for_zoom - громкость снижается на сильном отдалении камеры (см. запрос
+# пользователя: от 45% зума до ~5% на максимальном отдалении).
+# ---------------------------------------------------------------------------
+
+def _zoom_camera(zoom, min_zoom=0.1):
+    return types.SimpleNamespace(zoom=zoom, min_zoom=min_zoom)
+
+
+def test_volume_for_zoom_is_full_at_100_percent():
+    assert volume_for_zoom(_zoom_camera(zoom=1.0)) == pytest.approx(1.0)
+
+
+def test_volume_for_zoom_is_full_anywhere_at_or_above_the_falloff_start():
+    assert volume_for_zoom(_zoom_camera(zoom=ZOOM_FALLOFF_START)) == pytest.approx(1.0)
+    assert volume_for_zoom(_zoom_camera(zoom=0.9)) == pytest.approx(1.0)
+
+
+def test_volume_for_zoom_reaches_minimum_at_max_zoom_out():
+    camera = _zoom_camera(zoom=0.1, min_zoom=0.1)
+    assert volume_for_zoom(camera) == pytest.approx(ZOOM_FALLOFF_MIN_VOLUME)
+
+
+def test_volume_for_zoom_falls_off_linearly_between_start_and_min_zoom():
+    camera = _zoom_camera(zoom=0.275, min_zoom=0.1)  # ровно посередине между 0.45 и 0.1
+    volume = volume_for_zoom(camera)
+
+    expected_midpoint = (1.0 + ZOOM_FALLOFF_MIN_VOLUME) / 2
+    assert volume == pytest.approx(expected_midpoint, abs=0.01)
+
+
+def test_volume_for_zoom_never_drops_below_the_configured_minimum_even_past_min_zoom():
+    """Защита от рассинхрона, если zoom когда-то окажется чуть ниже min_zoom камеры
+    (например, только что уменьшили окно) - не должно уйти в отрицательную/безумную
+    громкость."""
+    camera = _zoom_camera(zoom=0.05, min_zoom=0.1)
+    volume = volume_for_zoom(camera)
+
+    assert volume == pytest.approx(ZOOM_FALLOFF_MIN_VOLUME)
+
+
+def test_volume_for_zoom_stays_full_when_min_zoom_is_not_below_falloff_start():
+    """На маленькой карте/большом окне min_zoom может оказаться >= 0.45 - отдалиться
+    дальше физически нельзя, поэтому и снижать громкость не на чем."""
+    camera = _zoom_camera(zoom=0.5, min_zoom=0.5)
+    assert volume_for_zoom(camera) == pytest.approx(1.0)
+
+
+def test_volume_for_zoom_defaults_min_zoom_gracefully_when_missing():
+    """Фейковая камера без min_zoom (как в некоторых старых тестах/двойниках) не
+    должна ронять функцию - трактуем как min_zoom=0.0."""
+    camera = types.SimpleNamespace(zoom=0.2)
+    volume = volume_for_zoom(camera)
+
+    assert 0.0 <= volume <= 1.0

@@ -22,7 +22,7 @@ from src.ui.sound_manager import SoundManager
 from src.ui.music_manager import MusicManager
 from src.ui.sprite_manager import SpriteManager
 from src.save_load.save_manager import SaveManager
-from src.systems.spatial_audio import volume_for_position
+from src.systems.spatial_audio import volume_for_position, volume_for_zoom
 
 
 class GameView:
@@ -480,12 +480,19 @@ class GameView:
         self.music_manager.play_category("gameplay")
 
     def _handle_game_event(self, event_name, **data):
-        """Проигрывает звук, привязанный к игровому событию, приглушая его вне вида камеры и с учётом кулдауна."""
+        """Проигрывает звук, привязанный к игровому событию, приглушая его вне вида камеры,
+        на сильном отдалении зумом (см. volume_for_zoom - запрос пользователя) и с учётом
+        кулдауна. Зум-затухание применяется только к позиционным звукам вместе с
+        затуханием по краю кадра (одна и та же идея "насколько это сейчас видно на экране") -
+        не трогает ALWAYS_AUDIBLE_EVENTS (например base_hit - это тревога о базе, она обязана
+        быть слышна всегда) и не позиционные глобальные звуки вроде victory/defeat."""
         position = data.get("position")
         if event_name in self.ALWAYS_AUDIBLE_EVENTS:
             volume_multiplier = 1.0
+        elif position and self.controller:
+            volume_multiplier = volume_for_position(self.camera, position) * volume_for_zoom(self.camera)
         else:
-            volume_multiplier = volume_for_position(self.camera, position) if (position and self.controller) else 1.0
+            volume_multiplier = 1.0
         volume_multiplier *= self.SOUND_VOLUME_MULTIPLIERS.get(event_name, 1.0)
         cooldown = self.SOUND_COOLDOWNS.get(event_name, 0.0)
 
