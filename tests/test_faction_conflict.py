@@ -172,7 +172,7 @@ def test_enemy_killed_in_combat_is_removed_from_map():
     game_map.spawn_enemy(corp)
     game_map.spawn_enemy(fauna)
 
-    _, killed = game_map.update(1.0)
+    _, killed, _ = game_map.update(1.0)
 
     assert fauna in killed
     assert fauna not in game_map.enemies
@@ -191,6 +191,6 @@ def test_fighting_does_not_falsely_count_as_reached_base():
     game_map.spawn_enemy(corp)
     game_map.spawn_enemy(fauna)
 
-    reached_base, _ = game_map.update(1.0)
+    reached_base, _, _ = game_map.update(1.0)
 
     assert corp not in reached_base, "враг дерётся, а не дошёл до базы"

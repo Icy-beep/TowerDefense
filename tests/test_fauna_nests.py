@@ -96,6 +96,49 @@ def test_destroyed_nest_is_removed_from_map_and_spawn_points():
     assert game_map.spawn_points_by_faction[Faction.FAUNA] == []
 
 
+def test_nest_defaults_to_a_reward():
+    nest = FaunaNest(Coordinate(0, 0))
+    assert nest.reward == 200
+
+
+def test_map_update_returns_nests_destroyed_this_frame():
+    game_map = Map(width=4000, height=4000)
+    tower = LaserTurret(Coordinate(20, 0))
+    nest = FaunaNest(Coordinate(0, 0), max_health=1.0, reward=250)
+    game_map.modules.append(tower)
+    game_map.add_fauna_nest(nest)
+
+    _, _, destroyed_nests = game_map.update(1.0)
+
+    assert destroyed_nests == [nest]
+    assert destroyed_nests[0].reward == 250
+
+
+def test_map_update_reports_no_destroyed_nests_when_all_survive():
+    game_map = Map(width=4000, height=4000)
+    nest = FaunaNest(Coordinate(3000, 3000))
+    game_map.add_fauna_nest(nest)
+
+    _, _, destroyed_nests = game_map.update(1.0)
+
+    assert destroyed_nests == []
+
+
+def test_full_nest_kill_to_reward_pipeline_via_game_session():
+    """Полный путь: Map возвращает уничтоженные гнёзда -> GameSession начисляет
+    награду в ResourceBank (как для обычных врагов, см. test_damage_system.py)."""
+    session = GameSession()
+    session.setup_game()
+    nest = session.map.fauna_nests[0]
+    nest.take_damage(10_000, DamageType.KINETIC)
+
+    credits_before = session.resources.credits
+    session.update(delta_time=0.01)
+
+    assert session.resources.credits == credits_before + nest.reward
+    assert nest not in session.map.fauna_nests
+
+
 def test_other_alive_nests_are_kept_when_one_is_destroyed():
     game_map = Map(width=4000, height=4000)
     tower = LaserTurret(Coordinate(20, 0))

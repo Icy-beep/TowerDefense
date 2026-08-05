@@ -79,7 +79,7 @@ def test_map_removes_dead_enemy_from_active_list():
     game_map.spawn_enemy(enemy)
     enemy.health = 0
 
-    reached_base, killed = game_map.update(delta_time=0.1)
+    reached_base, killed, _ = game_map.update(delta_time=0.1)
 
     assert enemy not in game_map.enemies, "уничтоженный противник должен исчезать из активного списка"
     assert enemy in killed
@@ -92,7 +92,7 @@ def test_map_keeps_alive_enemies_in_active_list():
     enemy.set_path([Coordinate(200, 100)])
     game_map.spawn_enemy(enemy)
 
-    _, killed = game_map.update(delta_time=0.1)
+    _, killed, _ = game_map.update(delta_time=0.1)
 
     assert enemy in game_map.enemies
     assert killed == []
@@ -104,7 +104,7 @@ def test_map_reports_killed_enemy_with_correct_reward_amount():
     game_map.spawn_enemy(enemy)
     enemy.health = 0
 
-    _, killed = game_map.update(delta_time=0.1)
+    _, killed, _ = game_map.update(delta_time=0.1)
 
     assert len(killed) == 1
     assert killed[0].reward == 15

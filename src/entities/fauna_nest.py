@@ -10,11 +10,14 @@ class FaunaNest(Entity):
     когда уничтожены все гнёзда, фракция Fauna перестаёт спавниться вовсе (см.
     GameSession._generate_fauna_nests и Map.spawn_points_for)."""
 
-    def __init__(self, position: Coordinate, max_health: float = 150.0):
-        """Создаёт гнездо заданного здоровья в указанной точке."""
+    def __init__(self, position: Coordinate, max_health: float = 150.0, reward: int = 200):
+        """Создаёт гнездо заданного здоровья в указанной точке. reward - разовая награда
+        игроку за уничтожение (гнездо не респавнится, поэтому награда крупнее, чем за
+        обычного врага - см. GameSession.update)."""
         super().__init__(position)
         self.max_health = max_health
         self.health = max_health
+        self.reward = reward
         self.faction = Faction.FAUNA
         self.armor = ArmorType.ORGANIC
         self.type_name = "fauna_nest"

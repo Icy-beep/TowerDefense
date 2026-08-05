@@ -723,8 +723,9 @@ class Map:
             )
             module.is_powered = near_base or near_energized_node
 
-    def update(self, delta_time: float) -> tuple[List[HostileEntity], List[HostileEntity]]:
-        """Обновляет карту на один кадр."""
+    def update(self, delta_time: float) -> tuple[List[HostileEntity], List[HostileEntity], List[FaunaNest]]:
+        """Обновляет карту на один кадр. Возвращает (враги, дошедшие до базы, убитые
+        враги, уничтоженные в этом кадре гнёзда фауны)."""
         self._elapsed_time += delta_time
         self._avoid_danger_searches_this_frame = 0
         destroyed_this_frame = sum(1 for module in self.modules if module.is_destroyed())
@@ -881,6 +882,7 @@ class Map:
                     self._emit(event_name, position=projectile.position)
         self.projectiles = surviving_projectiles + spawned_projectiles
 
+        destroyed_nests = []
         if self.fauna_nests:
             destroyed_nests = [nest for nest in self.fauna_nests if not nest.is_alive()]
             for nest in destroyed_nests:
@@ -888,4 +890,4 @@ class Map:
             self.fauna_nests = [nest for nest in self.fauna_nests if nest.is_alive()]
             self.spawn_points_by_faction[Faction.FAUNA] = [nest.position for nest in self.fauna_nests]
 
-        return enemies_reached_base, killed_enemies
+        return enemies_reached_base, killed_enemies, destroyed_nests

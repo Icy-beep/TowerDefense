@@ -20,8 +20,8 @@ class GameSession:
 
     NEST_COUNT_MIN = 6
     NEST_COUNT_MAX = 10
-    NEST_MIN_DISTANCE_FROM_BASE = 600.0
-    NEST_MAX_DISTANCE_FROM_BASE = 2400.0
+    NEST_MIN_DISTANCE_FROM_BASE = 800.0
+    NEST_MAX_DISTANCE_FROM_BASE = 2600.0
     NEST_MIN_SPACING = 500.0
     NEST_PLACEMENT_ATTEMPTS_PER_NEST = 200
 
@@ -147,10 +147,13 @@ class GameSession:
         for strategy in self.threat_strategies.values():
             strategy.update(delta_time, self.map, self._spawn_enemy_factory)
 
-        reached_base, killed_enemies = self.map.update(delta_time)
+        reached_base, killed_enemies, destroyed_nests = self.map.update(delta_time)
         for enemy in killed_enemies:
             self.resources.add_reward(enemy.reward)
             self._emit("enemy_died", enemy_type=getattr(enemy, "type_name", None), position=enemy.position)
+
+        for nest in destroyed_nests:
+            self.resources.add_reward(nest.reward)
 
         for _ in reached_base:
             self.base_health -= 10
