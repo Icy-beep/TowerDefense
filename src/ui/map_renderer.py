@@ -40,6 +40,9 @@ class MapRenderer:
     BASE_SPRITE_WORLD_SIZE = 60
     BASE_SPRITE_MIN_SCREEN_SIZE = 50
 
+    NEST_SPRITE_WORLD_SIZE = 34
+    NEST_SPRITE_MIN_SCREEN_SIZE = 28
+
     def __init__(self, sprite_manager=None):
         """Запоминает SpriteManager; без него (или без спрайта под ключ) рисует примитивами."""
         self.sprite_manager = sprite_manager
@@ -82,6 +85,11 @@ class MapRenderer:
         раньше был жёстко зафиксирован в 50px на экране и при приближении визуально "терялся"
         на фоне выросших построек и карты, но не мельче BASE_SPRITE_MIN_SCREEN_SIZE при отдалении."""
         return max(self.BASE_SPRITE_WORLD_SIZE * camera.zoom, self.BASE_SPRITE_MIN_SCREEN_SIZE)
+
+    def _nest_screen_size(self, camera):
+        """Диаметр спрайта гнезда фауны в пикселях - растёт вместе с зумом камеры, как база и
+        враги, но не мельче NEST_SPRITE_MIN_SCREEN_SIZE при отдалении."""
+        return max(self.NEST_SPRITE_WORLD_SIZE * camera.zoom, self.NEST_SPRITE_MIN_SCREEN_SIZE)
 
     def _draw_background(self, screen, camera, width, height):
         """Рисует фон карты под всеми объектами: тайлит спрайт грунта, иначе — заливка цветом,
@@ -150,7 +158,7 @@ class MapRenderer:
         гнёзд фауны (у них своя отрисовка с полоской здоровья - см. _draw_fauna_nests)."""
         fauna_nests = getattr(session.map, "fauna_nests", None)
         if fauna_nests:
-            self._draw_fauna_nests(screen, camera, fauna_nests)
+            self._draw_fauna_nests(screen, camera, fauna_nests, getattr(session, "elapsed_time", 0.0))
 
         by_faction = getattr(session.map, "spawn_points_by_faction", {}) or {}
         threat_strategies = getattr(session, "threat_strategies", {}) or {}
@@ -179,16 +187,21 @@ class MapRenderer:
         pygame.draw.polygon(screen, color, triangle)
         pygame.draw.polygon(screen, (255, 255, 255), triangle, 2)
 
-    def _draw_fauna_nests(self, screen, camera, nests):
-        """Рисует гнёзда фауны маркером точки спавна и полоской здоровья - в отличие от
-        обычных точек спавна, гнёзда можно уничтожить (см. FaunaNest, Map.update)."""
+    def _draw_fauna_nests(self, screen, camera, nests, elapsed_time=0.0):
+        """Рисует гнёзда фауны спрайтом (если он есть - см. assets/sprites/fauna_nest/) или,
+        пока его нет, маркером точки спавна, и полоской здоровья - в отличие от обычных точек
+        спавна, гнёзда можно уничтожить (см. FaunaNest, Map.update)."""
         color = FACTION_SPAWN_COLORS.get(Faction.FAUNA, DEFAULT_SPAWN_COLOR)
         for nest in nests:
             if not nest.is_alive():
                 continue
-            self._draw_spawn_marker(screen, camera, nest.position, color)
-
             sx, sy = camera.world_to_screen(nest.position.x, nest.position.y)
+            sprite = self._sprite_for("fauna_nest", elapsed_time)
+            if sprite:
+                self._blit_scaled(screen, sprite, sx, sy, target_size=self._nest_screen_size(camera))
+            else:
+                self._draw_spawn_marker(screen, camera, nest.position, color)
+
             hp_ratio = max(0.0, nest.health / nest.max_health)
             bar_y = int(sy) - int(14 * camera.zoom) - 10
             pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 16, bar_y, 32, 5))
