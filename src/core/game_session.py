@@ -72,6 +72,7 @@ class GameSession:
         self.resources = ResourceBank(start_credits=1000)
 
         self.map = Map(on_event=self._emit)
+        self.map.power_grid_enabled = True
         self.base_position = Coordinate(self.map.width / 2, self.map.height / 2)
         self.map.nav_grid.set_blocked(self.base_position.x, self.base_position.y, blocked=True)
 

@@ -13,6 +13,8 @@ _KEY_TO_TOWER_TYPE = {
     pygame.K_1: "laser",
     pygame.K_2: "bullet",
     pygame.K_3: "mortar",
+    pygame.K_4: "generator",
+    pygame.K_5: "pylon",
 }
 
 

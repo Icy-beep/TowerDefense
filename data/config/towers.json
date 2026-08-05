@@ -19,5 +19,15 @@
     "cost": 200,
     "attack_speed": 0.5,
     "upgrade_costs": [250, 300]
+  },
+  "generator": {
+    "range_radius": 500,
+    "cost": 220,
+    "max_health": 150
+  },
+  "pylon": {
+    "range_radius": 600,
+    "cost": 60,
+    "max_health": 60
   }
 }

@@ -4,6 +4,8 @@ from typing import Dict, Optional, Type
 from src.entities.defense_module import DefenseModule
 from src.core.coordinate import Coordinate
 from src.entities.turrets import LaserTurret, BulletTurret, MortarTurret
+from src.entities.power_generator import PowerGenerator
+from src.entities.power_pylon import PowerPylon
 from src.config.config_loader import ConfigLoader
 
 
@@ -17,6 +19,8 @@ class TowerFactory:
         self.register("laser", LaserTurret)
         self.register("bullet", BulletTurret)
         self.register("mortar", MortarTurret)
+        self.register("generator", PowerGenerator)
+        self.register("pylon", PowerPylon)
 
     def register(self, type_name: str, tower_class: Type[DefenseModule]) -> None:
         """Регистрирует новый тип башни."""

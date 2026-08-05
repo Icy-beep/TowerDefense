@@ -80,6 +80,8 @@ class GameView:
             {"key": pygame.K_1, "type": "laser", "name": "Laser (50)", "color": (0, 255, 255)},
             {"key": pygame.K_2, "type": "bullet", "name": "Bullet (100)", "color": (255, 255, 0)},
             {"key": pygame.K_3, "type": "mortar", "name": "Mortar (200)", "color": (255, 100, 0)},
+            {"key": pygame.K_4, "type": "generator", "name": "Generator (220)", "color": (255, 215, 0)},
+            {"key": pygame.K_5, "type": "pylon", "name": "Pylon (60)", "color": (0, 200, 120)},
         ]
 
         self.hud_renderer = HudRenderer()

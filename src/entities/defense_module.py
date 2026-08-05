@@ -16,6 +16,12 @@ class DefenseModule(Entity, ABC):
 
     FOOTPRINT_CELLS = 3
 
+    # Считается ли эта постройка боевой угрозой для вражеского ИИ (см.
+    # Map.is_position_covered/_covering_towers). Переопределяется в False у
+    # PowerInfrastructure - генераторы и пилоны не стреляют, поэтому враги не должны
+    # шарахаться от них и обходить их радиус как радиус атаки.
+    IS_COMBAT_TOWER = True
+
     def __init__(self, position: Coordinate, range_radius: float, damage: float, cost: int, attack_speed: float = 1.0):
         """Создаёт башню с базовыми характеристиками."""
         super().__init__(position)
@@ -46,6 +52,13 @@ class DefenseModule(Entity, ABC):
 
         self.facing_angle = 0.0
 
+        # Подключена ли башня к энергосети - см. Map._update_power_grid. По умолчанию
+        # True, чтобы башни, созданные напрямую (без Map/GameSession, как в большинстве
+        # существующих тестов), продолжали стрелять как раньше - лимит по питанию
+        # применяется только на картах с включённой энергосетью
+        # (Map.power_grid_enabled).
+        self.is_powered = True
+
     def start_landing(self):
         """Запускает высадку с орбиты: башня неуязвима и не стреляет, пока не приземлится."""
         self.is_landing = True
@@ -71,6 +84,9 @@ class DefenseModule(Entity, ABC):
             return None
 
         if self.status in (ModuleStatus.OVERHEATED, ModuleStatus.OFFLINE):
+            return None
+
+        if not self.is_powered:
             return None
 
         target = self.find_target(enemies)

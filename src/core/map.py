@@ -1,10 +1,12 @@
 import math
 import random
 from typing import Callable, Dict, List, Optional, Set, Tuple
+from collections import deque
 from src.core.coordinate import Coordinate
 from src.entities.defense_module import DefenseModule
 from src.entities.hostile_entity import HostileEntity
 from src.entities.fauna_nest import FaunaNest
+from src.entities.power_infrastructure import PowerInfrastructure
 from src.entities.projectile import Projectile
 from src.core.navigation import NavigationGrid
 from src.systems.faction_intel import FactionIntel
@@ -40,6 +42,13 @@ class Map:
         self.spawn_points = []
         self.spawn_points_by_faction: Dict[Faction, List[Coordinate]] = {}
         self.towers_lost_count = 0
+
+        # Энергосеть выключена по умолчанию, чтобы карты, созданные напрямую (как в
+        # большинстве существующих тестов) без генераторов/пилонов, вели себя как
+        # раньше - лимит по питанию действует только там, где GameSession явно включил
+        # его в setup_game(). См. _update_power_grid.
+        self.power_grid_enabled = False
+        self.power_links: List[Tuple[Coordinate, Coordinate]] = []
         self._elapsed_time = 0.0
         self._staging_anchor: Dict[Faction, List[Coordinate]] = {}
         self._staging_anchor_created_at: Dict[int, float] = {}
@@ -102,8 +111,11 @@ class Map:
         self.enemies.append(enemy)
 
     def is_position_covered(self, position: Coordinate) -> bool:
-        """Проверяет, простреливается ли точка хотя бы одной башней."""
-        return any(position.distance_to(m.position) <= m.range_radius for m in self.modules)
+        """Проверяет, простреливается ли точка хотя бы одной боевой башней. Инфраструктура
+        энергосети (генераторы/пилоны) не учитывается - она не стреляет и не должна
+        считаться угрозой (см. DefenseModule.IS_COMBAT_TOWER)."""
+        return any(position.distance_to(m.position) <= m.range_radius
+                   for m in self.modules if m.IS_COMBAT_TOWER)
 
     TOWER_AVOIDANCE_COST = 25.0
 
@@ -122,6 +134,11 @@ class Map:
             if node is None:
                 continue
             blocked_nodes |= self._footprint_cells(tower.position)
+
+            if not tower.IS_COMBAT_TOWER:
+                # Инфраструктура энергосети физически блокирует свою клетку (см. выше),
+                # но не стреляет - обходить её радиус действия как зону обстрела не нужно.
+                continue
 
             radius_cells = int(tower.range_radius / self.nav_grid.cell_size) + 1
             for dx in range(-radius_cells, radius_cells + 1):
@@ -451,8 +468,10 @@ class Map:
         return min(covering, key=lambda m: position.distance_to(m.position))
 
     def _covering_towers(self, position: Coordinate, margin: float = 0.0) -> List[DefenseModule]:
-        """Возвращает все башни, простреливающие точку (с запасом margin)."""
-        return [m for m in self.modules if position.distance_to(m.position) <= m.range_radius + margin]
+        """Возвращает все боевые башни, простреливающие точку (с запасом margin).
+        Инфраструктура энергосети не в счёт - см. is_position_covered."""
+        return [m for m in self.modules
+                if m.IS_COMBAT_TOWER and position.distance_to(m.position) <= m.range_radius + margin]
 
     FLEE_EXIT_MARGIN = 60.0
     FLEE_TARGET_DISTANCE = 80.0
@@ -645,6 +664,65 @@ class Map:
                         changed_factions.add(enemy.faction)
         return changed_factions
 
+    # База сама даёт бесплатное питание в небольшом радиусе вокруг себя - иначе
+    # игрок не мог бы поставить вообще ни одной боевой башни, пока не построит первый
+    # генератор. За пределами этого радиуса требуется энергосеть: генераторы (сами
+    # всегда под напряжением) и пилоны (только в цепочке, доходящей до базы или
+    # генератора) - см. _update_power_grid. Радиус действия самих узлов сети - это
+    # их собственный range_radius (PowerInfrastructure переиспользует его как радиус
+    # подачи энергии, а не атаки - см. PowerInfrastructure), а не общая константа:
+    # у генератора и пилона он разный, и апгрейд/баланс одного не должен молча менять
+    # дальнобойность другого.
+    BASE_POWER_RADIUS = 550.0
+
+    def _update_power_grid(self):
+        """Пересчитывает энергосеть на один кадр: какие узлы сети (генераторы и
+        пилоны) под напряжением и какие боевые башни от них запитаны. Работает только
+        если power_grid_enabled - на картах без него (почти все существующие тесты,
+        создающие Map() напрямую) башни всегда считаются запитанными, как и было
+        раньше (см. DefenseModule.is_powered)."""
+        if not self.power_grid_enabled or self.base_position is None:
+            return
+
+        nodes = [m for m in self.modules
+                 if isinstance(m, PowerInfrastructure) and not m.is_destroyed() and not m.is_landing]
+
+        self.power_links = []
+        energized_ids = set()
+        frontier = deque()
+
+        for node in nodes:
+            if self.base_position.distance_to(node.position) <= self.BASE_POWER_RADIUS:
+                energized_ids.add(id(node))
+                frontier.append(node)
+                self.power_links.append((self.base_position, node.position))
+            elif node.IS_SOURCE:
+                energized_ids.add(id(node))
+                frontier.append(node)
+
+        while frontier:
+            current = frontier.popleft()
+            for other in nodes:
+                if id(other) in energized_ids:
+                    continue
+                if current.position.distance_to(other.position) <= current.range_radius:
+                    energized_ids.add(id(other))
+                    frontier.append(other)
+                    self.power_links.append((current.position, other.position))
+
+        for node in nodes:
+            node.is_powered = node.IS_SOURCE or id(node) in energized_ids
+
+        energized_nodes = [n for n in nodes if id(n) in energized_ids]
+        for module in self.modules:
+            if isinstance(module, PowerInfrastructure):
+                continue
+            near_base = self.base_position.distance_to(module.position) <= self.BASE_POWER_RADIUS
+            near_energized_node = any(
+                n.position.distance_to(module.position) <= n.range_radius for n in energized_nodes
+            )
+            module.is_powered = near_base or near_energized_node
+
     def update(self, delta_time: float) -> tuple[List[HostileEntity], List[HostileEntity]]:
         """Обновляет карту на один кадр."""
         self._elapsed_time += delta_time
@@ -652,6 +730,8 @@ class Map:
         destroyed_this_frame = sum(1 for module in self.modules if module.is_destroyed())
         self.towers_lost_count += destroyed_this_frame
         self.modules = [module for module in self.modules if not module.is_destroyed()]
+
+        self._update_power_grid()
 
         self._update_group_targets(self.enemies)
         self._update_staging_groups(self.enemies)

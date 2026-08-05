@@ -114,6 +114,7 @@ class MapRenderer:
         self._draw_base(screen, camera, session)
         self._draw_spawn_points(screen, camera, session)
         self._draw_pending_landings(screen, camera, session)
+        self._draw_power_links(screen, camera, session)
         self._draw_modules(screen, camera, session, controller, tower_options, alt_held)
         self._draw_enemies(screen, camera, session, controller, width, height)
         self._draw_projectiles(screen, camera, session)
@@ -240,6 +241,14 @@ class MapRenderer:
         pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
                           (int(sx) - 20, int(sy) - 40, int(40 * hp_ratio), 6))
 
+    def _draw_power_links(self, screen, camera, session):
+        """Рисует линии энергосети между запитанными узлами (и от базы к ним) - чисто
+        информативно, чтобы игрок видел, что от чего получает питание."""
+        for start, end in getattr(session.map, "power_links", []):
+            sx, sy = camera.world_to_screen(start.x, start.y)
+            ex, ey = camera.world_to_screen(end.x, end.y)
+            pygame.draw.line(screen, (255, 215, 0), (sx, sy), (ex, ey), 1)
+
     def _draw_modules(self, screen, camera, session, controller, tower_options, alt_held=False):
         """Рисует все башни, их уровень и радиус атаки при необходимости."""
         for module in session.map.modules:
@@ -249,6 +258,10 @@ class MapRenderer:
                         if o["type"] == getattr(module, "type_name", None)), None)
             if opt:
                 color = opt["color"]
+
+            is_powered = getattr(module, "is_powered", True)
+            if not is_powered:
+                color = tuple((c + 90) // 3 for c in color)
 
             cell_size = getattr(getattr(session.map, "nav_grid", None), "cell_size", 32)
 
@@ -273,6 +286,9 @@ class MapRenderer:
                 self._blit_scaled(screen, sprite, sx, sy, target_size=tower_size)
             else:
                 pygame.draw.circle(screen, color, (int(sx), int(sy)), int(tower_size / 2))
+
+            if not is_powered:
+                pygame.draw.circle(screen, (255, 60, 60), (int(sx), int(sy)), int(tower_size / 2) + 3, 2)
 
             for i in range(module.level):
                 pygame.draw.circle(screen, (255, 215, 0),
