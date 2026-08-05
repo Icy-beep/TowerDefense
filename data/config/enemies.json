@@ -33,5 +33,19 @@
     "armor": "Organic",
     "reward": 70,
     "faction": "Fauna"
+  },
+  "medic_drone": {
+    "max_health": 90,
+    "speed": 55,
+    "armor": "EnergyShielded",
+    "reward": 50,
+    "faction": "Corporation"
+  },
+  "sniper_drone": {
+    "max_health": 70,
+    "speed": 40,
+    "armor": "Light",
+    "reward": 55,
+    "faction": "Corporation"
   }
 }

@@ -28,6 +28,10 @@ class Projectile(ABC):
         """Возвращает снаряды, порождённые этим (например, шрапнель)."""
         return []
 
+    def landed_event_name(self) -> Optional[str]:
+        """Имя звукового события при исчезновении снаряда с карты, если оно есть."""
+        return None
+
     def _find_collision(self, enemies: List["HostileEntity"],
                          hit_radius: Optional[float] = None) -> Optional["HostileEntity"]:
         """Находит ближайшего живого врага в радиусе поражения снаряда."""
@@ -63,20 +67,48 @@ class Projectile(ABC):
 
 
 class HitscanBeam(Projectile):
-    """Мгновенный лазерный луч."""
+    """Мгновенный лазерный луч: урон наносится сразу, луч виден ещё BEAM_LIFETIME секунд."""
+
+    BEAM_LIFETIME = 0.08
 
     def __init__(self, position: Coordinate, target: "HostileEntity", damage: float, damage_type: DamageType):
-        """Создаёт луч от башни до цели."""
+        """Создаёт луч от башни до цели и сразу наносит урон."""
         super().__init__(Coordinate(position.x, position.y), damage, damage_type)
         self.origin = Coordinate(position.x, position.y)
         self.end = Coordinate(target.position.x, target.position.y)
         self._target = target
+        self._time_left = self.BEAM_LIFETIME
+        self._hit = self._target.is_alive()
+        if self._hit:
+            self._target.take_damage(self.damage, self.damage_type)
 
     def update(self, delta_time: float, enemies: List["HostileEntity"]) -> bool:
-        """Наносит урон цели и завершает существование луча."""
-        if self._target.is_alive():
-            self._target.take_damage(self.damage, self.damage_type)
-        return False
+        """Отсчитывает время жизни луча на экране (урон уже нанесён при создании)."""
+        self._time_left -= delta_time
+        return self._time_left > 0
+
+    def landed_event_name(self) -> Optional[str]:
+        """Имя звукового события попадания лазера, если цель была поражена."""
+        return "laser_hit" if self._hit else None
+
+
+class EnemyHitscanBeam(HitscanBeam):
+    """Мгновенный лучевой выстрел врага (например, SniperDrone) по башне - тот же
+    визуальный эффект, что и у HitscanBeam лазерной башни (MapRenderer различает их
+    только по классу, отрисовка общая). Отдельный класс нужен потому, что целью здесь
+    является DefenseModule, а не HostileEntity: у башни другой интерфейс проверки
+    жизни - is_destroyed(), а не is_alive()."""
+
+    def __init__(self, position: Coordinate, target, damage: float, damage_type: DamageType):
+        """Создаёт луч от врага до башни-цели и сразу наносит ей урон."""
+        Projectile.__init__(self, Coordinate(position.x, position.y), damage, damage_type)
+        self.origin = Coordinate(position.x, position.y)
+        self.end = Coordinate(target.position.x, target.position.y)
+        self._target = target
+        self._time_left = self.BEAM_LIFETIME
+        self._hit = not target.is_destroyed()
+        if self._hit:
+            target.take_damage(self.damage, self.damage_type)
 
 
 class _LinearProjectile(Projectile):
@@ -91,6 +123,7 @@ class _LinearProjectile(Projectile):
         self.speed = speed
         self.max_distance = max_distance
         self.traveled = 0.0
+        self._hit_something = False
 
     def update(self, delta_time: float, enemies: List["HostileEntity"]) -> bool:
         """Двигает снаряд вперёд и проверяет столкновение с врагами."""
@@ -103,6 +136,7 @@ class _LinearProjectile(Projectile):
         hit = self._find_path_collision(start, self.position, enemies, self.HIT_RADIUS)
         if hit:
             hit.take_damage(self.damage, self.damage_type)
+            self._hit_something = True
             return False
 
         return self.traveled < self.max_distance
@@ -112,10 +146,24 @@ class BulletProjectile(_LinearProjectile):
     """Пуля, летящая по прямой к позиции цели на момент выстрела."""
 
     def __init__(self, position: Coordinate, target: "HostileEntity", damage: float, damage_type: DamageType,
-                 speed: float, max_distance: float = 900.0):
-        """Создаёт пулю, летящую в сторону цели."""
+                 speed: float, max_distance: float = 900.0, spread_degrees: float = 0.0,
+                 rng: Optional[random.Random] = None):
+        """Создаёт пулю, летящую в сторону цели с необязательным случайным
+        разбросом направления в пределах ±spread_degrees/2."""
         direction = (target.position.x - position.x, target.position.y - position.y)
+        if spread_degrees:
+            rng = rng or random
+            angle = math.radians(rng.uniform(-spread_degrees / 2, spread_degrees / 2))
+            cos_a, sin_a = math.cos(angle), math.sin(angle)
+            direction = (
+                direction[0] * cos_a - direction[1] * sin_a,
+                direction[0] * sin_a + direction[1] * cos_a,
+            )
         super().__init__(Coordinate(position.x, position.y), direction, damage, damage_type, speed, max_distance)
+
+    def landed_event_name(self) -> Optional[str]:
+        """Имя звукового события попадания пули, если она во что-то попала."""
+        return "bullet_hit" if self._hit_something else None
 
 
 class ShrapnelPellet(_LinearProjectile):
@@ -166,6 +214,10 @@ class MortarShell(Projectile):
             self._land()
             return False
         return True
+
+    def landed_event_name(self) -> Optional[str]:
+        """Имя звукового события взрыва миномётного снаряда."""
+        return "mortar_explosion"
 
     def _land(self):
         """Взрывается и создаёт осколки шрапнели вокруг точки падения."""

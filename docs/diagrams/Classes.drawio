@@ -1,53 +1,59 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.6.1 Safari/537.36" version="29.5.2">
-  <diagram name="Class Diagram (Unified)" id="cdunified1">
-    <mxGraphModel dx="3565" dy="2188" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1800" math="0" shadow="0">
+  <diagram name="Диаграмма классов" id="cdunified1">
+    <mxGraphModel dx="1426" dy="875" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3940" pageHeight="1405" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="legend1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;span style=&quot;font-family: Tahoma; font-size: 13px; font-weight: 700;&quot;&gt;Легенда: сплошная граница = реализовано и покрыто тестами сейчас.&lt;/span&gt;" vertex="1">
+          <mxGeometry height="30" width="570" x="5" y="8" as="geometry" />
+        </mxCell>
+        <mxCell id="legend2" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;span style=&quot;font-family: Tahoma; font-size: 13px; font-weight: 700;&quot;&gt;Пунктирная граница + зелёная заливка = запланированное расширение (орбитальные события, режим Оператора), пока не реализовано.&lt;/span&gt;" vertex="1">
+          <mxGeometry height="30" width="1000" x="590" y="8" as="geometry" />
+        </mxCell>
         <mxCell id="e_dmg" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;enumeration&gt;&gt;&lt;div&gt;DamageType&lt;/div&gt;" vertex="1">
-          <mxGeometry height="128" width="200" x="40" y="40" as="geometry" />
+          <mxGeometry height="128" width="200" x="40" y="70" as="geometry" />
         </mxCell>
         <mxCell id="e_dmg_f" parent="e_dmg" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Kinetic&lt;div&gt;Energy&lt;div&gt;EMP&lt;div&gt;Explosive" vertex="1">
           <mxGeometry height="88" width="200" y="40" as="geometry" />
         </mxCell>
         <mxCell id="e_armor" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;enumeration&gt;&gt;&lt;div&gt;ArmorType&lt;/div&gt;" vertex="1">
-          <mxGeometry height="128" width="200" x="40" y="208" as="geometry" />
+          <mxGeometry height="128" width="200" x="40" y="238" as="geometry" />
         </mxCell>
         <mxCell id="e_armor_f" parent="e_armor" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Light&lt;div&gt;Heavy&lt;div&gt;EnergyShielded&lt;div&gt;Organic" vertex="1">
           <mxGeometry height="88" width="200" y="40" as="geometry" />
         </mxCell>
         <mxCell id="e_status" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;enumeration&gt;&gt;&lt;div&gt;ModuleStatus&lt;/div&gt;" vertex="1">
-          <mxGeometry height="128" width="200" x="40" y="376" as="geometry" />
+          <mxGeometry height="128" width="200" x="40" y="406" as="geometry" />
         </mxCell>
         <mxCell id="e_status_f" parent="e_status" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Idle&lt;div&gt;Active&lt;div&gt;Overheated&lt;div&gt;Offline" vertex="1">
           <mxGeometry height="88" width="200" y="40" as="geometry" />
         </mxCell>
         <mxCell id="e_gstate" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;enumeration&gt;&gt;&lt;div&gt;GameState&lt;/div&gt;" vertex="1">
-          <mxGeometry height="150" width="200" x="40" y="544" as="geometry" />
+          <mxGeometry height="150" width="200" x="40" y="574" as="geometry" />
         </mxCell>
         <mxCell id="e_gstate_f" parent="e_gstate" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Menu&lt;div&gt;Playing&lt;div&gt;Paused&lt;div&gt;GameOver&lt;div&gt;Victory" vertex="1">
           <mxGeometry height="110" width="200" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="e_gmode" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;enumeration&gt;&gt;&lt;div&gt;GameMode&lt;/div&gt;" vertex="1">
-          <mxGeometry height="84" width="200" x="40" y="734" as="geometry" />
+        <mxCell id="e_faction" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;enumeration&gt;&gt;&lt;div&gt;Faction&lt;/div&gt;" vertex="1">
+          <mxGeometry height="84" width="200" x="40" y="764" as="geometry" />
+        </mxCell>
+        <mxCell id="e_faction_f" parent="e_faction" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Corporation&lt;div&gt;Fauna" vertex="1">
+          <mxGeometry height="44" width="200" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="e_gmode" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;enumeration&gt;&gt;&lt;div&gt;GameMode (объявлен, пока не используется)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="84" width="200" x="40" y="888" as="geometry" />
         </mxCell>
         <mxCell id="e_gmode_f" parent="e_gmode" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="TowerDefenseMode&lt;div&gt;HeroMode" vertex="1">
           <mxGeometry height="44" width="200" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="e_cstate" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="&lt;&lt;enumeration&gt;&gt;&lt;div&gt;CommanderState (план)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="128" width="200" x="40" y="858" as="geometry" />
+        <mxCell id="e_cstate" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;enumeration&gt;&gt;&lt;div&gt;CommanderState (объявлен, пока не используется)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="128" width="200" x="40" y="1012" as="geometry" />
         </mxCell>
         <mxCell id="e_cstate_f" parent="e_cstate" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="InTransit&lt;div&gt;Available&lt;div&gt;Active&lt;div&gt;Dead" vertex="1">
           <mxGeometry height="88" width="200" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="e_faction" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="&lt;&lt;enumeration&gt;&gt;&lt;div&gt;Faction (план)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="106" width="200" x="40" y="1026" as="geometry" />
-        </mxCell>
-        <mxCell id="e_faction_f" parent="e_faction" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Player&lt;div&gt;Corporation&lt;div&gt;Fauna" vertex="1">
-          <mxGeometry height="66" width="200" y="40" as="geometry" />
-        </mxCell>
         <mxCell id="c_coord" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Coordinate" vertex="1">
-          <mxGeometry height="103" width="220" x="280" y="40" as="geometry" />
+          <mxGeometry height="103" width="220" x="300" y="70" as="geometry" />
         </mxCell>
         <mxCell id="c_coord_f" parent="c_coord" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+x: float&lt;div&gt;+y: float" vertex="1">
           <mxGeometry height="44" width="220" y="26" as="geometry" />
@@ -58,200 +64,80 @@
         <mxCell id="c_coord_m" parent="c_coord" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+distance_to(other): float" vertex="1">
           <mxGeometry height="25" width="220" y="78" as="geometry" />
         </mxCell>
-        <mxCell id="c_res" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="ResourceBank" vertex="1">
-          <mxGeometry height="122" width="220" x="840" y="450" as="geometry" />
+        <mxCell id="c_threat" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;Abstract&gt;&gt;&lt;div&gt;ThreatStrategy&lt;/div&gt;" vertex="1">
+          <mxGeometry height="65" width="260" x="1560" y="983.5" as="geometry" />
         </mxCell>
-        <mxCell id="c_res_f" parent="c_res" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-credits: int&lt;div&gt;-scrap: int" vertex="1">
-          <mxGeometry height="44" width="220" y="26" as="geometry" />
+        <mxCell id="c_threat_m" parent="c_threat" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(dt, map, spawn_factory) *абстр.*" vertex="1">
+          <mxGeometry height="25" width="260" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="c_res_d" parent="c_res" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="220" y="70" as="geometry" />
+        <mxCell id="c_ship" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="ShipLandingStrategy" vertex="1">
+          <mxGeometry height="169" width="260" x="1560" y="1110" as="geometry" />
         </mxCell>
-        <mxCell id="c_res_m" parent="c_res" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+spend(amount): bool&lt;div&gt;+add_reward(amount)" vertex="1">
-          <mxGeometry height="44" width="220" y="78" as="geometry" />
+        <mxCell id="c_ship_f" parent="c_ship" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-enemy_types: List[str]&lt;div&gt;-squad_size_range: tuple&lt;div&gt;-base_interval: float&lt;div&gt;-warning_time: float&lt;div&gt;-pending_landings: List[PendingLanding]" vertex="1">
+          <mxGeometry height="110" width="260" y="26" as="geometry" />
         </mxCell>
-        <mxCell id="c_wcfg" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="WaveConfig" vertex="1">
-          <mxGeometry height="92" width="220" x="1260" y="864" as="geometry" />
+        <mxCell id="c_ship_d" parent="c_ship" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="260" y="136" as="geometry" />
         </mxCell>
-        <mxCell id="c_wcfg_f" parent="c_wcfg" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-enemy_types: List[str]&lt;div&gt;-count: int&lt;div&gt;-interval: float" vertex="1">
-          <mxGeometry height="66" width="220" y="26" as="geometry" />
+        <mxCell id="c_ship_m" parent="c_ship" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(dt, map, spawn_factory)" vertex="1">
+          <mxGeometry height="25" width="260" y="144" as="geometry" />
         </mxCell>
-        <mxCell id="c_wproto" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="WaveProtocol" vertex="1">
-          <mxGeometry height="342" width="260" x="920" y="670" as="geometry" />
+        <mxCell id="c_nest_strat" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="NestSpawnStrategy" vertex="1">
+          <mxGeometry height="125" width="260" x="1870" y="1110" as="geometry" />
         </mxCell>
-        <mxCell id="c_wproto_f" parent="c_wproto" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-current_wave_idx: int&lt;div&gt;-waves: List[WaveConfig]&lt;div&gt;-spawn_timer: float&lt;div&gt;-enemies_spawned: int&lt;div&gt;-is_active: bool&lt;div&gt;-finished: bool&lt;div&gt;-cooldown_time: float&lt;div&gt;-cooldown_timer: float" vertex="1">
-          <mxGeometry height="176" width="260" y="26" as="geometry" />
+        <mxCell id="c_nest_strat_f" parent="c_nest_strat" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-enemy_types: List[str]&lt;div&gt;-base_interval: float&lt;div&gt;-max_active: int" vertex="1">
+          <mxGeometry height="66" width="260" y="26" as="geometry" />
         </mxCell>
-        <mxCell id="c_wproto_d" parent="c_wproto" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="260" y="202" as="geometry" />
+        <mxCell id="c_nest_strat_d" parent="c_nest_strat" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="260" y="92" as="geometry" />
         </mxCell>
-        <mxCell id="c_wproto_m" parent="c_wproto" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+set_waves(waves)&lt;div&gt;+start_next_wave(): bool&lt;div&gt;+force_start_next_wave()&lt;div&gt;+update(dt, map, spawn_factory)&lt;div&gt;+is_all_waves_complete(): bool&lt;div&gt;+get_time_until_next_wave(): float" vertex="1">
-          <mxGeometry height="132" width="260" y="210" as="geometry" />
+        <mxCell id="c_nest_strat_m" parent="c_nest_strat" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(dt, map, spawn_factory)" vertex="1">
+          <mxGeometry height="25" width="260" y="100" as="geometry" />
         </mxCell>
-        <mxCell id="c_entity" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;Abstract&gt;&gt;&lt;div&gt;Entity&lt;/div&gt;" vertex="1">
-          <mxGeometry height="139" width="240" x="1600" y="1233" as="geometry" />
+        <mxCell id="c_obj" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;Abstract&gt;&gt;&lt;div&gt;Objective&lt;/div&gt;" vertex="1">
+          <mxGeometry height="158" width="240" x="620" y="70" as="geometry" />
         </mxCell>
-        <mxCell id="c_entity_f" parent="c_entity" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-position: Coordinate" vertex="1">
-          <mxGeometry height="25" width="240" y="40" as="geometry" />
+        <mxCell id="c_obj_f" parent="c_obj" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-completed: bool&lt;div&gt;-failed: bool" vertex="1">
+          <mxGeometry height="44" width="240" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="c_entity_d" parent="c_entity" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="240" y="65" as="geometry" />
+        <mxCell id="c_obj_d" parent="c_obj" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="240" y="84" as="geometry" />
         </mxCell>
-        <mxCell id="c_entity_m" parent="c_entity" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+get_position(): Coordinate&lt;div&gt;+set_position(pos)&lt;div&gt;+take_damage(amount, type) *абстр.*" vertex="1">
-          <mxGeometry height="66" width="240" y="73" as="geometry" />
+        <mxCell id="c_obj_m" parent="c_obj" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+is_active(): bool&lt;div&gt;+update(session) *абстр.*&lt;div&gt;+describe(session): str *абстр.*" vertex="1">
+          <mxGeometry height="66" width="240" y="92" as="geometry" />
         </mxCell>
-        <mxCell id="c_hostile" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;Abstract&gt;&gt;&lt;div&gt;HostileEntity&lt;/div&gt;" vertex="1">
-          <mxGeometry height="290" width="260" x="1310" y="1406" as="geometry" />
+        <mxCell id="c_survive_obj" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="SurviveDurationObjective" vertex="1">
+          <mxGeometry height="103" width="240" x="620" y="268" as="geometry" />
         </mxCell>
-        <mxCell id="c_hostile_f" parent="c_hostile" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-max_health: float&lt;div&gt;-health: float&lt;div&gt;-speed: float&lt;div&gt;-armor: ArmorType&lt;div&gt;-reward: int&lt;div&gt;-path: List[Coordinate]&lt;div&gt;-path_index: int" vertex="1">
-          <mxGeometry height="154" width="260" y="40" as="geometry" />
+        <mxCell id="c_survive_obj_f" parent="c_survive_obj" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-target_seconds: float" vertex="1">
+          <mxGeometry height="25" width="240" y="26" as="geometry" />
         </mxCell>
-        <mxCell id="c_hostile_d" parent="c_hostile" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="260" y="194" as="geometry" />
+        <mxCell id="c_survive_obj_d" parent="c_survive_obj" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="240" y="51" as="geometry" />
         </mxCell>
-        <mxCell id="c_hostile_m" parent="c_hostile" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+take_damage(amount, type)&lt;div&gt;+is_alive(): bool&lt;div&gt;+move_along_path(dt): bool&lt;div&gt;+act(dt) *абстр.*" vertex="1">
-          <mxGeometry height="88" width="260" y="202" as="geometry" />
+        <mxCell id="c_survive_obj_m" parent="c_survive_obj" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(session)&lt;div&gt;+describe(session): str" vertex="1">
+          <mxGeometry height="44" width="240" y="59" as="geometry" />
         </mxCell>
-        <mxCell id="c_drone" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="DroneWalker" vertex="1">
-          <mxGeometry height="51" width="220" x="1240" y="1717" as="geometry" />
+        <mxCell id="c_protect_obj" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="ProtectTowersObjective" vertex="1">
+          <mxGeometry height="70" width="240" x="620" y="411" as="geometry" />
         </mxCell>
-        <mxCell id="c_drone_m" parent="c_drone" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+act(dt)" vertex="1">
-          <mxGeometry height="25" width="220" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_roach" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="GiantRoach" vertex="1">
-          <mxGeometry height="51" width="220" x="1490" y="1717" as="geometry" />
-        </mxCell>
-        <mxCell id="c_roach_m" parent="c_roach" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+act(dt)" vertex="1">
-          <mxGeometry height="25" width="220" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_scout" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="ScoutDrone" vertex="1">
-          <mxGeometry height="51" width="220" x="1730" y="1717" as="geometry" />
-        </mxCell>
-        <mxCell id="c_scout_m" parent="c_scout" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+act(dt)" vertex="1">
-          <mxGeometry height="25" width="220" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_colony" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="ColonyBase (план)" vertex="1">
-          <mxGeometry height="122" width="240" x="1570" y="1090" as="geometry" />
-        </mxCell>
-        <mxCell id="c_colony_f" parent="c_colony" style="text;strokeColor=#005700;fillColor=#008a00;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;fontColor=#ffffff;" value="-health: float&lt;div&gt;-max_health: float" vertex="1">
+        <mxCell id="c_protect_obj_m" parent="c_protect_obj" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(session)&lt;div&gt;+describe(session): str" vertex="1">
           <mxGeometry height="44" width="240" y="26" as="geometry" />
         </mxCell>
-        <mxCell id="c_colony_d" parent="c_colony" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+        <mxCell id="c_res" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="ResourceBank" vertex="1">
+          <mxGeometry height="122" width="240" x="940" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="c_res_f" parent="c_res" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-credits: int&lt;div&gt;-scrap: int" vertex="1">
+          <mxGeometry height="44" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_res_d" parent="c_res" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
           <mxGeometry height="8" width="240" y="70" as="geometry" />
         </mxCell>
-        <mxCell id="c_colony_m" parent="c_colony" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+take_damage(amount, type)&lt;div&gt;+is_destroyed(): bool" vertex="1">
+        <mxCell id="c_res_m" parent="c_res" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+spend(amount): bool&lt;div&gt;+add_reward(amount)" vertex="1">
           <mxGeometry height="44" width="240" y="78" as="geometry" />
         </mxCell>
-        <mxCell id="c_cmdr" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="Commander (план)" vertex="1">
-          <mxGeometry height="232" width="240" x="2230" y="1326.5" as="geometry" />
-        </mxCell>
-        <mxCell id="c_cmdr_f" parent="c_cmdr" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-health: float&lt;div&gt;-stamina: float&lt;div&gt;-speed: float&lt;div&gt;-state: CommanderState&lt;div&gt;-skills: List[Skill]&lt;div&gt;-faction: Faction" vertex="1">
-          <mxGeometry height="132" width="240" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_cmdr_d" parent="c_cmdr" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="240" y="158" as="geometry" />
-        </mxCell>
-        <mxCell id="c_cmdr_m" parent="c_cmdr" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+move(dx, dy, dt)&lt;div&gt;+activate_skill(idx, map)&lt;div&gt;+take_damage(amount, type)" vertex="1">
-          <mxGeometry height="66" width="240" y="166" as="geometry" />
-        </mxCell>
-        <mxCell id="c_defmod" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;Abstract&gt;&gt;&lt;div&gt;DefenseModule&lt;/div&gt;" vertex="1">
-          <mxGeometry height="422" width="280" x="575" y="774" as="geometry" />
-        </mxCell>
-        <mxCell id="c_defmod_f" parent="c_defmod" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-range_radius: float&lt;div&gt;-damage: float&lt;div&gt;-attack_speed: float&lt;div&gt;-cost: int&lt;div&gt;-status: ModuleStatus&lt;div&gt;-cooldown_timer: float&lt;div&gt;-level: int&lt;div&gt;-max_level: int&lt;div&gt;-upgrade_costs: List[int]" vertex="1">
-          <mxGeometry height="198" width="280" y="40" as="geometry" />
-        </mxCell>
-        <mxCell id="c_defmod_d" parent="c_defmod" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="280" y="238" as="geometry" />
-        </mxCell>
-        <mxCell id="c_defmod_m" parent="c_defmod" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(dt, enemies)&lt;div&gt;+find_target(enemies): HostileEntity&lt;div&gt;+fire(target) *абстр.*&lt;div&gt;+upgrade(): bool&lt;div&gt;+can_upgrade(): bool&lt;div&gt;+get_upgrade_cost(): int&lt;div&gt;+take_damage(amount, type)&lt;div&gt;+is_destroyed(): bool" vertex="1">
-          <mxGeometry height="176" width="280" y="246" as="geometry" />
-        </mxCell>
-        <mxCell id="c_laser" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="LaserTurret" vertex="1">
-          <mxGeometry height="84" width="220" x="300" y="769" as="geometry" />
-        </mxCell>
-        <mxCell id="c_laser_f" parent="c_laser" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-damage_type: DamageType = Energy" vertex="1">
-          <mxGeometry height="25" width="220" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_laser_d" parent="c_laser" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="220" y="51" as="geometry" />
-        </mxCell>
-        <mxCell id="c_laser_m" parent="c_laser" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+fire(target): Projectile" vertex="1">
-          <mxGeometry height="25" width="220" y="59" as="geometry" />
-        </mxCell>
-        <mxCell id="c_bullet" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="BulletTurret" vertex="1">
-          <mxGeometry height="84" width="220" x="280" y="956" as="geometry" />
-        </mxCell>
-        <mxCell id="c_bullet_f" parent="c_bullet" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-damage_type: DamageType = Kinetic" vertex="1">
-          <mxGeometry height="25" width="220" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_bullet_d" parent="c_bullet" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="220" y="51" as="geometry" />
-        </mxCell>
-        <mxCell id="c_bullet_m" parent="c_bullet" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+fire(target): Projectile" vertex="1">
-          <mxGeometry height="25" width="220" y="59" as="geometry" />
-        </mxCell>
-        <mxCell id="c_mortar" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="MortarTurret" vertex="1">
-          <mxGeometry height="84" width="220" x="290" y="1166" as="geometry" />
-        </mxCell>
-        <mxCell id="c_mortar_f" parent="c_mortar" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-damage_type: DamageType = Explosive" vertex="1">
-          <mxGeometry height="25" width="220" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_mortar_d" parent="c_mortar" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="220" y="51" as="geometry" />
-        </mxCell>
-        <mxCell id="c_mortar_m" parent="c_mortar" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+fire(target): Projectile" vertex="1">
-          <mxGeometry height="25" width="220" y="59" as="geometry" />
-        </mxCell>
-        <mxCell id="c_proj" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Projectile" vertex="1">
-          <mxGeometry height="169" width="220" x="570" y="1599" as="geometry" />
-        </mxCell>
-        <mxCell id="c_proj_f" parent="c_proj" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-position: Coordinate&lt;div&gt;-target: Entity&lt;div&gt;-damage: float&lt;div&gt;-damage_type: DamageType&lt;div&gt;-speed: float" vertex="1">
-          <mxGeometry height="110" width="220" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_proj_d" parent="c_proj" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="220" y="136" as="geometry" />
-        </mxCell>
-        <mxCell id="c_proj_m" parent="c_proj" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(dt): bool" vertex="1">
-          <mxGeometry height="25" width="220" y="144" as="geometry" />
-        </mxCell>
-        <mxCell id="c_nav" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="NavigationGrid" vertex="1">
-          <mxGeometry height="188" width="240" x="970" y="1589.5" as="geometry" />
-        </mxCell>
-        <mxCell id="c_nav_f" parent="c_nav" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-grid: List[List[int]]&lt;div&gt;-cols: int&lt;div&gt;-rows: int&lt;div&gt;-cell_size: int" vertex="1">
-          <mxGeometry height="88" width="240" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_nav_d" parent="c_nav" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="240" y="114" as="geometry" />
-        </mxCell>
-        <mxCell id="c_nav_m" parent="c_nav" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+find_path(start, end): List[Coordinate]&lt;div&gt;+set_blocked(x, y, blocked)&lt;div&gt;+is_walkable(node): bool" vertex="1">
-          <mxGeometry height="66" width="240" y="122" as="geometry" />
-        </mxCell>
-        <mxCell id="c_cam" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Camera" vertex="1">
-          <mxGeometry height="320" width="240" x="1570" y="40" as="geometry" />
-        </mxCell>
-        <mxCell id="c_cam_f" parent="c_cam" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-x: float&lt;div&gt;-y: float&lt;div&gt;-zoom: float&lt;div&gt;-screen_w: int&lt;div&gt;-screen_h: int&lt;div&gt;-map_w: int&lt;div&gt;-map_h: int" vertex="1">
-          <mxGeometry height="154" width="240" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_cam_d" parent="c_cam" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="240" y="180" as="geometry" />
-        </mxCell>
-        <mxCell id="c_cam_m" parent="c_cam" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+move(dx, dy)&lt;div&gt;+zoom_at_mouse(mx, my, factor)&lt;div&gt;+world_to_screen(wx, wy)&lt;div&gt;+screen_to_world(sx, sy)&lt;div&gt;+center_on(pos)&lt;div&gt;+follow(pos)" vertex="1">
-          <mxGeometry height="132" width="240" y="188" as="geometry" />
-        </mxCell>
-        <mxCell id="c_map" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Map" vertex="1">
-          <mxGeometry height="232" width="240" x="970" y="1270" as="geometry" />
-        </mxCell>
-        <mxCell id="c_map_f" parent="c_map" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-modules: List[DefenseModule]&lt;div&gt;-enemies: List[HostileEntity]&lt;div&gt;-projectiles: List[Projectile]&lt;div&gt;-nav_grid: NavigationGrid&lt;div&gt;-spawn_points: List[Coordinate]" vertex="1">
-          <mxGeometry height="110" width="240" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_map_d" parent="c_map" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="240" y="136" as="geometry" />
-        </mxCell>
-        <mxCell id="c_map_m" parent="c_map" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+add_module(module)&lt;div&gt;+can_place_module(pos): bool&lt;div&gt;+spawn_enemy(enemy)&lt;div&gt;+update(dt): (reached_base, killed)" vertex="1">
-          <mxGeometry height="88" width="240" y="144" as="geometry" />
-        </mxCell>
         <mxCell id="c_tfac" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="TowerFactory" vertex="1">
-          <mxGeometry height="147" width="260" x="400" y="450" as="geometry" />
+          <mxGeometry height="147" width="260" x="940" y="232" as="geometry" />
         </mxCell>
         <mxCell id="c_tfac_f" parent="c_tfac" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-registry: Dict[str, Type[DefenseModule]]" vertex="1">
           <mxGeometry height="25" width="260" y="26" as="geometry" />
@@ -263,7 +149,7 @@
           <mxGeometry height="88" width="260" y="59" as="geometry" />
         </mxCell>
         <mxCell id="c_efac" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="EnemyFactory" vertex="1">
-          <mxGeometry height="125" width="260" x="1990" y="970.5" as="geometry" />
+          <mxGeometry height="147" width="260" x="940" y="419" as="geometry" />
         </mxCell>
         <mxCell id="c_efac_f" parent="c_efac" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-registry: Dict[str, Type[HostileEntity]]" vertex="1">
           <mxGeometry height="25" width="260" y="26" as="geometry" />
@@ -271,23 +157,11 @@
         <mxCell id="c_efac_d" parent="c_efac" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
           <mxGeometry height="8" width="260" y="51" as="geometry" />
         </mxCell>
-        <mxCell id="c_efac_m" parent="c_efac" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+register(type_name, cls)&lt;div&gt;+create(type_name, pos): HostileEntity&lt;div&gt;+available_types(): List[str]" vertex="1">
-          <mxGeometry height="66" width="260" y="59" as="geometry" />
-        </mxCell>
-        <mxCell id="c_session" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="GameSession" vertex="1">
-          <mxGeometry height="320" width="300" x="1540" y="706" as="geometry" />
-        </mxCell>
-        <mxCell id="c_session_f" parent="c_session" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-map: Map&lt;div&gt;-resources: ResourceBank&lt;div&gt;-wave_protocol: WaveProtocol&lt;div&gt;-tower_factory: TowerFactory&lt;div&gt;-enemy_factory: EnemyFactory&lt;div&gt;-state_manager: GameStateManager&lt;div&gt;-base_health: int&lt;div&gt;-max_base_health: int&lt;div&gt;-base_position: Coordinate&lt;div&gt;/state: GameState" vertex="1">
-          <mxGeometry height="220" width="300" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_session_d" parent="c_session" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="300" y="246" as="geometry" />
-        </mxCell>
-        <mxCell id="c_session_m" parent="c_session" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+setup_game()&lt;div&gt;+update(dt)&lt;div&gt;+place_turret(type, pos): bool" vertex="1">
-          <mxGeometry height="66" width="300" y="254" as="geometry" />
+        <mxCell id="c_efac_m" parent="c_efac" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+register(type_name, cls)&lt;div&gt;+create(type_name, pos): HostileEntity&lt;div&gt;+faction_for(type_name): Faction&lt;div&gt;+available_types(): List[str]" vertex="1">
+          <mxGeometry height="88" width="260" y="59" as="geometry" />
         </mxCell>
         <mxCell id="c_gsm" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="GameStateManager" vertex="1">
-          <mxGeometry height="125" width="260" x="820" y="300" as="geometry" />
+          <mxGeometry height="125" width="260" x="940" y="606" as="geometry" />
         </mxCell>
         <mxCell id="c_gsm_f" parent="c_gsm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-current_state: GameState" vertex="1">
           <mxGeometry height="25" width="260" y="26" as="geometry" />
@@ -295,11 +169,185 @@
         <mxCell id="c_gsm_d" parent="c_gsm" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
           <mxGeometry height="8" width="260" y="51" as="geometry" />
         </mxCell>
-        <mxCell id="c_gsm_m" parent="c_gsm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+change_state(new_state)&lt;div&gt;+check_victory(map, wave_protocol): bool&lt;div&gt;+check_defeat(base_health): bool" vertex="1">
+        <mxCell id="c_gsm_m" parent="c_gsm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+change_state(new_state)&lt;div&gt;+check_victory(elapsed_time, target_duration): bool&lt;div&gt;+check_defeat(base_health): bool" vertex="1">
           <mxGeometry height="66" width="260" y="59" as="geometry" />
         </mxCell>
+        <mxCell id="c_entity" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;Abstract&gt;&gt;&lt;div&gt;Entity&lt;/div&gt;" vertex="1">
+          <mxGeometry height="139" width="240" x="1260" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="c_entity_f" parent="c_entity" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-position: Coordinate" vertex="1">
+          <mxGeometry height="25" width="240" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c_entity_d" parent="c_entity" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="240" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="c_entity_m" parent="c_entity" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+get_position(): Coordinate&lt;div&gt;+set_position(pos)&lt;div&gt;+take_damage(amount, type) *абстр.*" vertex="1">
+          <mxGeometry height="66" width="240" y="73" as="geometry" />
+        </mxCell>
+        <mxCell id="c_hostile" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;Abstract&gt;&gt;&lt;div&gt;HostileEntity&lt;/div&gt;" vertex="1">
+          <mxGeometry height="400" width="280" x="1260" y="249" as="geometry" />
+        </mxCell>
+        <mxCell id="c_hostile_f" parent="c_hostile" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-max_health: float&lt;div&gt;-health: float&lt;div&gt;-speed: float&lt;div&gt;-armor: ArmorType&lt;div&gt;-reward: int&lt;div&gt;-faction: Faction&lt;div&gt;-vision_radius: float&lt;div&gt;-path: List[Coordinate]&lt;div&gt;-path_index: int" vertex="1">
+          <mxGeometry height="198" width="280" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c_hostile_d" parent="c_hostile" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="280" y="238" as="geometry" />
+        </mxCell>
+        <mxCell id="c_hostile_m" parent="c_hostile" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+take_damage(amount, type)&lt;div&gt;+is_alive(): bool&lt;div&gt;+move_along_path(dt): bool&lt;div&gt;+act(dt) *абстр.*&lt;div&gt;+avoids_danger(): bool&lt;div&gt;+is_combatant(): bool&lt;div&gt;+heals_allies(): bool" vertex="1">
+          <mxGeometry height="154" width="280" y="246" as="geometry" />
+        </mxCell>
+        <mxCell id="c_fauna_nest" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="FaunaNest" vertex="1">
+          <mxGeometry height="210" width="240" x="1260" y="689" as="geometry" />
+        </mxCell>
+        <mxCell id="c_fauna_nest_f" parent="c_fauna_nest" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-max_health: float&lt;div&gt;-health: float&lt;div&gt;-reward: int&lt;div&gt;-faction: Faction&lt;div&gt;-armor: ArmorType" vertex="1">
+          <mxGeometry height="110" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_fauna_nest_d" parent="c_fauna_nest" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="240" y="136" as="geometry" />
+        </mxCell>
+        <mxCell id="c_fauna_nest_m" parent="c_fauna_nest" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+is_alive(): bool&lt;div&gt;+is_destroyed(): bool&lt;div&gt;+take_damage(amount, type)" vertex="1">
+          <mxGeometry height="66" width="240" y="144" as="geometry" />
+        </mxCell>
+        <mxCell id="c_roach" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="GiantRoach" vertex="1">
+          <mxGeometry height="51" width="210" x="1630" y="731" as="geometry" />
+        </mxCell>
+        <mxCell id="c_roach_m" parent="c_roach" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+act(dt)" vertex="1">
+          <mxGeometry height="25" width="210" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_medic" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="MedicDrone" vertex="1">
+          <mxGeometry height="114" width="210" x="1630" y="474" as="geometry" />
+        </mxCell>
+        <mxCell id="c_medic_m" parent="c_medic" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+act(dt)&lt;div&gt;+is_combatant(): bool&lt;div&gt;+heals_allies(): bool&lt;div&gt;+avoids_danger(): bool" vertex="1">
+          <mxGeometry height="88" width="210" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_titan" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="BioTitan" vertex="1">
+          <mxGeometry height="51" width="210" x="1865" y="731" as="geometry" />
+        </mxCell>
+        <mxCell id="c_titan_m" parent="c_titan" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+act(dt)" vertex="1">
+          <mxGeometry height="25" width="210" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_defmod" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;Abstract&gt;&gt;&lt;div&gt;DefenseModule&lt;/div&gt;" vertex="1">
+          <mxGeometry height="444" width="280" x="2040" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c_defmod_f" parent="c_defmod" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-range_radius: float&lt;div&gt;-damage: float&lt;div&gt;-attack_speed: float&lt;div&gt;-cost: int&lt;div&gt;-status: ModuleStatus&lt;div&gt;-cooldown_timer: float&lt;div&gt;-level: int&lt;div&gt;-max_level: int&lt;div&gt;-upgrade_costs: List[int]&lt;div&gt;-is_powered: bool" vertex="1">
+          <mxGeometry height="220" width="280" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c_defmod_d" parent="c_defmod" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="280" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="c_defmod_m" parent="c_defmod" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(dt, enemies)&lt;div&gt;+find_target(enemies): HostileEntity&lt;div&gt;+fire(target) *абстр.*&lt;div&gt;+upgrade(): bool&lt;div&gt;+can_upgrade(): bool&lt;div&gt;+get_upgrade_cost(): int&lt;div&gt;+take_damage(amount, type)&lt;div&gt;+is_destroyed(): bool" vertex="1">
+          <mxGeometry height="176" width="280" y="268" as="geometry" />
+        </mxCell>
+        <mxCell id="c_laser" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="LaserTurret" vertex="1">
+          <mxGeometry height="84" width="220" x="2370" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="c_laser_f" parent="c_laser" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-damage_type: DamageType = Energy" vertex="1">
+          <mxGeometry height="25" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_laser_d" parent="c_laser" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="220" y="51" as="geometry" />
+        </mxCell>
+        <mxCell id="c_laser_m" parent="c_laser" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+fire(target): Projectile" vertex="1">
+          <mxGeometry height="25" width="220" y="59" as="geometry" />
+        </mxCell>
+        <mxCell id="c_bullet" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="BulletTurret" vertex="1">
+          <mxGeometry height="84" width="220" x="2600" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="c_bullet_f" parent="c_bullet" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-damage_type: DamageType = Kinetic" vertex="1">
+          <mxGeometry height="25" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_bullet_d" parent="c_bullet" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="220" y="51" as="geometry" />
+        </mxCell>
+        <mxCell id="c_bullet_m" parent="c_bullet" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+fire(target): Projectile" vertex="1">
+          <mxGeometry height="25" width="220" y="59" as="geometry" />
+        </mxCell>
+        <mxCell id="c_mortar" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="MortarTurret" vertex="1">
+          <mxGeometry height="84" width="220" x="2860" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="c_mortar_f" parent="c_mortar" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-damage_type: DamageType = Explosive" vertex="1">
+          <mxGeometry height="25" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_mortar_d" parent="c_mortar" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="220" y="51" as="geometry" />
+        </mxCell>
+        <mxCell id="c_mortar_m" parent="c_mortar" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+fire(target): Projectile" vertex="1">
+          <mxGeometry height="25" width="220" y="59" as="geometry" />
+        </mxCell>
+        <mxCell id="c_powinfra" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="PowerInfrastructure" vertex="1">
+          <mxGeometry height="144" width="260" x="2050" y="554" as="geometry" />
+        </mxCell>
+        <mxCell id="c_powinfra_f" parent="c_powinfra" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-max_health: float&lt;div&gt;-health: float&lt;div&gt;IS_COMBAT_TOWER: bool = False" vertex="1">
+          <mxGeometry height="66" width="260" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_powinfra_d" parent="c_powinfra" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="260" y="92" as="geometry" />
+        </mxCell>
+        <mxCell id="c_powinfra_m" parent="c_powinfra" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+find_target(enemies): None&lt;div&gt;+fire(target): None" vertex="1">
+          <mxGeometry height="44" width="260" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="c_powgen" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="PowerGenerator" vertex="1">
+          <mxGeometry height="51" width="220" x="2075" y="809" as="geometry" />
+        </mxCell>
+        <mxCell id="c_powgen_f" parent="c_powgen" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="IS_SOURCE: bool = True" vertex="1">
+          <mxGeometry height="25" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_powpylon" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="PowerPylon" vertex="1">
+          <mxGeometry height="51" width="220" x="2230" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="c_powpylon_f" parent="c_powpylon" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="IS_SOURCE: bool = False" vertex="1">
+          <mxGeometry height="25" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_nav" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="NavigationGrid" vertex="1">
+          <mxGeometry height="188" width="240" x="2480" y="1310" as="geometry" />
+        </mxCell>
+        <mxCell id="c_nav_f" parent="c_nav" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-grid: List[List[int]]&lt;div&gt;-cols: int&lt;div&gt;-rows: int&lt;div&gt;-cell_size: int" vertex="1">
+          <mxGeometry height="88" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_nav_d" parent="c_nav" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="240" y="114" as="geometry" />
+        </mxCell>
+        <mxCell id="c_nav_m" parent="c_nav" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+find_path(start, end): List[Coordinate]&lt;div&gt;+set_blocked(x, y, blocked)&lt;div&gt;+is_walkable(node): bool" vertex="1">
+          <mxGeometry height="66" width="240" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cam" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Camera" vertex="1">
+          <mxGeometry height="320" width="240" x="2500" y="543" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cam_f" parent="c_cam" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-x: float&lt;div&gt;-y: float&lt;div&gt;-zoom: float&lt;div&gt;-screen_w: int&lt;div&gt;-screen_h: int&lt;div&gt;-map_w: int&lt;div&gt;-map_h: int" vertex="1">
+          <mxGeometry height="154" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cam_d" parent="c_cam" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="240" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cam_m" parent="c_cam" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+move(dx, dy)&lt;div&gt;+zoom_at_mouse(mx, my, factor)&lt;div&gt;+world_to_screen(wx, wy)&lt;div&gt;+screen_to_world(sx, sy)&lt;div&gt;+center_on(pos)&lt;div&gt;+follow(pos)" vertex="1">
+          <mxGeometry height="132" width="240" y="188" as="geometry" />
+        </mxCell>
+        <mxCell id="c_map" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Map" vertex="1">
+          <mxGeometry height="298" width="260" x="2470" y="960" as="geometry" />
+        </mxCell>
+        <mxCell id="c_map_f" parent="c_map" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-modules: List[DefenseModule]&lt;div&gt;-enemies: List[HostileEntity]&lt;div&gt;-projectiles: List[Projectile]&lt;div&gt;-fauna_nests: List[FaunaNest]&lt;div&gt;-nav_grid: NavigationGrid&lt;div&gt;-spawn_points_by_faction: Dict[Faction, List]" vertex="1">
+          <mxGeometry height="132" width="260" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_map_d" parent="c_map" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="260" y="158" as="geometry" />
+        </mxCell>
+        <mxCell id="c_map_m" parent="c_map" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+add_module(module)&lt;div&gt;+add_fauna_nest(nest)&lt;div&gt;+can_place_module(pos): bool&lt;div&gt;+spawn_enemy(enemy)&lt;div&gt;+spawn_points_for(faction): List[Coordinate]&lt;div&gt;+update(dt): (reached_base, killed, destroyed_nests)" vertex="1">
+          <mxGeometry height="132" width="260" y="166" as="geometry" />
+        </mxCell>
+        <mxCell id="c_session" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="GameSession" vertex="1">
+          <mxGeometry height="364" width="300" x="2820" y="224" as="geometry" />
+        </mxCell>
+        <mxCell id="c_session_f" parent="c_session" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-map: Map&lt;div&gt;-resources: ResourceBank&lt;div&gt;-threat_strategies: Dict[Faction, ThreatStrategy]&lt;div&gt;-objectives: List[Objective]&lt;div&gt;-tower_factory: TowerFactory&lt;div&gt;-enemy_factory: EnemyFactory&lt;div&gt;-state_manager: GameStateManager&lt;div&gt;-base_health: int&lt;div&gt;-max_base_health: int&lt;div&gt;-base_position: Coordinate&lt;div&gt;-endless: bool&lt;div&gt;/state: GameState" vertex="1">
+          <mxGeometry height="264" width="300" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_session_d" parent="c_session" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="300" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="c_session_m" parent="c_session" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+setup_game(endless)&lt;div&gt;+update(dt)&lt;div&gt;+place_turret(type, pos): bool" vertex="1">
+          <mxGeometry height="66" width="300" y="298" as="geometry" />
+        </mxCell>
         <mxCell id="c_gctrl" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="GameController" vertex="1">
-          <mxGeometry height="210" width="300" x="2100" y="120.5" as="geometry" />
+          <mxGeometry height="166" width="300" x="2820" y="720" as="geometry" />
         </mxCell>
         <mxCell id="c_gctrl_f" parent="c_gctrl" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-session: GameSession&lt;div&gt;-active_mode: IGameModeController" vertex="1">
           <mxGeometry height="44" width="300" y="26" as="geometry" />
@@ -307,11 +355,11 @@
         <mxCell id="c_gctrl_d" parent="c_gctrl" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
           <mxGeometry height="8" width="300" y="70" as="geometry" />
         </mxCell>
-        <mxCell id="c_gctrl_m" parent="c_gctrl" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+set_mode(mode)&lt;div&gt;+update(dt)&lt;div&gt;+handle_input(event): bool&lt;div&gt;+get_game_state(): dict&lt;div&gt;+enter_operator_mode(commander) (план)&lt;div&gt;+exit_operator_mode() (план)" vertex="1">
-          <mxGeometry height="132" width="300" y="78" as="geometry" />
+        <mxCell id="c_gctrl_m" parent="c_gctrl" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+set_mode(mode)&lt;div&gt;+update(dt)&lt;div&gt;+handle_input(event): bool&lt;div&gt;+get_game_state(): dict" vertex="1">
+          <mxGeometry height="88" width="300" y="78" as="geometry" />
         </mxCell>
         <mxCell id="c_imode" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="&lt;&lt;Interface&gt;&gt;&lt;div&gt;IGameModeController&lt;/div&gt;" vertex="1">
-          <mxGeometry height="180" width="280" x="1550" y="400" as="geometry" />
+          <mxGeometry height="180" width="280" x="2820" y="926" as="geometry" />
         </mxCell>
         <mxCell id="c_imode_f" parent="c_imode" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-session: GameSession&lt;div&gt;-camera: Camera" vertex="1">
           <mxGeometry height="44" width="280" y="40" as="geometry" />
@@ -323,7 +371,7 @@
           <mxGeometry height="88" width="280" y="92" as="geometry" />
         </mxCell>
         <mxCell id="c_orbital" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="OrbitalModeController" vertex="1">
-          <mxGeometry height="166" width="280" x="730" y="100" as="geometry" />
+          <mxGeometry height="166" width="280" x="2820" y="1146" as="geometry" />
         </mxCell>
         <mxCell id="c_orbital_f" parent="c_orbital" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-selected_tower_type: Type&lt;div&gt;-selected_module: DefenseModule" vertex="1">
           <mxGeometry height="44" width="280" y="26" as="geometry" />
@@ -334,221 +382,329 @@
         <mxCell id="c_orbital_m" parent="c_orbital" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+select_tower(type): bool&lt;div&gt;+place_tower(pos): bool&lt;div&gt;+upgrade_selected(): bool&lt;div&gt;+get_game_state(): dict" vertex="1">
           <mxGeometry height="88" width="280" y="78" as="geometry" />
         </mxCell>
-        <mxCell id="c_operator" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="OperatorModeController (план)" vertex="1">
-          <mxGeometry height="103" width="280" x="2210" y="1674.5" as="geometry" />
-        </mxCell>
-        <mxCell id="c_operator_f" parent="c_operator" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-commander: Commander" vertex="1">
-          <mxGeometry height="25" width="280" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_operator_d" parent="c_operator" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="280" y="51" as="geometry" />
-        </mxCell>
-        <mxCell id="c_operator_m" parent="c_operator" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(dt)&lt;div&gt;+handle_input(event): bool" vertex="1">
-          <mxGeometry height="44" width="280" y="59" as="geometry" />
-        </mxCell>
-        <mxCell id="c_skill" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;strokeColor=#005700;fontColor=#ffffff;" value="&lt;&lt;Abstract&gt;&gt;&lt;div&gt;Skill (план)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="136" width="220" x="2690" y="1190.5" as="geometry" />
-        </mxCell>
-        <mxCell id="c_skill_f" parent="c_skill" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-cooldown: float&lt;div&gt;-energy_cost: float" vertex="1">
-          <mxGeometry height="44" width="220" y="40" as="geometry" />
-        </mxCell>
-        <mxCell id="c_skill_d" parent="c_skill" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="220" y="84" as="geometry" />
-        </mxCell>
-        <mxCell id="c_skill_m" parent="c_skill" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+execute(target, map) *абстр.*&lt;div&gt;+can_activate(): bool" vertex="1">
-          <mxGeometry height="44" width="220" y="92" as="geometry" />
-        </mxCell>
-        <mxCell id="c_orbstrike" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="OrbitalStrike (план)" vertex="1">
-          <mxGeometry height="51" width="220" x="2690" y="1366.5" as="geometry" />
-        </mxCell>
-        <mxCell id="c_orbstrike_m" parent="c_orbstrike" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+execute(target, map)" vertex="1">
-          <mxGeometry height="25" width="220" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_overclock" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="Overclock (план)" vertex="1">
-          <mxGeometry height="51" width="220" x="2690" y="1457.5" as="geometry" />
-        </mxCell>
-        <mxCell id="c_overclock_m" parent="c_overclock" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+execute(target, map)" vertex="1">
-          <mxGeometry height="25" width="220" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_shield" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="DeployShield (план)" vertex="1">
-          <mxGeometry height="51" width="220" x="2690" y="1548.5" as="geometry" />
-        </mxCell>
-        <mxCell id="c_shield_m" parent="c_shield" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+execute(target, map)" vertex="1">
-          <mxGeometry height="25" width="220" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="c_repair" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="RepairDrone (план)" vertex="1">
-          <mxGeometry height="51" width="220" x="2690" y="1639.5" as="geometry" />
-        </mxCell>
-        <mxCell id="c_repair_m" parent="c_repair" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+execute(target, map)" vertex="1">
-          <mxGeometry height="25" width="220" y="26" as="geometry" />
-        </mxCell>
         <mxCell id="c_view" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="GameView" vertex="1">
-          <mxGeometry height="276" width="280" x="2120" y="374.5" as="geometry" />
+          <mxGeometry height="320" width="280" x="3180" y="70" as="geometry" />
         </mxCell>
-        <mxCell id="c_view_f" parent="c_view" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-session: GameSession&lt;div&gt;-controller: GameController&lt;div&gt;-screen: Surface&lt;div&gt;-clock: Clock&lt;div&gt;-tower_options: List[dict]&lt;div&gt;-map_renderer: MapRenderer&lt;div&gt;-hud_renderer: HudRenderer&lt;div&gt;-game_over_screen: GameOverScreen" vertex="1">
-          <mxGeometry height="176" width="280" y="26" as="geometry" />
+        <mxCell id="c_view_f" parent="c_view" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-session: GameSession&lt;div&gt;-controller: GameController&lt;div&gt;-screen: Surface&lt;div&gt;-clock: Clock&lt;div&gt;-tower_options: List[dict]&lt;div&gt;-map_renderer: MapRenderer&lt;div&gt;-hud_renderer: HudRenderer&lt;div&gt;-game_over_screen: GameOverScreen&lt;div&gt;-mode_select_screen: ModeSelectScreen&lt;div&gt;-menu_view: str" vertex="1">
+          <mxGeometry height="220" width="280" y="26" as="geometry" />
         </mxCell>
         <mxCell id="c_view_d" parent="c_view" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
-          <mxGeometry height="8" width="280" y="202" as="geometry" />
+          <mxGeometry height="8" width="280" y="246" as="geometry" />
         </mxCell>
         <mxCell id="c_view_m" parent="c_view" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+run()&lt;div&gt;+render()&lt;div&gt;+handle_events()" vertex="1">
-          <mxGeometry height="66" width="280" y="210" as="geometry" />
+          <mxGeometry height="66" width="280" y="254" as="geometry" />
         </mxCell>
         <mxCell id="c_maprend" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="MapRenderer" vertex="1">
-          <mxGeometry height="80" width="260" x="2100" y="726.5" as="geometry" />
+          <mxGeometry height="51" width="280" x="3180" y="430" as="geometry" />
         </mxCell>
         <mxCell id="c_maprend_m" parent="c_maprend" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+render(screen, camera, session, controller, tower_options, w, h)" vertex="1">
-          <mxGeometry height="54" width="260" y="26" as="geometry" />
+          <mxGeometry height="25" width="280" y="26" as="geometry" />
         </mxCell>
         <mxCell id="c_hudrend" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="HudRenderer" vertex="1">
-          <mxGeometry height="80" width="270" x="2370" y="726.5" as="geometry" />
+          <mxGeometry height="51" width="280" x="3180" y="521" as="geometry" />
         </mxCell>
         <mxCell id="c_hudrend_m" parent="c_hudrend" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+render(screen, camera, session, controller, tower_options, w, h, font, small_font)" vertex="1">
-          <mxGeometry height="54" width="270" y="26" as="geometry" />
+          <mxGeometry height="25" width="280" y="26" as="geometry" />
         </mxCell>
         <mxCell id="c_goscreen" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="GameOverScreen" vertex="1">
-          <mxGeometry height="51" width="240" x="2490" y="560.5" as="geometry" />
+          <mxGeometry height="51" width="260" x="3180" y="612" as="geometry" />
         </mxCell>
         <mxCell id="c_goscreen_m" parent="c_goscreen" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+render(screen, session, w, h)" vertex="1">
-          <mxGeometry height="25" width="240" y="26" as="geometry" />
+          <mxGeometry height="25" width="260" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_modeselect" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="ModeSelectScreen" vertex="1">
+          <mxGeometry height="70" width="260" x="3180" y="703" as="geometry" />
+        </mxCell>
+        <mxCell id="c_modeselect_m" parent="c_modeselect" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+render(screen, width, height, font, title_font)&lt;div&gt;+handle_click(pos, width, height): str" vertex="1">
+          <mxGeometry height="44" width="260" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_orbevent" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="&lt;&lt;Abstract&gt;&gt;&lt;div&gt;OrbitalEvent (план)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="117" width="260" x="3540" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="c_orbevent_f" parent="c_orbevent" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-position: Coordinate&lt;div&gt;-time_to_impact: float" vertex="1">
+          <mxGeometry height="44" width="260" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c_orbevent_d" parent="c_orbevent" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="260" y="84" as="geometry" />
+        </mxCell>
+        <mxCell id="c_orbevent_m" parent="c_orbevent" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+on_impact(map) *абстр.*" vertex="1">
+          <mxGeometry height="25" width="260" y="92" as="geometry" />
+        </mxCell>
+        <mxCell id="c_turretdrop" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="TurretDropEvent (план)" vertex="1">
+          <mxGeometry height="51" width="260" x="3540" y="227" as="geometry" />
+        </mxCell>
+        <mxCell id="c_turretdrop_m" parent="c_turretdrop" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+on_impact(map)" vertex="1">
+          <mxGeometry height="25" width="260" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_orbstrike" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="OrbitalStrikeEvent (план)" vertex="1">
+          <mxGeometry height="51" width="260" x="3540" y="318" as="geometry" />
+        </mxCell>
+        <mxCell id="c_orbstrike_m" parent="c_orbstrike" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+on_impact(map)" vertex="1">
+          <mxGeometry height="25" width="260" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_operative" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="Operative (план)" vertex="1">
+          <mxGeometry height="166" width="260" x="3540" y="409" as="geometry" />
+        </mxCell>
+        <mxCell id="c_operative_f" parent="c_operative" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-health: float&lt;div&gt;-speed: float&lt;div&gt;-state: CommanderState&lt;div&gt;-faction: Faction" vertex="1">
+          <mxGeometry height="88" width="260" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_operative_d" parent="c_operative" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="260" y="114" as="geometry" />
+        </mxCell>
+        <mxCell id="c_operative_m" parent="c_operative" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+move(dx, dy, dt)&lt;div&gt;+take_damage(amount, type)" vertex="1">
+          <mxGeometry height="44" width="260" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="c_opctrl" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="OperativeModeController (план)" vertex="1">
+          <mxGeometry height="103" width="280" x="3540" y="615" as="geometry" />
+        </mxCell>
+        <mxCell id="c_opctrl_f" parent="c_opctrl" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-operative: Operative" vertex="1">
+          <mxGeometry height="25" width="280" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_opctrl_d" parent="c_opctrl" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="280" y="51" as="geometry" />
+        </mxCell>
+        <mxCell id="c_opctrl_m" parent="c_opctrl" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(dt)&lt;div&gt;+handle_input(event): bool" vertex="1">
+          <mxGeometry height="44" width="280" y="59" as="geometry" />
+        </mxCell>
+        <mxCell id="c_sector" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;dashed=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="Sector (план)" vertex="1">
+          <mxGeometry height="125" width="240" x="3540" y="758" as="geometry" />
+        </mxCell>
+        <mxCell id="c_sector_f" parent="c_sector" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-id: int&lt;div&gt;-bounds&lt;div&gt;-unlocked: bool" vertex="1">
+          <mxGeometry height="66" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_sector_d" parent="c_sector" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="240" y="92" as="geometry" />
+        </mxCell>
+        <mxCell id="c_sector_m" parent="c_sector" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+contains(pos): bool" vertex="1">
+          <mxGeometry height="25" width="240" y="100" as="geometry" />
         </mxCell>
         <mxCell id="r1" edge="1" parent="1" source="c_hostile" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_entity">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r2" edge="1" parent="1" source="c_defmod" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_entity">
+        <mxCell id="r2" edge="1" parent="1" source="c_fauna_nest" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_entity">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r3" edge="1" parent="1" source="c_colony" style="endArrow=block;endFill=0;html=1;rounded=0;dashed=1;" target="c_entity">
+        <mxCell id="r3" edge="1" parent="1" source="c_defmod" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_entity">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r4" edge="1" parent="1" source="c_cmdr" style="endArrow=block;endFill=0;html=1;rounded=0;dashed=1;" target="c_entity">
+        <mxCell id="r4" edge="1" parent="1" source="c_drone" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_hostile">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r5" edge="1" parent="1" source="c_drone" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_hostile">
+        <mxCell id="r5" edge="1" parent="1" source="c_heavy" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_hostile">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r6" edge="1" parent="1" source="c_roach" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_hostile">
+        <mxCell id="r6" edge="1" parent="1" source="c_drone" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_hostile">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="r7" edge="1" parent="1" source="c_scout" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_hostile">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r8" edge="1" parent="1" source="c_laser" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_defmod">
+        <mxCell id="r8" edge="1" parent="1" source="c_sniper" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_hostile">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r9" edge="1" parent="1" source="c_bullet" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_defmod">
+        <mxCell id="r9" edge="1" parent="1" source="c_medic" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_hostile">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r10" edge="1" parent="1" source="c_mortar" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_defmod">
+        <mxCell id="r10" edge="1" parent="1" source="c_sniper" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_hostile">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r11" edge="1" parent="1" source="c_orbstrike" style="endArrow=block;endFill=0;html=1;rounded=0;dashed=1;" target="c_skill">
+        <mxCell id="r11" edge="1" parent="1" source="c_laser" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_defmod">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r12" edge="1" parent="1" source="c_overclock" style="endArrow=block;endFill=0;html=1;rounded=0;dashed=1;" target="c_skill">
+        <mxCell id="r12" edge="1" parent="1" source="c_bullet" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_defmod">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r13" edge="1" parent="1" source="c_shield" style="endArrow=block;endFill=0;html=1;rounded=0;dashed=1;" target="c_skill">
+        <mxCell id="r13" edge="1" parent="1" source="c_mortar" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_defmod">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r14" edge="1" parent="1" source="c_repair" style="endArrow=block;endFill=0;html=1;rounded=0;dashed=1;" target="c_skill">
+        <mxCell id="r14" edge="1" parent="1" source="c_powinfra" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_defmod">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r15" edge="1" parent="1" source="c_orbital" style="endArrow=block;endFill=0;dashed=1;html=1;rounded=0;" target="c_imode">
+        <mxCell id="r15" edge="1" parent="1" source="c_powgen" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_powinfra">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r16" edge="1" parent="1" source="c_operator" style="endArrow=block;endFill=0;dashed=1;html=1;rounded=0;" target="c_imode">
+        <mxCell id="r16" edge="1" parent="1" source="c_powpylon" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_powinfra">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r17" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_map" value="1">
+        <mxCell id="r17" edge="1" parent="1" source="c_ship" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_threat">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r18" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_res" value="1">
+        <mxCell id="r18" edge="1" parent="1" source="c_nest_strat" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_threat">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r19" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_wproto" value="1">
+        <mxCell id="r19" edge="1" parent="1" source="c_survive_obj" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_obj">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r20" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_gsm" value="1">
+        <mxCell id="r20" edge="1" parent="1" source="c_protect_obj" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_obj">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r21" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_tfac" value="1">
+        <mxCell id="r21" edge="1" parent="1" source="c_orbital" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_imode">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r22" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_efac" value="1">
+        <mxCell id="r22" edge="1" parent="1" source="c_turretdrop" style="endArrow=block;endFill=0;html=1;rounded=0;dashed=1;" target="c_orbevent">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r23" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;dashed=1;" target="c_colony" value="1 (план)">
+        <mxCell id="r23" edge="1" parent="1" source="c_orbstrike" style="endArrow=block;endFill=0;html=1;rounded=0;dashed=1;" target="c_orbevent">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r24" edge="1" parent="1" source="c_gctrl" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_imode" value="1 (активный)">
+        <mxCell id="r24" edge="1" parent="1" source="c_opctrl" style="endArrow=block;endFill=0;html=1;rounded=0;dashed=1;" target="c_imode">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r25" edge="1" parent="1" source="c_gctrl" style="endArrow=open;html=1;rounded=0;" target="c_session" value="uses">
+        <mxCell id="r25" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_map" value="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r26" edge="1" parent="1" source="c_imode" style="endArrow=open;html=1;rounded=0;" target="c_session" value="uses">
+        <mxCell id="r26" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_res" value="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r27" edge="1" parent="1" source="c_imode" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_cam" value="1">
+        <mxCell id="r27" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_threat" value="0..*">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r28" edge="1" parent="1" source="c_map" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;" target="c_defmod" value="0..*">
+        <mxCell id="r28" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_obj" value="0..*">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r29" edge="1" parent="1" source="c_map" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;" target="c_hostile" value="0..*">
+        <mxCell id="r29" edge="1" parent="1" source="c_proj" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_tfac" value="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r30" edge="1" parent="1" source="c_map" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;" target="c_proj" value="0..*">
+        <mxCell id="r30" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_efac" value="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r31" edge="1" parent="1" source="c_map" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_nav" value="1">
+        <mxCell id="r31" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_gsm" value="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r32" edge="1" parent="1" source="c_defmod" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_proj" value="creates">
+        <mxCell id="r32" edge="1" parent="1" source="c_session" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_fauna_nest" value="creates">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r33" edge="1" parent="1" source="c_defmod" style="endArrow=open;html=1;rounded=0;" target="c_hostile" value="targets">
+        <mxCell id="r33" edge="1" parent="1" source="c_gctrl" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_imode" value="1 (активный)">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r34" edge="1" parent="1" source="c_wproto" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;" target="c_wcfg" value="0..*">
+        <mxCell id="r34" edge="1" parent="1" source="c_gctrl" style="endArrow=open;html=1;rounded=0;" target="c_session" value="uses">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r35" edge="1" parent="1" source="c_wproto" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_hostile" value="spawns (via callback)">
+        <mxCell id="r35" edge="1" parent="1" source="c_imode" style="endArrow=open;html=1;rounded=0;" target="c_session" value="uses">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r36" edge="1" parent="1" source="c_tfac" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_defmod" value="creates">
+        <mxCell id="r36" edge="1" parent="1" source="c_imode" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_cam" value="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r37" edge="1" parent="1" source="c_efac" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_hostile" value="creates">
+        <mxCell id="r37" edge="1" parent="1" source="c_map" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;" target="c_defmod" value="0..*">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r38" edge="1" parent="1" source="c_view" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_gctrl" value="creates">
+        <mxCell id="r38" edge="1" parent="1" source="c_scout" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;" target="c_hostile" value="0..*">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r39" edge="1" parent="1" source="c_view" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_session" value="reads state">
+        <mxCell id="r39" edge="1" parent="1" source="c_map" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;" target="c_proj" value="0..*">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r40" edge="1" parent="1" source="c_view" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_maprend" value="1">
+        <mxCell id="r40" edge="1" parent="1" source="c_map" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;" target="c_fauna_nest" value="0..*">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r41" edge="1" parent="1" source="c_view" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_hudrend" value="1">
+        <mxCell id="r41" edge="1" parent="1" source="c_map" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_nav" value="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r42" edge="1" parent="1" source="c_view" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_goscreen" value="1">
+        <mxCell id="r42" edge="1" parent="1" source="c_defmod" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_proj" value="creates">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r43" edge="1" parent="1" source="c_operator" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;dashed=1;" target="c_cmdr" value="1">
+        <mxCell id="r43" edge="1" parent="1" source="c_defmod" style="endArrow=open;html=1;rounded=0;" target="c_hostile" value="targets">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r44" edge="1" parent="1" source="c_cmdr" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;dashed=1;" target="c_skill" value="0..*">
+        <mxCell id="r44" edge="1" parent="1" source="c_threat" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_hostile" value="spawns (via callback)">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="akV85ji-OctG8cVyFUl2-2" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;span style=&quot;font-family: Tahoma; font-size: 13px; font-weight: 700; text-align: left; text-wrap-mode: nowrap;&quot;&gt;Легенда: сплошная граница = реализовано и покрыто тестами сейчас.&lt;/span&gt;" vertex="1">
-          <mxGeometry height="30" width="570" x="5" y="8" as="geometry" />
+        <mxCell id="r45" edge="1" parent="1" source="c_heavy" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_defmod" value="creates">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="akV85ji-OctG8cVyFUl2-3" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&#xa;&lt;span style=&quot;color: rgb(255, 255, 255); font-family: Tahoma; font-size: 13px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 700; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(27, 29, 30); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;Пунктирная граница + зеленая заливка = запланированное расширение (Operator-режим, навыки, фракции), пока не реализовано&lt;/span&gt;&#xa;&#xa;" vertex="1">
-          <mxGeometry height="30" width="910" x="535" y="15" as="geometry" />
+        <mxCell id="r46" edge="1" parent="1" source="c_efac" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_hostile" value="creates">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r47" edge="1" parent="1" source="c_view" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_gctrl" value="creates">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r48" edge="1" parent="1" source="c_view" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_session" value="reads state">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r49" edge="1" parent="1" source="c_view" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_maprend" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r50" edge="1" parent="1" source="c_view" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_hudrend" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r51" edge="1" parent="1" source="c_view" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_goscreen" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r52" edge="1" parent="1" source="c_view" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_modeselect" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r53" edge="1" parent="1" source="c_opctrl" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;dashed=1;" target="c_operative" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r54" edge="1" parent="1" source="c_map" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;" target="c_sector" value="0..* (план)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ybn5ifpyzOGSTPZkZyxM-1" edge="1" parent="1" source="c_map" style="startArrow=diamondThin;startFill=0;endArrow=none;html=1;rounded=0;" target="c_scout" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2500" y="956" as="sourcePoint" />
+            <mxPoint x="1540" y="514" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_scout" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="ScoutDrone" vertex="1">
+          <mxGeometry height="70" width="210" x="1630" y="617" as="geometry" />
+        </mxCell>
+        <mxCell id="c_scout_m" parent="c_scout" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+act(dt)&lt;div&gt;+avoids_danger(): bool" vertex="1">
+          <mxGeometry height="44" width="210" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ybn5ifpyzOGSTPZkZyxM-2" edge="1" parent="1" source="c_titan" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_sniper" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2050" y="393" as="sourcePoint" />
+            <mxPoint x="1540" y="437" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_sniper" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="SniperDrone" vertex="1">
+          <mxGeometry height="51" width="210" x="1630" y="406" as="geometry" />
+        </mxCell>
+        <mxCell id="c_sniper_m" parent="c_sniper" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+act(dt)" vertex="1">
+          <mxGeometry height="25" width="210" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ybn5ifpyzOGSTPZkZyxM-3" edge="1" parent="1" source="c_roach" style="endArrow=block;endFill=0;html=1;rounded=0;" target="c_drone" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2050" y="299" as="sourcePoint" />
+            <mxPoint x="1540" y="417" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_drone" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="DroneWalker" vertex="1">
+          <mxGeometry height="51" width="210" x="1630" y="347.5" as="geometry" />
+        </mxCell>
+        <mxCell id="c_drone_m" parent="c_drone" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+act(dt)" vertex="1">
+          <mxGeometry height="25" width="210" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ybn5ifpyzOGSTPZkZyxM-4" edge="1" parent="1" source="c_tfac" style="endArrow=open;dashed=1;html=1;rounded=0;" target="c_heavy" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1200" y="304" as="sourcePoint" />
+            <mxPoint x="2050" y="294" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_heavy" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="HeavyAssaultDrone" vertex="1">
+          <mxGeometry height="51" width="210" x="1630" y="283" as="geometry" />
+        </mxCell>
+        <mxCell id="c_heavy_m" parent="c_heavy" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+act(dt)" vertex="1">
+          <mxGeometry height="25" width="210" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ybn5ifpyzOGSTPZkZyxM-5" edge="1" parent="1" source="c_session" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;" target="c_proj" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2820" y="256" as="sourcePoint" />
+            <mxPoint x="1200" y="302" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_proj" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="Projectile" vertex="1">
+          <mxGeometry height="169" width="220" x="2500" y="242" as="geometry" />
+        </mxCell>
+        <mxCell id="c_proj_f" parent="c_proj" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="-position: Coordinate&lt;div&gt;-target: Entity&lt;div&gt;-damage: float&lt;div&gt;-damage_type: DamageType&lt;div&gt;-speed: float" vertex="1">
+          <mxGeometry height="110" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c_proj_d" parent="c_proj" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;strokeColor=inherit;" vertex="1">
+          <mxGeometry height="8" width="220" y="136" as="geometry" />
+        </mxCell>
+        <mxCell id="c_proj_m" parent="c_proj" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;overflow=hidden;whiteSpace=wrap;html=1;fontFamily=Tahoma;" value="+update(dt): bool" vertex="1">
+          <mxGeometry height="25" width="220" y="144" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

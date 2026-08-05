@@ -8,9 +8,12 @@ if TYPE_CHECKING:
 class IGameModeController(ABC):
     """Управляет вводом, обновлением и камерой одного режима игры."""
 
-    def __init__(self, session: "GameSession"):
-        """Создаёт контроллер и его камеру для данной игровой сессии."""
+    def __init__(self, session: "GameSession", screen_w: int = 900, screen_h: int = 600):
+        """Создаёт контроллер и его камеру для данной игровой сессии на
+        экране заданного размера (900x600 по умолчанию - для тестов)."""
         self.session = session
+        self.screen_w = screen_w
+        self.screen_h = screen_h
         self.camera = self._create_camera()
 
     @abstractmethod

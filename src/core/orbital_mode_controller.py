@@ -13,29 +13,38 @@ _KEY_TO_TOWER_TYPE = {
     pygame.K_1: "laser",
     pygame.K_2: "bullet",
     pygame.K_3: "mortar",
+    pygame.K_4: "generator",
+    pygame.K_5: "pylon",
 }
 
 
 class OrbitalModeController(IGameModeController):
-    """Свободная камера, строительство башен, управление волнами."""
+    """Свободная камера и строительство башен - RTS-режим обзора."""
 
     ENEMY_SELECT_RADIUS = 16
 
-    def __init__(self, session: "GameSession"):
+    def __init__(self, session: "GameSession", screen_w: int = 900, screen_h: int = 600):
         """Создаёт контроллер орбитального режима для сессии."""
         self.selected_tower_type = None
         self.selected_module = None
         self.selected_enemy = None
         self.dragging_camera = False
         self._last_mouse_pos = None
-        super().__init__(session)
+        super().__init__(session, screen_w, screen_h)
 
         if session.base_position is not None:
             self.camera.center_on(session.base_position)
 
+    DEFAULT_MAP_SIZE = 6000
+
     def _create_camera(self):
-        """Создаёт камеру для орбитального режима."""
-        return Camera(900, 600, map_w=4000, map_h=4000)
+        """Создаёт камеру для орбитального режима под текущий размер окна и реальный
+        размер карты сессии (а не зашитую константу - иначе камера не узнает об
+        увеличенной карте и будет считать себя на маленькой). DEFAULT_MAP_SIZE - только
+        запасной вариант на случай, если камера создаётся до setup_game()."""
+        map_w = self.session.map.width if self.session.map else self.DEFAULT_MAP_SIZE
+        map_h = self.session.map.height if self.session.map else self.DEFAULT_MAP_SIZE
+        return Camera(self.screen_w, self.screen_h, map_w=map_w, map_h=map_h)
 
     def update(self, delta_time: float):
         """Обновляет камеру и снимает выделение с исчезнувшего врага."""
@@ -54,8 +63,6 @@ class OrbitalModeController(IGameModeController):
         if event.type == pygame.KEYDOWN:
             if event.key in _KEY_TO_TOWER_TYPE:
                 self.select_tower(_KEY_TO_TOWER_TYPE[event.key])
-            elif event.key == pygame.K_SPACE:
-                self.start_next_wave()
             elif event.key == pygame.K_u:
                 self.upgrade_selected()
             elif event.key == pygame.K_p:
@@ -143,13 +150,6 @@ class OrbitalModeController(IGameModeController):
         self.selected_tower_type = None
         self.selected_enemy = None
 
-    def start_next_wave(self) -> bool:
-        """Запускает следующую волну досрочно."""
-        if self.session.wave_protocol.is_active:
-            return False
-        self.session.wave_protocol.force_start_next_wave()
-        return True
-
     def pause_game(self):
         """Переключает игру между паузой и продолжением."""
         if self.session.state == GameState.PLAYING:
@@ -157,20 +157,16 @@ class OrbitalModeController(IGameModeController):
         elif self.session.state == GameState.PAUSED:
             self.session.state = GameState.PLAYING
 
-    def get_next_wave_time(self) -> float:
-        """Время до следующей волны."""
-        return self.session.wave_protocol.get_time_until_next_wave()
-
     def get_game_state(self) -> dict:
         """Собирает состояние игры для HUD."""
         return {
             "credits": self.session.resources.credits,
             "base_health": self.session.base_health,
             "max_base_health": self.session.max_base_health,
-            "current_wave": self.session.wave_protocol.current_wave_idx + 1,
-            "total_waves": len(self.session.wave_protocol.waves),
+            "elapsed_time": self.session.elapsed_time,
+            "survive_duration_target": self.session.survive_duration_target,
+            "endless": self.session.endless,
             "game_state": self.session.state,
-            "is_wave_active": self.session.wave_protocol.is_active,
             "selected_tower": self.selected_tower_type,
         }
 

@@ -2,11 +2,10 @@
 import pygame
 
 from src.core.coordinate import Coordinate
+from src.entities.defense_module import DefenseModule
 from src.entities.projectile import HitscanBeam, MortarShell, ShrapnelPellet
 from src.enums import Faction
-
-MAP_WIDTH = 4000
-MAP_HEIGHT = 4000
+from src.systems.threat_strategy import ShipLandingStrategy
 
 ENEMY_COLORS = {
     "drone_walker": (220, 50, 50),
@@ -14,6 +13,8 @@ ENEMY_COLORS = {
     "scout_drone": (80, 160, 255),
     "heavy_assault_drone": (150, 60, 200),
     "bio_titan": (40, 140, 40),
+    "medic_drone": (80, 255, 220),
+    "sniper_drone": (255, 210, 60),
 }
 DEFAULT_ENEMY_COLOR = (220, 50, 50)
 
@@ -27,29 +28,105 @@ DEFAULT_SPAWN_COLOR = (255, 140, 0)
 class MapRenderer:
     """Рисует игровое поле."""
 
+    BACKGROUND_TILE_WORLD_SIZE = 200
+    BACKGROUND_FALLBACK_COLOR = (48, 50, 55)
+
+    TOWER_SPRITE_FOOTPRINT_MARGIN = 8
+    TOWER_SPRITE_MIN_SCREEN_SIZE = 30
+
+    ENEMY_SPRITE_WORLD_SIZE = 20
+    ENEMY_SPRITE_MIN_SCREEN_SIZE = 20
+
+    BASE_SPRITE_WORLD_SIZE = 60
+    BASE_SPRITE_MIN_SCREEN_SIZE = 50
+
+    NEST_SPRITE_WORLD_SIZE = 34
+    NEST_SPRITE_MIN_SCREEN_SIZE = 28
+
+    def __init__(self, sprite_manager=None):
+        """Запоминает SpriteManager; без него (или без спрайта под ключ) рисует примитивами."""
+        self.sprite_manager = sprite_manager
+
+    def _sprite_for(self, key, elapsed_time):
+        """Возвращает текущий кадр спрайта для ключа, или None, если спрайтов нет/не подключены."""
+        if not self.sprite_manager:
+            return None
+        return self.sprite_manager.get_frame(key, elapsed_time)
+
+    def _sprite_for_angle(self, key, angle_degrees):
+        """Возвращает кадр, ближайший к азимуту (для направленных спрайтов вроде поворота
+        башни), или None, если спрайтов нет/не подключены."""
+        if not self.sprite_manager:
+            return None
+        return self.sprite_manager.get_frame_for_angle(key, angle_degrees)
+
+    def _blit_scaled(self, screen, sprite, sx, sy, target_size):
+        """Масштабирует спрайт под target_size (диаметр в пикселях) и рисует центром в (sx, sy)."""
+        target_size = max(1, int(target_size))
+        scaled = pygame.transform.smoothscale(sprite, (target_size, target_size))
+        rect = scaled.get_rect(center=(int(sx), int(sy)))
+        screen.blit(scaled, rect)
+
+    def _tower_screen_size(self, camera, cell_size):
+        """Диаметр спрайта башни в пикселях: занимает почти весь footprint в
+        DefenseModule.FOOTPRINT_CELLS клеток (с небольшим отступом, чтобы соседние башни не
+        сливались друг с другом на глаз), но не мельче TOWER_SPRITE_MIN_SCREEN_SIZE при отдалении камеры."""
+        world_size = DefenseModule.FOOTPRINT_CELLS * cell_size - self.TOWER_SPRITE_FOOTPRINT_MARGIN
+        return max(world_size * camera.zoom, self.TOWER_SPRITE_MIN_SCREEN_SIZE)
+
+    def _enemy_screen_size(self, camera):
+        """Диаметр спрайта врага в пикселях: растёт вместе с зумом камеры (раньше был жёстко
+        зафиксирован, из-за чего при приближении враг визуально становился мельче на фоне
+        выросшей остальной карты), но не мельче ENEMY_SPRITE_MIN_SCREEN_SIZE при отдалении."""
+        return max(self.ENEMY_SPRITE_WORLD_SIZE * camera.zoom, self.ENEMY_SPRITE_MIN_SCREEN_SIZE)
+
+    def _base_screen_size(self, camera):
+        """Диаметр спрайта базы в пикселях: растёт вместе с зумом камеры, как башни и враги -
+        раньше был жёстко зафиксирован в 50px на экране и при приближении визуально "терялся"
+        на фоне выросших построек и карты, но не мельче BASE_SPRITE_MIN_SCREEN_SIZE при отдалении."""
+        return max(self.BASE_SPRITE_WORLD_SIZE * camera.zoom, self.BASE_SPRITE_MIN_SCREEN_SIZE)
+
+    def _nest_screen_size(self, camera):
+        """Диаметр спрайта гнезда фауны в пикселях - растёт вместе с зумом камеры, как база и
+        враги, но не мельче NEST_SPRITE_MIN_SCREEN_SIZE при отдалении."""
+        return max(self.NEST_SPRITE_WORLD_SIZE * camera.zoom, self.NEST_SPRITE_MIN_SCREEN_SIZE)
+
+    def _draw_background(self, screen, camera, width, height):
+        """Рисует фон карты под всеми объектами: тайлит спрайт грунта, иначе — заливка цветом,
+        достаточно светлым, чтобы тёмные спрайты башен/врагов не сливались с фоном."""
+        sprite = self._sprite_for("map_background", 0.0)
+        if not sprite:
+            screen.fill(self.BACKGROUND_FALLBACK_COLOR)
+            return
+
+        tile_size = max(1, int(self.BACKGROUND_TILE_WORLD_SIZE * camera.zoom))
+        tile = pygame.transform.smoothscale(sprite, (tile_size, tile_size))
+        start_x = (int(-camera.x * camera.zoom) % tile_size) - tile_size
+        start_y = (int(-camera.y * camera.zoom) % tile_size) - tile_size
+
+        y = start_y
+        while y < height:
+            x = start_x
+            while x < width:
+                screen.blit(tile, (x, y))
+                x += tile_size
+            y += tile_size
+
     def render(self, screen, camera, session, controller, tower_options, width, height):
         """Рисует все элементы карты за один кадр."""
         keys = pygame.key.get_pressed()
         alt_held = bool(keys[pygame.K_LALT] or keys[pygame.K_RALT])
 
-        self._draw_border(screen, camera)
+        self._draw_background(screen, camera, width, height)
         self._draw_placement_grid(screen, camera, session, controller, width, height)
         self._draw_base(screen, camera, session)
         self._draw_spawn_points(screen, camera, session)
+        self._draw_pending_landings(screen, camera, session)
+        self._draw_power_links(screen, camera, session)
         self._draw_modules(screen, camera, session, controller, tower_options, alt_held)
         self._draw_enemies(screen, camera, session, controller, width, height)
         self._draw_projectiles(screen, camera, session)
         self._draw_placement_preview(screen, camera, session, controller, tower_options)
-
-    def _draw_border(self, screen, camera):
-        """Рисует границу карты."""
-        border_rect = pygame.Rect(
-            -camera.x * camera.zoom,
-            -camera.y * camera.zoom,
-            MAP_WIDTH * camera.zoom,
-            MAP_HEIGHT * camera.zoom
-        )
-        pygame.draw.rect(screen, (50, 50, 50), border_rect, 3)
 
     def _draw_placement_grid(self, screen, camera, session, controller, width, height):
         """Рисует сетку построек, пока выбрана башня для постройки."""
@@ -77,10 +154,20 @@ class MapRenderer:
                 pygame.draw.line(screen, color, (0, sy), (width, sy))
 
     def _draw_spawn_points(self, screen, camera, session):
-        """Рисует точки спавна врагов, разными цветами по фракциям."""
+        """Рисует точки спавна врагов по фракциям, кроме высаживающихся кораблями и
+        гнёзд фауны (у них своя отрисовка с полоской здоровья - см. _draw_fauna_nests)."""
+        fauna_nests = getattr(session.map, "fauna_nests", None)
+        if fauna_nests:
+            self._draw_fauna_nests(screen, camera, fauna_nests, getattr(session, "elapsed_time", 0.0))
+
         by_faction = getattr(session.map, "spawn_points_by_faction", {}) or {}
+        threat_strategies = getattr(session, "threat_strategies", {}) or {}
         if by_faction:
             for faction, points in by_faction.items():
+                if isinstance(threat_strategies.get(faction), ShipLandingStrategy):
+                    continue
+                if faction == Faction.FAUNA and fauna_nests:
+                    continue
                 color = FACTION_SPAWN_COLORS.get(faction, DEFAULT_SPAWN_COLOR)
                 for point in points:
                     self._draw_spawn_marker(screen, camera, point, color)
@@ -100,17 +187,80 @@ class MapRenderer:
         pygame.draw.polygon(screen, color, triangle)
         pygame.draw.polygon(screen, (255, 255, 255), triangle, 2)
 
+    def _draw_fauna_nests(self, screen, camera, nests, elapsed_time=0.0):
+        """Рисует гнёзда фауны спрайтом (если он есть - см. assets/sprites/fauna_nest/) или,
+        пока его нет, маркером точки спавна, и полоской здоровья - в отличие от обычных точек
+        спавна, гнёзда можно уничтожить (см. FaunaNest, Map.update)."""
+        color = FACTION_SPAWN_COLORS.get(Faction.FAUNA, DEFAULT_SPAWN_COLOR)
+        for nest in nests:
+            if not nest.is_alive():
+                continue
+            sx, sy = camera.world_to_screen(nest.position.x, nest.position.y)
+            sprite = self._sprite_for("fauna_nest", elapsed_time)
+            if sprite:
+                self._blit_scaled(screen, sprite, sx, sy, target_size=self._nest_screen_size(camera))
+            else:
+                self._draw_spawn_marker(screen, camera, nest.position, color)
+
+            hp_ratio = max(0.0, nest.health / nest.max_health)
+            bar_y = int(sy) - int(14 * camera.zoom) - 10
+            pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 16, bar_y, 32, 5))
+            pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
+                              (int(sx) - 16, bar_y, int(32 * hp_ratio), 5))
+
+    LANDING_WARNING_MAX_RADIUS = 55.0
+
+    def _draw_pending_landings(self, screen, camera, session):
+        """Рисует маркеры высадки Corporation - место на границе карты, где через
+        time_remaining секунд материализуется отряд (ShipLandingStrategy.pending_landings).
+        Раньше нигде не отображались, хотя предупреждение по игровой логике уже было."""
+        threat_strategies = getattr(session, "threat_strategies", {}) or {}
+        for faction, strategy in threat_strategies.items():
+            if not isinstance(strategy, ShipLandingStrategy):
+                continue
+            color = FACTION_SPAWN_COLORS.get(faction, DEFAULT_SPAWN_COLOR)
+            for landing in strategy.pending_landings:
+                self._draw_pending_landing_marker(screen, camera, landing, strategy.warning_time, color)
+
+    def _draw_pending_landing_marker(self, screen, camera, landing, warning_time, color):
+        """Рисует одну точку высадки: внешнее кольцо цвета фракции и стягивающееся к
+        центру белое кольцо-обратный отсчёт, наглядно показывающее, сколько времени
+        осталось до появления отряда."""
+        sx, sy = camera.world_to_screen(landing.position.x, landing.position.y)
+        progress = 1.0 - max(0.0, landing.time_remaining) / warning_time if warning_time > 0 else 1.0
+        progress = min(1.0, max(0.0, progress))
+
+        outer_radius = max(10, int(self.LANDING_WARNING_MAX_RADIUS * camera.zoom))
+        inner_radius = max(4, int(outer_radius * (1.0 - progress)))
+
+        pygame.draw.line(screen, color, (sx - outer_radius, sy), (sx + outer_radius, sy), 1)
+        pygame.draw.line(screen, color, (sx, sy - outer_radius), (sx, sy + outer_radius), 1)
+        pygame.draw.circle(screen, color, (int(sx), int(sy)), outer_radius, 2)
+        pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(sy)), inner_radius, 3)
+
     def _draw_base(self, screen, camera, session):
         """Рисует базу и полоску её здоровья."""
         if session.base_position is None:
             return
         sx, sy = camera.world_to_screen(session.base_position.x, session.base_position.y)
-        pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 25)
-        pygame.draw.circle(screen, (255, 200, 200), (int(sx), int(sy)), 30, 3)
+        sprite = self._sprite_for("base", getattr(session, "elapsed_time", 0.0))
+        if sprite:
+            self._blit_scaled(screen, sprite, sx, sy, target_size=self._base_screen_size(camera))
+        else:
+            pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 25)
+            pygame.draw.circle(screen, (255, 200, 200), (int(sx), int(sy)), 30, 3)
         hp_ratio = session.base_health / session.max_base_health
         pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 20, int(sy) - 40, 40, 6))
         pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
                           (int(sx) - 20, int(sy) - 40, int(40 * hp_ratio), 6))
+
+    def _draw_power_links(self, screen, camera, session):
+        """Рисует линии энергосети между запитанными узлами (и от базы к ним) - чисто
+        информативно, чтобы игрок видел, что от чего получает питание."""
+        for start, end in getattr(session.map, "power_links", []):
+            sx, sy = camera.world_to_screen(start.x, start.y)
+            ex, ey = camera.world_to_screen(end.x, end.y)
+            pygame.draw.line(screen, (255, 215, 0), (sx, sy), (ex, ey), 1)
 
     def _draw_modules(self, screen, camera, session, controller, tower_options, alt_held=False):
         """Рисует все башни, их уровень и радиус атаки при необходимости."""
@@ -122,6 +272,16 @@ class MapRenderer:
             if opt:
                 color = opt["color"]
 
+            is_powered = getattr(module, "is_powered", True)
+            if not is_powered:
+                color = tuple((c + 90) // 3 for c in color)
+
+            cell_size = getattr(getattr(session.map, "nav_grid", None), "cell_size", 32)
+
+            if module.is_landing:
+                self._draw_landing_module(screen, camera, module, color, cell_size)
+                continue
+
             sx, sy = camera.world_to_screen(module.position.x, module.position.y)
 
             if is_selected:
@@ -131,7 +291,17 @@ class MapRenderer:
             if is_selected or alt_held:
                 pygame.draw.circle(screen, (*color[:3], 40),
                                    (int(sx), int(sy)), int(module.range_radius * camera.zoom), 1)
-            pygame.draw.circle(screen, color, (int(sx), int(sy)), int(14 * camera.zoom))
+
+            tower_size = self._tower_screen_size(camera, cell_size)
+            sprite = self._sprite_for_angle(f"tower_{getattr(module, 'type_name', '')}",
+                                             getattr(module, "facing_angle", 0.0))
+            if sprite:
+                self._blit_scaled(screen, sprite, sx, sy, target_size=tower_size)
+            else:
+                pygame.draw.circle(screen, color, (int(sx), int(sy)), int(tower_size / 2))
+
+            if not is_powered:
+                pygame.draw.circle(screen, (255, 60, 60), (int(sx), int(sy)), int(tower_size / 2) + 3, 2)
 
             for i in range(module.level):
                 pygame.draw.circle(screen, (255, 215, 0),
@@ -142,6 +312,23 @@ class MapRenderer:
                 pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 16, int(sy) - 28, 32, 5))
                 pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
                                   (int(sx) - 16, int(sy) - 28, int(32 * hp_ratio), 5))
+
+    def _draw_landing_module(self, screen, camera, module, color, cell_size):
+        """Рисует падающую с орбиты башню: тень на земле, зону удара и опускающийся спрайт."""
+        sx, sy = camera.world_to_screen(module.position.x, module.position.y)
+        impact_radius = int(module.LANDING_IMPACT_RADIUS * camera.zoom)
+        pygame.draw.circle(screen, (255, 120, 0, 60), (int(sx), int(sy)), impact_radius, 1)
+        shadow_scale = max(0.3, 1.0 - module.landing_progress * 0.5)
+        pygame.draw.circle(screen, (20, 20, 20), (int(sx), int(sy)), int(10 * camera.zoom * shadow_scale))
+
+        pod_y = sy - module.landing_height * camera.zoom
+        pod_size = self._tower_screen_size(camera, cell_size)
+        sprite = self._sprite_for("landing_pod", module.landing_elapsed)
+        if sprite:
+            self._blit_scaled(screen, sprite, sx, pod_y, target_size=pod_size)
+        else:
+            pygame.draw.circle(screen, color, (int(sx), int(pod_y)), int(pod_size / 2))
+            pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(pod_y)), int(pod_size / 2), 2)
 
     def _draw_enemies(self, screen, camera, session, controller, width, height):
         """Рисует врагов, их полоски здоровья и линии эскорта к лидеру."""
@@ -170,8 +357,14 @@ class MapRenderer:
                                  (int(sx) - 12, int(sy) - 18, 24, 4))
                 pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
                                  (int(sx) - 12, int(sy) - 18, int(24 * hp_ratio), 4))
-                color = ENEMY_COLORS.get(getattr(enemy, "type_name", None), DEFAULT_ENEMY_COLOR)
-                pygame.draw.circle(screen, color, (int(sx), int(sy)), 10)
+
+                enemy_size = self._enemy_screen_size(camera)
+                sprite = self._sprite_for(f"enemy_{getattr(enemy, 'type_name', None)}", getattr(session, "elapsed_time", 0.0))
+                if sprite:
+                    self._blit_scaled(screen, sprite, sx, sy, target_size=enemy_size)
+                else:
+                    color = ENEMY_COLORS.get(getattr(enemy, "type_name", None), DEFAULT_ENEMY_COLOR)
+                    pygame.draw.circle(screen, color, (int(sx), int(sy)), int(enemy_size / 2))
 
     def _draw_projectiles(self, screen, camera, session):
         """Рисует все снаряды на карте, каждый тип по-своему."""
@@ -235,5 +428,11 @@ class MapRenderer:
         screen.blit(preview_surf, (snap_x - screen_radius, snap_y - screen_radius))
 
         marker_color = (0, 255, 0) if valid else (255, 0, 0)
+
+        footprint_size = DefenseModule.FOOTPRINT_CELLS * session.map.nav_grid.cell_size * camera.zoom
+        footprint_rect = pygame.Rect(0, 0, int(footprint_size), int(footprint_size))
+        footprint_rect.center = (int(snap_x), int(snap_y))
+        pygame.draw.rect(screen, marker_color, footprint_rect, 2)
+
         pygame.draw.circle(screen, marker_color, (int(snap_x), int(snap_y)), 6)
         pygame.draw.circle(screen, (255, 255, 255), (int(snap_x), int(snap_y)), 6, 2)

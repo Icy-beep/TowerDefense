@@ -50,9 +50,9 @@ def test_drag_pans_camera_opposite_to_mouse_movement(controller):
     controller.handle_input(_event(pygame.MOUSEBUTTONDOWN, button=1, pos=(400, 300)))
     x_before, y_before = controller.camera.x, controller.camera.y
 
-    controller.handle_input(_event(pygame.MOUSEMOTION, pos=(450, 320)))  # тащим вправо-вниз
+    controller.handle_input(_event(pygame.MOUSEMOTION, pos=(450, 320)))
 
-    assert controller.camera.x < x_before  # поле "едет" за курсором -> камера влево
+    assert controller.camera.x < x_before
     assert controller.camera.y < y_before
 
 
@@ -74,7 +74,6 @@ def test_click_on_existing_module_does_not_start_drag(controller):
 
     module_pos = controller.session.map.modules[0].position
     down = _event(pygame.MOUSEBUTTONDOWN, button=1, pos=(400, 300))
-    # Кликаем прямо в мировые координаты башни через screen_to_world -> подменим позицию клика
     controller.camera.x, controller.camera.y = module_pos.x - 400, module_pos.y - 300
 
     controller.handle_input(down)

@@ -8,10 +8,11 @@ from src.core.coordinate import Coordinate
 class GameController:
     """Точка входа для View, хранит активный режим игры."""
 
-    def __init__(self, session: GameSession):
-        """Создаёт контроллер с орбитальным режимом(rts) по умолчанию."""
+    def __init__(self, session: GameSession, screen_w: int = 900, screen_h: int = 600):
+        """Создаёт контроллер с орбитальным режимом(rts) по умолчанию, под
+        текущий размер окна."""
         self.session = session
-        self.active_mode: IGameModeController = OrbitalModeController(session)
+        self.active_mode: IGameModeController = OrbitalModeController(session, screen_w, screen_h)
 
     def set_mode(self, mode: IGameModeController):
         """Переключает активный режим игры."""
@@ -47,13 +48,18 @@ class GameController:
         """Передаёт событие ввода активному режиму."""
         return self.active_mode.handle_input(event)
 
+    def select_tower(self, tower_type: str) -> bool:
+        """Выбирает тип постройки для размещения в активном режиме, если тот это
+        поддерживает (см. OrbitalModeController.select_tower) - нужно HUD-панели
+        построек, чтобы клик по иконке работал так же, как хоткей 1-5."""
+        select = getattr(self.active_mode, "select_tower", None)
+        if select is None:
+            return False
+        return select(tower_type)
+
     def get_game_state(self) -> dict:
         """Возвращает состояние игры для HUD."""
         return self.active_mode.get_game_state()
-
-    def get_next_wave_time(self) -> float:
-        """Время до следующей волны."""
-        return self.active_mode.get_next_wave_time()
 
     def _is_valid_position(self, position: Coordinate) -> bool:
         """Проверяет, можно ли поставить башню в этой точке."""

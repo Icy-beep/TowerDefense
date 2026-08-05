@@ -40,6 +40,15 @@ class HostileEntity(Entity, ABC):
         self.patrol_direction: int = 1
 
         self.is_healing: bool = False
+        self.is_fleeing: bool = False
+        self.retreat_heal_count: int = 0
+        self.replan_retry_cooldown: float = 0.0
+        self.replan_failure_streak: int = 0
+
+        self.is_staging: bool = False
+        self.stage_angle: Optional[float] = None
+        self.stage_direction: int = 1
+        self.stage_anchor: Optional[Coordinate] = None
 
         self.dodge_timer: float = 0.0
         self._dodge_offset: float = 0.0
@@ -47,6 +56,21 @@ class HostileEntity(Entity, ABC):
     def avoids_danger(self) -> bool:
         """Проверяет, должен ли враг убегать от простреливаемых башнями зон вместо боя."""
         return False
+
+    def is_combatant(self) -> bool:
+        """Проверяет, может ли враг атаковать вражеских юнитов и башни."""
+        return True
+
+    def heals_allies(self) -> bool:
+        """Проверяет, лечит ли враг участников своей группы (см. MedicDrone)."""
+        return False
+
+    def stages_before_attacking(self) -> bool:
+        """Проверяет, должен ли враг сперва дождаться сбора группы у точки появления
+        (см. Map._update_staging_groups), а не сразу идти к базе поодиночке. По умолчанию
+        да для всех боевых юнитов; разведчики (avoids_danger) и лекари (heals_allies) сами
+        решают, что делать до боя, и в отложенной атаке не участвуют."""
+        return self.is_combatant() and not self.avoids_danger() and not self.heals_allies()
 
     DODGE_AMPLITUDE = 24.0
     DODGE_FREQUENCY = 5.0
@@ -79,13 +103,19 @@ class HostileEntity(Entity, ABC):
             return self.group_leader.target_tower
         return None
 
-    def attack_tower(self, tower, delta_time: float):
-        """Наносит урон башне."""
+    def attack_tower(self, tower, delta_time: float) -> Optional["Projectile"]:
+        """Наносит урон башне. По умолчанию урон мгновенный и без видимого снаряда;
+        подклассы могут вернуть Projectile для визуального эффекта выстрела (см.
+        SniperDrone.attack_tower) - Map добавит его в self.projectiles, если он есть."""
         tower.take_damage(self.ATTACK_DAMAGE_PER_SECOND * delta_time, DamageType.KINETIC)
+        return None
 
-    def attack_enemy(self, other: "HostileEntity", delta_time: float):
-        """Наносит урон врагу вражеской фракции."""
+    def attack_enemy(self, other: "HostileEntity", delta_time: float) -> Optional["Projectile"]:
+        """Наносит урон врагу вражеской фракции. По умолчанию урон мгновенный и без
+        видимого снаряда; подклассы могут вернуть Projectile для визуального эффекта
+        выстрела (см. SniperDrone.attack_enemy)."""
         other.take_damage(self.ATTACK_DAMAGE_PER_SECOND * delta_time, DamageType.KINETIC)
+        return None
 
     def has_reached_end_of_path(self) -> bool:
         """Проверяет, дошёл ли враг до конца своего маршрута."""

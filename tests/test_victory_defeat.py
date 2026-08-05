@@ -1,7 +1,4 @@
-"""
-- корректность уменьшения прочности базы при достижении её противником
-- корректность определения состояний победы и поражения
-"""
+"""Уменьшение прочности базы врагами и определение состояний победы/поражения."""
 from src.core.game_state import GameStateManager
 from src.core.game_session import GameSession
 from src.core.coordinate import Coordinate
@@ -9,14 +6,11 @@ from src.entities.enemies import DroneWalker
 from src.enums import GameState
 
 
-# ---------------------------------------------------------------------
-# Урон базе при достижении противником конца маршрута
-# ---------------------------------------------------------------------
 
 def _enemy_that_reached_base():
     enemy = DroneWalker(Coordinate(0, 0))
     enemy.set_path([Coordinate(0, 0)])
-    enemy.path_index = 1  # индекс уже за пределами пути — противник "дошёл"
+    enemy.path_index = 1
     return enemy
 
 
@@ -43,9 +37,6 @@ def test_multiple_enemies_reaching_base_stack_damage():
     assert session.base_health == 70
 
 
-# ---------------------------------------------------------------------
-# GameStateManager — правила определения победы/поражения
-# ---------------------------------------------------------------------
 
 def test_check_defeat_true_when_base_health_zero_or_below():
     gsm = GameStateManager()
@@ -55,32 +46,15 @@ def test_check_defeat_true_when_base_health_zero_or_below():
     assert gsm.check_defeat(base_health=1) is False
 
 
-class _FakeWaveProtocol:
-    def __init__(self, complete):
-        self._complete = complete
-
-    def is_all_waves_complete(self):
-        return self._complete
-
-
-class _FakeMap:
-    def __init__(self, enemies):
-        self.enemies = enemies
-
-
-def test_check_victory_requires_both_conditions_simultaneously():
+def test_check_victory_true_once_target_duration_reached():
     gsm = GameStateManager()
 
-    assert gsm.check_victory(_FakeMap([]), _FakeWaveProtocol(True)) is True
-    assert gsm.check_victory(_FakeMap(["enemy"]), _FakeWaveProtocol(True)) is False, \
-        "победа не должна засчитываться, пока на поле остаются противники"
-    assert gsm.check_victory(_FakeMap([]), _FakeWaveProtocol(False)) is False, \
-        "победа не должна засчитываться, пока не пройдены все волны"
+    assert gsm.check_victory(elapsed_time=180.0, target_duration=180.0) is True
+    assert gsm.check_victory(elapsed_time=200.0, target_duration=180.0) is True
+    assert gsm.check_victory(elapsed_time=179.9, target_duration=180.0) is False, \
+        "победа не должна засчитываться раньше целевого времени"
 
 
-# ---------------------------------------------------------------------
-# Полный переход состояния через GameSession
-# ---------------------------------------------------------------------
 
 def test_game_session_transitions_to_game_over_on_defeat():
     session = GameSession()
@@ -93,11 +67,10 @@ def test_game_session_transitions_to_game_over_on_defeat():
     assert session.state == GameState.GAME_OVER
 
 
-def test_game_session_transitions_to_victory_when_all_waves_cleared():
+def test_game_session_transitions_to_victory_when_duration_target_reached():
     session = GameSession()
     session.setup_game()
-    session.wave_protocol.finished = True
-    session.wave_protocol.is_active = False
+    session.elapsed_time = session.survive_duration_target
     session.map.enemies = []
 
     session.update(delta_time=0.016)
@@ -114,15 +87,52 @@ def test_game_session_stays_in_playing_state_during_normal_gameplay():
     assert session.state == GameState.PLAYING
 
 
+def test_setup_game_defaults_to_not_endless():
+    session = GameSession()
+    session.setup_game()
+
+    assert session.endless is False
+    assert len(session.objectives) == 2
+
+
+def test_endless_mode_has_no_objectives():
+    session = GameSession()
+    session.setup_game(endless=True)
+
+    assert session.endless is True
+    assert session.objectives == []
+
+
+def test_endless_mode_never_triggers_victory_by_time():
+    session = GameSession()
+    session.setup_game(endless=True)
+    session.elapsed_time = session.survive_duration_target * 10
+    session.map.enemies = []
+
+    session.update(delta_time=0.016)
+
+    assert session.state == GameState.PLAYING, "в бесконечном режиме не должно быть победы по таймеру"
+
+
+def test_endless_mode_base_can_still_be_destroyed():
+    session = GameSession()
+    session.setup_game(endless=True)
+    session.base_health = 5
+    session.map.enemies = [_enemy_that_reached_base()]
+
+    session.update(delta_time=0.016)
+
+    assert session.state == GameState.GAME_OVER, "база должна оставаться уязвимой и в бесконечном режиме"
+
+
 def test_defeat_takes_priority_when_both_conditions_true_simultaneously():
-    """Если база уже разрушена в тот же тик, когда волны закончились —
+    """Если база уже разрушена в тот же тик, когда целевое время достигнуто —
     поражение должно иметь приоритет (игрок не успел выиграть)."""
     session = GameSession()
     session.setup_game()
     session.base_health = 5
-    session.wave_protocol.finished = True
-    session.wave_protocol.is_active = False
-    session.map.enemies = [_enemy_that_reached_base()]  # снимет ещё 10 хп -> уйдёт в минус
+    session.elapsed_time = session.survive_duration_target
+    session.map.enemies = [_enemy_that_reached_base()]
 
     session.update(delta_time=0.016)
 

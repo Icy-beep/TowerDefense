@@ -1,6 +1,7 @@
 from typing import Optional
 from src.entities.hostile_entity import HostileEntity
-from src.enums import ArmorType, Faction
+from src.entities.projectile import HitscanBeam, EnemyHitscanBeam
+from src.enums import ArmorType, DamageType, Faction
 from src.core.coordinate import Coordinate
 
 class DroneWalker(HostileEntity):
@@ -48,7 +49,7 @@ class GiantRoach(HostileEntity):
 class ScoutDrone(HostileEntity):
     """Дрон-разведчик корпорации: только разведка, убегает от башен, не участвует в группах."""
 
-    VISION_RADIUS = 260.0
+    VISION_RADIUS = 300.0
 
     def __init__(self, position: Coordinate, max_health: float = 100, speed: float = 70,
                  armor: ArmorType = ArmorType.ENERGY_SHIELDED, reward: int = 60,
@@ -64,6 +65,72 @@ class ScoutDrone(HostileEntity):
     def avoids_danger(self) -> bool:
         """Разведчик всегда убегает от простреливаемых зон вместо боя."""
         return True
+
+class SniperDrone(HostileEntity):
+    """Дрон-снайпер корпорации: бьёт башню издалека своим увеличенным ATTACK_RANGE,
+    не заходя в радиус большинства турелей первого уровня - чтобы его достать,
+    игроку нужна прокачанная башня или миномёт."""
+
+    ATTACK_RANGE = 430.0
+    ATTACK_DAMAGE_PER_SECOND = 10.0
+
+    def __init__(self, position: Coordinate, max_health: float = 70, speed: float = 40,
+                 armor: ArmorType = ArmorType.LIGHT, reward: int = 55,
+                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
+        """Создаёт дрона-снайпера."""
+        super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
+                          vision_radius=vision_radius)
+
+    def act(self, delta_time: float, in_danger: bool = False):
+        """Не выполняет особых действий - дальнобойность реализована через ATTACK_RANGE."""
+        pass
+
+    def attack_tower(self, tower, delta_time: float):
+        """Стреляет по башне лучом - урон мгновенный, как и у базовой реализации, но
+        выстрел виден на карте так же, как у LaserTurret (см. EnemyHitscanBeam)."""
+        return EnemyHitscanBeam(
+            position=self.position,
+            target=tower,
+            damage=self.ATTACK_DAMAGE_PER_SECOND * delta_time,
+            damage_type=DamageType.KINETIC,
+        )
+
+    def attack_enemy(self, other: HostileEntity, delta_time: float):
+        """Стреляет по вражескому юниту лучом с тем же видимым эффектом выстрела."""
+        return HitscanBeam(
+            position=self.position,
+            target=other,
+            damage=self.ATTACK_DAMAGE_PER_SECOND * delta_time,
+            damage_type=DamageType.KINETIC,
+        )
+
+class MedicDrone(HostileEntity):
+    """Дрон-медик корпорации: не атакует, ищет ближайшую группу союзников,
+    присоединяется к ней и лечит - пока не в группе, избегает башен."""
+
+    def __init__(self, position: Coordinate, max_health: float = 90, speed: float = 55,
+                 armor: ArmorType = ArmorType.ENERGY_SHIELDED, reward: int = 50,
+                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
+        """Создаёт дрона-медика."""
+        super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
+                          vision_radius=vision_radius)
+
+    def act(self, delta_time: float, in_danger: bool = False):
+        """Не выполняет особых действий - поиск группы и лечение находятся в Map.update()."""
+        pass
+
+    def is_combatant(self) -> bool:
+        """Медик никогда не атакует врагов и не участвует в захвате башен."""
+        return False
+
+    def heals_allies(self) -> bool:
+        """Медик лечит участников своей группы, пока состоит в ней."""
+        return True
+
+    def avoids_danger(self) -> bool:
+        """Пока не присоединился к группе - избегает простреливаемых зон;
+        в группе (занят лечением) - игнорирует обстрел и не убегает."""
+        return self.group_leader is None
 
 class BioTitan(HostileEntity):
     """Огромный и живучий органический титан фауны планеты."""

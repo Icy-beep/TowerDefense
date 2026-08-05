@@ -1,11 +1,4 @@
-"""Раньше Corporation и Fauna физически не замечали друг друга — каждый
-враг взаимодействовал только с башнями и своим маршрутом к базе, даже
-если рядом стоял враг противоположной фракции. Map._find_enemy_combat_
-target ищет ближайшего живого врага чужой фракции в радиусе обзора
-(HostileEntity.vision_radius); если он в пределах ATTACK_RANGE — начинается
-бой (HostileEntity.attack_enemy), иначе враг идёт на сближение. Бой имеет
-приоритет над охотой на башню (см. Map._update_group_targets) и движением
-к базе — это касается любого врага, а не только сформированных эскортов."""
+"""Бой между Corporation и Fauna при встрече в радиусе обзора, приоритет над охотой на башню."""
 import pytest
 
 from src.core.coordinate import Coordinate
@@ -30,7 +23,6 @@ class _NeverFormRng:
         return seq[0]
 
 
-# --------------------------------------------------- _find_enemy_combat_target
 
 def test_finds_nearest_opposing_enemy_in_vision_range():
     game_map = Map(width=4000, height=4000)
@@ -51,10 +43,10 @@ def test_ignores_same_faction_enemies():
     assert game_map._find_enemy_combat_target(corp_a) is None
 
 
-def test_ignores_opposing_enemy_outside_vision_range():
+def test_ignores_opposing_enemy_outside_combat_detection_range():
     game_map = Map(width=4000, height=4000)
     corp = _tagged(DroneWalker(Coordinate(0, 0)), "drone_walker")
-    fauna = _tagged(GiantRoach(Coordinate(corp.vision_radius + 50, 0)), "giant_roach")
+    fauna = _tagged(GiantRoach(Coordinate(Map.ENEMY_COMBAT_DETECTION_RADIUS + 50, 0)), "giant_roach")
     game_map.enemies = [corp, fauna]
 
     assert game_map._find_enemy_combat_target(corp) is None
@@ -80,7 +72,6 @@ def test_picks_the_closest_of_several_opposing_enemies():
     assert game_map._find_enemy_combat_target(corp) is near_fauna
 
 
-# ------------------------------------------------------------------- Map.update()
 
 def test_opposing_enemies_in_attack_range_damage_each_other():
     game_map = Map(width=4000, height=4000)
@@ -181,7 +172,7 @@ def test_enemy_killed_in_combat_is_removed_from_map():
     game_map.spawn_enemy(corp)
     game_map.spawn_enemy(fauna)
 
-    _, killed = game_map.update(1.0)
+    _, killed, _ = game_map.update(1.0)
 
     assert fauna in killed
     assert fauna not in game_map.enemies
@@ -200,6 +191,6 @@ def test_fighting_does_not_falsely_count_as_reached_base():
     game_map.spawn_enemy(corp)
     game_map.spawn_enemy(fauna)
 
-    reached_base, _ = game_map.update(1.0)
+    reached_base, _, _ = game_map.update(1.0)
 
     assert corp not in reached_base, "враг дерётся, а не дошёл до базы"

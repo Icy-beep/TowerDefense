@@ -1,4 +1,6 @@
-"""HUD-панели поверх игрового поля."""
+"""HUD-панели поверх игрового поля: единый RTS-стиль - панель ресурсов сверху,
+командная панель (выбор/постройки/подсказки) снизу (см. обсуждение с пользователем:
+раньше HUD был чисто текстовым, без кликабельных иконок построек)."""
 import pygame
 
 from src.enums import ArmorType, Faction
@@ -10,6 +12,7 @@ ENEMY_DISPLAY_KEYS = {
     "scout_drone": "enemy.scout_drone",
     "heavy_assault_drone": "enemy.heavy_assault_drone",
     "bio_titan": "enemy.bio_titan",
+    "medic_drone": "enemy.medic_drone",
 }
 
 ARMOR_LABEL_KEYS = {
@@ -28,64 +31,154 @@ FACTION_LABEL_KEYS = {
 class HudRenderer:
     """Рисует HUD-панели поверх игрового поля."""
 
+    # Общая палитра - одна и та же для всех панелей, чтобы HUD выглядел как единый
+    # набор, а не набор случайно раскрашенных прямоугольников.
+    PANEL_BG = (18, 22, 30, 210)
+    BORDER_COLOR = (90, 140, 190)
+    BORDER_WIDTH = 2
+    HIGHLIGHT_COLOR = (255, 215, 0)
+    TEXT_COLOR = (230, 230, 230)
+    DIM_TEXT_COLOR = (140, 140, 145)
+
+    TOP_BAR_HEIGHT = 60
+    BOTTOM_BAR_HEIGHT = 130
+
+    BUILD_ICON_SIZE = 64
+    BUILD_ICON_GAP = 12
+
+    def __init__(self, sprite_manager=None):
+        """Запоминает SpriteManager; без него (или без спрайта под ключ) иконки
+        построек рисуются цветными плашками вместо картинки."""
+        self.sprite_manager = sprite_manager
+
+    def _sprite_for(self, key, elapsed_time=0.0):
+        """Возвращает статичный (первый) кадр спрайта для ключа, или None, если
+        спрайтов нет/не подключены - иконкам не нужна анимация/поворот."""
+        if not self.sprite_manager:
+            return None
+        return self.sprite_manager.get_frame(key, elapsed_time)
+
     def render(self, screen, camera, session, controller, tower_options, width, height, font, small_font):
         """Рисует все панели HUD."""
         state = controller.get_game_state()
-        alpha = 170
-        pad = 10
 
-        self._draw_status_panel(screen, state, controller, font, pad, alpha)
-        self._draw_missions_panel(screen, session, small_font, pad, alpha, width)
-        self._draw_controls_panel(screen, camera, small_font, pad, alpha, width, height)
-        self._draw_selection_panel(screen, state, controller, tower_options, small_font, width, height)
+        self._draw_top_bar(screen, state, font, width)
+        self._draw_missions_panel(screen, session, small_font, width)
+        self._draw_bottom_bar(screen, state, controller, tower_options, camera, small_font, width, height)
 
-    def _draw_status_panel(self, screen, state, controller, font, pad, alpha):
-        """Рисует панель с деньгами, здоровьем базы и номером волны."""
-        surf1 = pygame.Surface((360, 125), pygame.SRCALPHA)
-        surf1.fill((20, 25, 35, alpha))
-        screen.blit(surf1, (pad, pad))
+    # ------------------------------------------------------------------
+    # Верхняя панель: ресурсы, здоровье базы, таймер/бесконечный режим
+    # ------------------------------------------------------------------
 
-        screen.blit(font.render(loc.get("hud.money", credits=state['credits']), True, (255, 215, 0)),
-                    (pad + 10, pad + 10))
-        screen.blit(
-            font.render(loc.get("hud.base_health", hp=state['base_health'], max_hp=state['max_base_health']),
-                        True, (255, 100, 100)),
-            (pad + 10, pad + 40))
-        screen.blit(
-            font.render(loc.get("hud.wave", current=state['current_wave'], total=state['total_waves']),
-                        True, (100, 200, 255)),
-            (pad + 10, pad + 70))
+    def _draw_top_bar(self, screen, state, font, width):
+        """Рисует полосу ресурсов во всю ширину экрана: деньги и здоровье базы
+        слева, таймер выживания (или ничего - в бесконечном режиме нет таймера,
+        см. GameSession.setup_game) справа."""
+        surf = pygame.Surface((width, self.TOP_BAR_HEIGHT), pygame.SRCALPHA)
+        surf.fill(self.PANEL_BG)
+        screen.blit(surf, (0, 0))
+        pygame.draw.line(screen, self.BORDER_COLOR, (0, self.TOP_BAR_HEIGHT), (width, self.TOP_BAR_HEIGHT),
+                          self.BORDER_WIDTH)
 
-        if state['is_wave_active']:
-            wave_line = loc.get("hud.wave_active")
-            color = (255, 150, 150)
-        else:
-            seconds_left = controller.get_next_wave_time()
-            if seconds_left > 0:
-                wave_line = loc.get("hud.wave_next_in", seconds=seconds_left)
-                color = (200, 200, 100)
-            else:
-                wave_line = (loc.get("hud.wave_game_over") if state['current_wave'] > state['total_waves']
-                             else loc.get("hud.wave_start_prompt"))
-                color = (150, 255, 150)
-        screen.blit(font.render(wave_line, True, color), (pad + 10, pad + 100))
+        cy = self.TOP_BAR_HEIGHT // 2
+        x = 16
+        x = self._draw_coin_icon(screen, x, cy) + 8
 
-    def _draw_missions_panel(self, screen, session, small_font, pad, alpha, width):
-        """Рисует панель заданий в правом верхнем углу."""
+        credits_text = loc.get("hud.money", credits=state['credits'])
+        x = self._draw_label(screen, font, credits_text, x, cy, (255, 215, 0)) + 28
+
+        x = self._draw_heart_icon(screen, x, cy) + 8
+        hp_text = loc.get("hud.base_health", hp=state['base_health'], max_hp=state['max_base_health'])
+        x = self._draw_label(screen, font, hp_text, x, cy, (255, 100, 100)) + 12
+
+        hp_ratio = max(0.0, min(1.0, state['base_health'] / state['max_base_health'])) \
+            if state['max_base_health'] else 0.0
+        self._draw_mini_bar(screen, x, cy, 70, 10, hp_ratio)
+
+        if state.get('endless', False):
+            return
+
+        target = state['survive_duration_target']
+        current = min(state['elapsed_time'], target)
+        remaining = max(0.0, target - state['elapsed_time'])
+        remaining_color = (150, 255, 150) if remaining <= 0 else (200, 200, 100)
+
+        remaining_text = loc.get("hud.survive_remaining", seconds=remaining)
+        progress_text = loc.get("hud.survive_progress", current=int(current), target=int(target))
+
+        rw, _ = font.size(remaining_text)
+        pw, _ = font.size(progress_text)
+        rx = width - 16 - rw
+        self._draw_label(screen, font, remaining_text, rx, cy, remaining_color)
+        px = rx - 24 - pw
+        self._draw_label(screen, font, progress_text, px, cy, (100, 200, 255))
+        self._draw_clock_icon(screen, px - 24, cy)
+
+    def _draw_label(self, screen, font, text, x, cy, color):
+        """Рисует строку с вертикальным центрированием по cy, возвращает x после текста."""
+        surf = font.render(text, True, color)
+        rect = surf.get_rect(midleft=(x, cy))
+        screen.blit(surf, rect)
+        return rect.right
+
+    def _draw_mini_bar(self, screen, x, cy, w, h, ratio):
+        """Рисует небольшую полоску прогресса (для здоровья базы в верхней панели)."""
+        y = cy - h // 2
+        pygame.draw.rect(screen, (50, 50, 55), (x, y, w, h))
+        fill_color = (0, 220, 0) if ratio > 0.5 else (220, 60, 60)
+        pygame.draw.rect(screen, fill_color, (x, y, int(w * ratio), h))
+        pygame.draw.rect(screen, (10, 10, 12), (x, y, w, h), 1)
+
+    def _draw_coin_icon(self, screen, x, cy):
+        """Рисует иконку-монету (кредиты). Возвращает x после иконки."""
+        r = 10
+        pygame.draw.circle(screen, (255, 215, 0), (x + r, cy), r)
+        pygame.draw.circle(screen, (150, 110, 0), (x + r, cy), r, 2)
+        return x + r * 2
+
+    def _draw_heart_icon(self, screen, x, cy):
+        """Рисует иконку-крест (здоровье базы). Возвращает x после иконки."""
+        size = 20
+        rect = pygame.Rect(x, cy - size // 2, size, size)
+        pygame.draw.rect(screen, (120, 30, 30), rect)
+        pygame.draw.rect(screen, (220, 90, 90), rect, 2)
+        cx, cy2 = rect.center
+        pygame.draw.line(screen, (255, 210, 210), (cx - 5, cy2), (cx + 5, cy2), 3)
+        pygame.draw.line(screen, (255, 210, 210), (cx, cy2 - 5), (cx, cy2 + 5), 3)
+        return x + size
+
+    def _draw_clock_icon(self, screen, x, cy):
+        """Рисует иконку-часы (таймер выживания)."""
+        r = 9
+        pygame.draw.circle(screen, (40, 45, 55), (x + r, cy), r)
+        pygame.draw.circle(screen, (150, 190, 220), (x + r, cy), r, 2)
+        pygame.draw.line(screen, (150, 190, 220), (x + r, cy), (x + r, cy - r + 2), 2)
+        pygame.draw.line(screen, (150, 190, 220), (x + r, cy), (x + r + r - 3, cy), 2)
+        return x + r * 2
+
+    # ------------------------------------------------------------------
+    # Панель заданий (справа сверху, под верхней панелью ресурсов)
+    # ------------------------------------------------------------------
+
+    def _draw_missions_panel(self, screen, session, small_font, width):
+        """Рисует панель заданий в правом верхнем углу, под панелью ресурсов."""
         objectives = getattr(session, "objectives", [])
         if not objectives:
             return
 
+        pad = 10
         line_height = 22
         w = 340
         h = len(objectives) * line_height + 35
         surf = pygame.Surface((w, h), pygame.SRCALPHA)
-        surf.fill((20, 25, 35, alpha))
+        surf.fill(self.PANEL_BG)
         x = width - w - pad
-        screen.blit(surf, (x, pad))
+        y = self.TOP_BAR_HEIGHT + 8
+        screen.blit(surf, (x, y))
+        pygame.draw.rect(screen, self.BORDER_COLOR, (x, y, w, h), self.BORDER_WIDTH)
 
         screen.blit(small_font.render(loc.get("mission.title"), True, (200, 200, 255)),
-                    (x + 10, pad + 8))
+                    (x + 10, y + 8))
 
         for i, objective in enumerate(objectives):
             text = objective.describe(session)
@@ -97,29 +190,114 @@ class HudRenderer:
                 text += f" — {loc.get('mission.status_failed')}"
             else:
                 color = (230, 230, 230)
-            screen.blit(small_font.render(text, True, color), (x + 10, pad + 32 + i * line_height))
+            screen.blit(small_font.render(text, True, color), (x + 10, y + 32 + i * line_height))
 
-    def _draw_controls_panel(self, screen, camera, small_font, pad, alpha, width, height):
-        """Рисует панель с подсказками по управлению."""
-        surf2 = pygame.Surface((300, 160), pygame.SRCALPHA)
-        surf2.fill((20, 25, 35, alpha))
-        screen.blit(surf2, (pad, height - 170))
+    # ------------------------------------------------------------------
+    # Нижняя командная панель: инфо о выборе | иконки построек | подсказки
+    # ------------------------------------------------------------------
 
-        screen.blit(small_font.render(
-            loc.get("hud.camera_info", x=int(camera.x), y=int(camera.y), zoom=int(camera.zoom * 100)),
-            True, (180, 180, 180)), (pad + 10, height - 160))
-        screen.blit(small_font.render(loc.get("hud.controls_move"), True, (150, 150, 150)),
-                    (pad + 10, height - 140))
-        screen.blit(small_font.render(loc.get("hud.controls_drag"), True, (150, 150, 150)),
-                    (pad + 10, height - 120))
-        screen.blit(small_font.render(loc.get("hud.controls_build"), True, (150, 150, 150)),
-                    (pad + 10, height - 100))
-        screen.blit(small_font.render(loc.get("hud.controls_select"), True, (150, 150, 150)),
-                    (pad + 10, height - 80))
-        screen.blit(small_font.render(loc.get("hud.controls_misc"), True, (150, 150, 150)),
-                    (pad + 10, height - 60))
-        screen.blit(small_font.render(loc.get("hud.controls_alt"), True, (150, 150, 150)),
-                    (pad + 10, height - 40))
+    def _draw_bottom_bar(self, screen, state, controller, tower_options, camera, small_font, width, height):
+        """Рисует единую нижнюю панель во всю ширину экрана, поделённую на три зоны:
+        слева - информация о текущем выборе, по центру - кликабельные иконки построек,
+        справа - подсказки по управлению."""
+        bar_y = height - self.BOTTOM_BAR_HEIGHT
+        surf = pygame.Surface((width, self.BOTTOM_BAR_HEIGHT), pygame.SRCALPHA)
+        surf.fill(self.PANEL_BG)
+        screen.blit(surf, (0, bar_y))
+        pygame.draw.line(screen, self.BORDER_COLOR, (0, bar_y), (width, bar_y), self.BORDER_WIDTH)
+
+        slots = self._layout_build_panel(tower_options, width, height)
+        build_left = slots[0][0].left if slots else width // 2
+        build_right = slots[-1][0].right if slots else width // 2
+
+        self._draw_selection_zone(screen, state, controller, tower_options, small_font,
+                                   16, bar_y + 10, build_left - 26, self.BOTTOM_BAR_HEIGHT - 20)
+        self._draw_build_icons(screen, state, controller, slots, small_font)
+        self._draw_controls_zone(screen, camera, small_font,
+                                  build_right + 16, bar_y + 10, width - 16, self.BOTTOM_BAR_HEIGHT - 20)
+
+    def _layout_build_panel(self, tower_options, width, height):
+        """Считает прямоугольники иконок построек - используется и при отрисовке, и
+        при обработке клика (handle_build_click), чтобы раскладка совпадала."""
+        n = len(tower_options)
+        if n == 0:
+            return []
+        total_w = n * self.BUILD_ICON_SIZE + (n - 1) * self.BUILD_ICON_GAP
+        start_x = (width - total_w) // 2
+        icon_y = height - self.BOTTOM_BAR_HEIGHT + (self.BOTTOM_BAR_HEIGHT - self.BUILD_ICON_SIZE - 22) // 2
+
+        slots = []
+        x = start_x
+        for opt in tower_options:
+            rect = pygame.Rect(x, icon_y, self.BUILD_ICON_SIZE, self.BUILD_ICON_SIZE)
+            slots.append((rect, opt))
+            x += self.BUILD_ICON_SIZE + self.BUILD_ICON_GAP
+        return slots
+
+    def handle_build_click(self, pos, tower_options, width, height) -> "str | None":
+        """Определяет, по какой иконке постройки кликнули - или None, если клик мимо
+        панели. Раскладка та же, что и при отрисовке (_layout_build_panel)."""
+        for rect, opt in self._layout_build_panel(tower_options, width, height):
+            if rect.collidepoint(pos):
+                return opt["type"]
+        return None
+
+    def _draw_build_icons(self, screen, state, controller, slots, small_font):
+        """Рисует иконки построек: спрайт (если есть) или цветную плашку, значок
+        хоткея, цену (тусклую и красную, если не хватает денег) и золотую рамку
+        у текущего выбранного типа."""
+        credits = state.get('credits', 0)
+        selected_type = state.get('selected_tower')
+        tower_factory = getattr(controller.session, "tower_factory", None)
+
+        for rect, opt in slots:
+            cost = tower_factory.get_cost(opt["type"]) if tower_factory else None
+            affordable = cost is None or credits >= cost
+            is_selected = opt["type"] == selected_type
+
+            bg_color = (34, 38, 48) if affordable else (22, 22, 26)
+            pygame.draw.rect(screen, bg_color, rect)
+
+            sprite = self._sprite_for(f"tower_{opt['type']}")
+            if sprite:
+                self._blit_icon_sprite(screen, sprite, rect)
+            else:
+                swatch = opt.get("color", (150, 150, 150))
+                if not affordable:
+                    swatch = tuple(c // 3 for c in swatch)
+                inner = rect.inflate(-14, -14)
+                pygame.draw.rect(screen, swatch, inner)
+
+            border_color = self.HIGHLIGHT_COLOR if is_selected else self.BORDER_COLOR
+            border_width = 3 if is_selected else self.BORDER_WIDTH
+            pygame.draw.rect(screen, border_color, rect, border_width)
+
+            hotkey_label = self._hotkey_label(opt.get("key"))
+            if hotkey_label:
+                badge = small_font.render(hotkey_label, True, (255, 255, 255))
+                screen.blit(badge, (rect.x + 3, rect.y + 1))
+
+            if cost is not None:
+                cost_color = (255, 215, 0) if affordable else (220, 80, 80)
+                cost_surf = small_font.render(str(cost), True, cost_color)
+                crect = cost_surf.get_rect(midtop=(rect.centerx, rect.bottom + 2))
+                screen.blit(cost_surf, crect)
+
+    def _blit_icon_sprite(self, screen, sprite, rect):
+        """Масштабирует спрайт под размер иконки (с небольшим отступом от рамки)."""
+        target = rect.inflate(-8, -8)
+        scaled = pygame.transform.smoothscale(sprite, (target.width, target.height))
+        screen.blit(scaled, target)
+
+    @staticmethod
+    def _hotkey_label(key) -> "str | None":
+        """Возвращает подпись хоткея для иконки постройки (например, "1" для K_1)."""
+        if key is None:
+            return None
+        try:
+            return pygame.key.name(key).upper()
+        except Exception:
+            return None
 
     def _build_selection_info(self, state, controller, tower_options):
         """Собирает строки текста для панели выбора."""
@@ -157,24 +335,34 @@ class HudRenderer:
             info_lines.append(loc.get("hud.nothing_selected"))
         return info_lines
 
-    def _draw_selection_panel(self, screen, state, controller, tower_options, small_font, width, height):
-        """Рисует панель с информацией о текущем выборе."""
+    def _draw_selection_zone(self, screen, state, controller, tower_options, small_font, x, y, right, h):
+        """Рисует информацию о текущем выборе в левой зоне нижней панели."""
         info_lines = self._build_selection_info(state, controller, tower_options)
-
-        w3 = max(len(line) * 8 for line in info_lines) + 40
-        h3 = len(info_lines) * 22 + 25
-        surf3 = pygame.Surface((w3, h3), pygame.SRCALPHA)
-        surf3.fill((20, 25, 35, 170))
-        x3 = (width - w3) // 2
-        y3 = height - h3 - 10
-        screen.blit(surf3, (x3, y3))
-
+        line_height = 17
         for i, line in enumerate(info_lines):
-            col = (255, 255, 255)
+            col = self.TEXT_COLOR
             if "НЕТ" in line:
                 col = (255, 100, 100)
             elif "ДА" in line:
                 col = (100, 255, 100)
             elif "МАКСИМУМ" in line:
-                col = (255, 215, 0)
-            screen.blit(small_font.render(line, True, col), (x3 + 10, y3 + 10 + i * 22))
+                col = self.HIGHLIGHT_COLOR
+            screen.blit(small_font.render(line, True, col), (x, y + i * line_height))
+
+    def _draw_controls_zone(self, screen, camera, small_font, left, y, right, h):
+        """Рисует компактные подсказки по управлению в правой зоне нижней панели."""
+        lines = [
+            (loc.get("hud.camera_info", x=int(camera.x), y=int(camera.y), zoom=int(camera.zoom * 100)),
+             (180, 180, 180)),
+            (loc.get("hud.controls_move"), self.DIM_TEXT_COLOR),
+            (loc.get("hud.controls_drag"), self.DIM_TEXT_COLOR),
+            (loc.get("hud.controls_build"), self.DIM_TEXT_COLOR),
+            (loc.get("hud.controls_select"), self.DIM_TEXT_COLOR),
+            (loc.get("hud.controls_misc"), self.DIM_TEXT_COLOR),
+            (loc.get("hud.controls_alt"), self.DIM_TEXT_COLOR),
+        ]
+        line_height = 16
+        for i, (text, color) in enumerate(lines):
+            surf = small_font.render(text, True, color)
+            rect = surf.get_rect(topright=(right, y + i * line_height))
+            screen.blit(surf, rect)

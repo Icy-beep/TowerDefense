@@ -11,18 +11,36 @@ class Camera:
         self.screen_w, self.screen_h = screen_w, screen_h
         self.map_w, self.map_h = map_w, map_h
         self.zoom = 1.0
-        self.min_zoom, self.max_zoom = 0.3, 2.5
+        self.min_zoom = self._min_zoom_for_screen()
+        self.max_zoom = 2.5
         self.speed = 400.0
         self.boost_multiplier = 2.5
 
+    def _min_zoom_for_screen(self) -> float:
+        """Зум до границ экрана"""
+        return min(self.screen_w / self.map_w, self.screen_h / self.map_h)
+
+    def resize(self, screen_w, screen_h):
+        """Обновляет видимую область при изменении размера окна."""
+        self.screen_w, self.screen_h = screen_w, screen_h
+        self.min_zoom = self._min_zoom_for_screen()
+        self.zoom = max(self.min_zoom, min(self.max_zoom, self.zoom))
+        self.move(0, 0)
+
     def move(self, dx, dy):
-        """Смещает камеру, не выпуская её за границы карты."""
+        """Должен смещать камеру не давая выйти за пределы экрана."""
         self.x += dx
         self.y += dy
         vis_w = self.screen_w / self.zoom
         vis_h = self.screen_h / self.zoom
-        self.x = max(0, min(self.x, self.map_w - vis_w))
-        self.y = max(0, min(self.y, self.map_h - vis_h))
+        if vis_w >= self.map_w:
+            self.x = (self.map_w - vis_w) / 2
+        else:
+            self.x = max(0, min(self.x, self.map_w - vis_w))
+        if vis_h >= self.map_h:
+            self.y = (self.map_h - vis_h) / 2
+        else:
+            self.y = max(0, min(self.y, self.map_h - vis_h))
 
     def zoom_at_mouse(self, mx, my, factor):
         """Зумит так, чтобы мировая точка под курсором осталась под курсором."""

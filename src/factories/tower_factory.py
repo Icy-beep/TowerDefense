@@ -4,6 +4,8 @@ from typing import Dict, Optional, Type
 from src.entities.defense_module import DefenseModule
 from src.core.coordinate import Coordinate
 from src.entities.turrets import LaserTurret, BulletTurret, MortarTurret
+from src.entities.power_generator import PowerGenerator
+from src.entities.power_pylon import PowerPylon
 from src.config.config_loader import ConfigLoader
 
 
@@ -17,6 +19,8 @@ class TowerFactory:
         self.register("laser", LaserTurret)
         self.register("bullet", BulletTurret)
         self.register("mortar", MortarTurret)
+        self.register("generator", PowerGenerator)
+        self.register("pylon", PowerPylon)
 
     def register(self, type_name: str, tower_class: Type[DefenseModule]) -> None:
         """Регистрирует новый тип башни."""
@@ -39,3 +43,9 @@ class TowerFactory:
     def available_types(self) -> list:
         """Возвращает список зарегистрированных типов башен."""
         return list(self._registry.keys())
+
+    def get_cost(self, type_name: str) -> Optional[int]:
+        """Возвращает стоимость постройки заданного типа из конфига, не создавая
+        экземпляр - нужно UI (например, панели построек), чтобы показать цену и
+        подсветить недоступные по деньгам варианты."""
+        return self._config_loader.get_tower_config(type_name).get("cost")

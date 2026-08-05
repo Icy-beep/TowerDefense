@@ -1,32 +1,50 @@
+import math
 import random
-from typing import List, Optional
+from typing import Callable, Dict, List, Optional
 
 from src.core.map import Map
 from src.core.game_state import GameStateManager
 from src.systems.resource_bank import ResourceBank
-from src.systems.wave_protocol import WaveProtocol, WaveConfig
+from src.systems.threat_strategy import ThreatStrategy, ShipLandingStrategy, NestSpawnStrategy
 from src.factories.tower_factory import TowerFactory
 from src.factories.enemy_factory import EnemyFactory
 from src.enums import Faction, GameState
 from src.entities.hostile_entity import HostileEntity
+from src.entities.fauna_nest import FaunaNest
 from src.core.coordinate import Coordinate
-from src.systems.mission import Objective, SurviveWavesObjective, ProtectTowersObjective
+from src.systems.mission import Objective, SurviveDurationObjective, ProtectTowersObjective
 
 
 class GameSession:
     """Модель игры: правила, состояние, фабрики башен и врагов."""
 
+    NEST_COUNT_MIN = 6
+    NEST_COUNT_MAX = 10
+    NEST_MIN_DISTANCE_FROM_BASE = 800.0
+    NEST_MAX_DISTANCE_FROM_BASE = 2600.0
+    NEST_MIN_SPACING = 500.0
+    NEST_PLACEMENT_ATTEMPTS_PER_NEST = 200
+
     def __init__(self):
         """Создаёт пустую игровую сессию в главном меню."""
         self.map = None
         self.resources = ResourceBank()
-        self.wave_protocol = WaveProtocol()
+        self.threat_strategies: Dict[Faction, ThreatStrategy] = {}
         self.tower_factory = TowerFactory()
         self.enemy_factory = EnemyFactory()
         self.state_manager = GameStateManager(GameState.MENU)
         self.base_health = 100
         self.max_base_health = 100
+        self.elapsed_time = 0.0
+        self.survive_duration_target = 180.0
         self.objectives: List[Objective] = []
+        self.endless = False
+        self.on_event: Optional[Callable[..., None]] = None
+
+    def _emit(self, event_name: str, **data):
+        """Уведомляет подписчика (например, звуковую систему) об игровом событии."""
+        if self.on_event:
+            self.on_event(event_name, **data)
 
     @property
     def base_position(self) -> Optional[Coordinate]:
@@ -48,71 +66,112 @@ class GameSession:
         """Меняет состояние игры."""
         self.state_manager.change_state(new_state)
 
-    def setup_game(self):
-        """Готовит новую игру: карту, базу, ресурсы, волны и задания."""
+    def setup_game(self, endless: bool = False):
+        """Готовит новую игру: карту, базу, ресурсы, источники угроз и задания.
+        endless=True - режим без ограничения по времени и без заданий (см. update):
+        победы по таймеру не будет, база остаётся уязвимой, поражение по-прежнему
+        возможно."""
         self.state = GameState.PLAYING
+        self.endless = endless
         self.base_health = self.max_base_health
         self.resources = ResourceBank(start_credits=1000)
 
-        self.map = Map(width=4000, height=4000)
-        self.base_position = Coordinate(2000, 2000)
+        self.map = Map(on_event=self._emit)
+        self.map.power_grid_enabled = True
+        self.base_position = Coordinate(self.map.width / 2, self.map.height / 2)
         self.map.nav_grid.set_blocked(self.base_position.x, self.base_position.y, blocked=True)
+
+        margin = 200
+        near_edge, far_edge_x, far_edge_y = margin, self.map.width - margin, self.map.height - margin
         self.map.spawn_points = [
-            Coordinate(200, 200),
-            Coordinate(3800, 200),
-            Coordinate(200, 3800),
-            Coordinate(3800, 3800)
+            Coordinate(near_edge, near_edge),
+            Coordinate(far_edge_x, near_edge),
+            Coordinate(near_edge, far_edge_y),
+            Coordinate(far_edge_x, far_edge_y),
         ]
+
+        fauna_nests = self._generate_fauna_nests()
+        self.map.fauna_nests = fauna_nests
         self.map.spawn_points_by_faction = {
-            Faction.CORPORATION: [Coordinate(200, 200), Coordinate(3800, 3800)],
-            Faction.FAUNA: [Coordinate(3800, 200), Coordinate(200, 3800)],
+            Faction.CORPORATION: [],
+            Faction.FAUNA: [nest.position for nest in fauna_nests],
         }
 
         print(f"Карта инициализирована")
         print(f"База: {self.base_position}")
-        waves = self._generate_random_waves()
-        self.wave_protocol.set_waves(waves)
-        self.wave_protocol.start_next_wave()
 
-        milestone = max(1, len(waves) // 2)
-        self.objectives = [
-            SurviveWavesObjective(target_wave_count=milestone),
+        corp_types = self._enemy_types_for_faction(Faction.CORPORATION)
+        fauna_types = self._enemy_types_for_faction(Faction.FAUNA)
+        self.threat_strategies = {
+            Faction.CORPORATION: ShipLandingStrategy(enemy_types=corp_types),
+            Faction.FAUNA: NestSpawnStrategy(enemy_types=fauna_types),
+        }
+
+        self.elapsed_time = 0.0
+        self.objectives = [] if endless else [
+            SurviveDurationObjective(target_seconds=self.survive_duration_target),
             ProtectTowersObjective(),
         ]
 
-    def _generate_random_waves(self, rng: Optional[random.Random] = None) -> List[WaveConfig]:
-        """Генерирует случайный набор волн врагов."""
+    def _generate_fauna_nests(self, rng: Optional[random.Random] = None) -> List[FaunaNest]:
+        """Расставляет гнёзда фауны один раз при старте игры (новые не появляются, а
+        уничтоженные исчезают навсегда - см. Map.update). Случайное число гнёзд в
+        диапазоне [NEST_COUNT_MIN, NEST_COUNT_MAX], каждое не дальше
+        NEST_MAX_DISTANCE_FROM_BASE и не ближе NEST_MIN_DISTANCE_FROM_BASE от базы
+        игрока, и не ближе NEST_MIN_SPACING к уже поставленным гнёздам."""
         rng = rng or random
-        available_types = self.enemy_factory.available_types()
+        count = rng.randint(self.NEST_COUNT_MIN, self.NEST_COUNT_MAX)
+        nests: List[FaunaNest] = []
+        max_attempts = count * self.NEST_PLACEMENT_ATTEMPTS_PER_NEST
+        attempts = 0
+        while len(nests) < count and attempts < max_attempts:
+            attempts += 1
+            angle = rng.uniform(0, 2 * math.pi)
+            distance = rng.uniform(self.NEST_MIN_DISTANCE_FROM_BASE, self.NEST_MAX_DISTANCE_FROM_BASE)
+            x = self.base_position.x + math.cos(angle) * distance
+            y = self.base_position.y + math.sin(angle) * distance
+            if not (0 <= x <= self.map.width and 0 <= y <= self.map.height):
+                continue
+            candidate = Coordinate(x, y)
+            if any(candidate.distance_to(nest.position) < self.NEST_MIN_SPACING for nest in nests):
+                continue
+            nests.append(FaunaNest(candidate))
+        return nests
 
-        wave_count = rng.randint(4, 7)
-        waves = []
-        for i in range(wave_count):
-            type_count = rng.randint(1, min(3, len(available_types)))
-            enemy_types = rng.sample(available_types, type_count)
-            count = rng.randint(18 + i, 22 + i * 2)
-            interval = rng.uniform(0.7, 1.5)
-            waves.append(WaveConfig(enemy_types, count, interval))
-        return waves
+    def _enemy_types_for_faction(self, faction: Faction) -> List[str]:
+        """Возвращает зарегистрированные типы врагов, принадлежащие фракции."""
+        return [t for t in self.enemy_factory.available_types()
+                if self.enemy_factory.faction_for(t) == faction]
 
     def update(self, delta_time: float):
-        """Обновляет игру на один кадр: волны, карту, здоровье базы, состояние, задания."""
+        """Обновляет игру на один кадр: угрозы, карту, здоровье базы, состояние, задания."""
         if self.state != GameState.PLAYING:
             return
 
-        self.wave_protocol.update(delta_time, self.map, self._spawn_enemy_factory)
-        reached_base, killed_enemies = self.map.update(delta_time)
+        self.elapsed_time += delta_time
+        for strategy in self.threat_strategies.values():
+            strategy.update(delta_time, self.map, self._spawn_enemy_factory)
+
+        reached_base, killed_enemies, destroyed_nests = self.map.update(delta_time)
         for enemy in killed_enemies:
             self.resources.add_reward(enemy.reward)
+            self._emit("enemy_died", enemy_type=getattr(enemy, "type_name", None), position=enemy.position)
+
+        for nest in destroyed_nests:
+            self.resources.add_reward(nest.reward)
 
         for _ in reached_base:
             self.base_health -= 10
+            self._emit("base_hit", position=self.base_position)
 
         if self.state_manager.check_defeat(self.base_health):
             self.state = GameState.GAME_OVER
+            self._emit("defeat")
 
-        if self.state == GameState.PLAYING and self.state_manager.check_victory(self.map, self.wave_protocol):
+        if (not self.endless and self.state == GameState.PLAYING
+                and self.state_manager.check_victory(self.elapsed_time, self.survive_duration_target)):
             self.state = GameState.VICTORY
+            self._emit("victory")
 
         for objective in self.objectives:
             if objective.is_active():
@@ -127,29 +186,38 @@ class GameSession:
         if turret is None:
             return False
         if self.resources.spend(turret.cost):
+            turret.start_landing()
             self.map.add_module(turret)
             self.map.replan_enemy_paths()
             return True
         return False
 
-    def _spawn_enemy_factory(self, enemy_type: str) -> Optional[HostileEntity]:
-        """Создаёт врага заданного типа в точке спавна его фракции и прокладывает путь к базе."""
+    def _spawn_enemy_factory(self, enemy_type: str, position: Optional[Coordinate] = None) -> Optional[HostileEntity]:
+        """Создаёт врага и прокладывает путь к базе, при необходимости выбирая точку спавна фракции."""
         faction = self.enemy_factory.faction_for(enemy_type)
-        spawn_points = self.map.spawn_points_for(faction)
-        if not spawn_points:
-            print(f"Ошибка: нет точек спавна для фракции {faction}!")
-            return None
-        spawn_point = random.choice(spawn_points)
-        pos = Coordinate(spawn_point.x, spawn_point.y)  # копия — враг не должен владеть точкой спавна
+        if position is None:
+            spawn_points = self.map.spawn_points_for(faction)
+            if not spawn_points:
+                print(f"Ошибка: нет точек спавна для фракции {faction}!")
+                return None
+            position = random.choice(spawn_points)
+
+        pos = Coordinate(position.x, position.y)
 
         enemy = self.enemy_factory.create(enemy_type, pos)
         if enemy is None:
-            raise ValueError(f"Неизвестный тип врага в WaveConfig: '{enemy_type}'")
+            raise ValueError(f"Неизвестный тип врага: '{enemy_type}'")
 
-        path = self.map.path_to_base(pos, enemy.faction)
-        if path:
-            enemy.set_path(path)
+        if enemy.stages_before_attacking():
+            # Отложенная атака: враг сначала кружит у точки появления, дожидаясь
+            # сбора группы (см. Map._update_staging_groups), и получает маршрут
+            # к базе только когда группа наберётся и атакует всей массой.
+            enemy.is_staging = True
         else:
-            print(f"Ошибка пути! Враг застрянет.")
+            path = self.map.path_to_base_within_budget(pos, enemy.faction, avoid_danger=enemy.avoids_danger())
+            if path:
+                enemy.set_path(path)
+            elif not enemy.avoids_danger():
+                print(f"Ошибка пути! Враг застрянет.")
 
         return enemy

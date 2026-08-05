@@ -16,6 +16,6 @@ class GameStateManager:
         """Проверяет, наступило ли поражение."""
         return base_health <= 0
 
-    def check_victory(self, game_map, wave_protocol) -> bool:
-        """Проверяет, наступила ли победа."""
-        return wave_protocol.is_all_waves_complete() and not game_map.enemies
+    def check_victory(self, elapsed_time: float, target_duration: float) -> bool:
+        """Проверяет, наступила ли победа - продержаться заданное время."""
+        return elapsed_time >= target_duration

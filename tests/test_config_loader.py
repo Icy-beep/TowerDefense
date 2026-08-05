@@ -1,8 +1,4 @@
-"""Конфигурирование параметров башен/врагов из внешних данных
-(data/config/*.json) — пункт ТЗ. Проверяем и сам ConfigLoader, и что
-TowerFactory/EnemyFactory реально применяют прочитанные значения (а не
-просто тихо падают обратно на дефолты класса, маскируя поломанную
-проводку), и что при отсутствии файла/типа всё равно ничего не падает."""
+"""ConfigLoader и применение параметров башен/врагов из data/config/*.json."""
 import json
 import pytest
 
@@ -17,7 +13,7 @@ def test_config_loader_reads_real_tower_config():
     loader = ConfigLoader()
     config = loader.get_tower_config("laser")
 
-    assert config["range_radius"] == 400  # значение перебалансировано в data/config/towers.json
+    assert config["range_radius"] == 400
     assert config["damage"] == 15
     assert config["cost"] == 50
     assert config["upgrade_costs"] == [80, 120]
@@ -72,7 +68,7 @@ def test_enemy_factory_applies_custom_config_values_and_converts_armor(custom_co
 
     assert enemy.max_health == 12345
     assert enemy.reward == 999
-    assert enemy.armor == ArmorType.HEAVY  # строка "Heavy" из JSON сконвертирована в enum
+    assert enemy.armor == ArmorType.HEAVY
 
 
 def test_tower_factory_falls_back_to_class_defaults_without_config(tmp_path):
@@ -80,5 +76,5 @@ def test_tower_factory_falls_back_to_class_defaults_without_config(tmp_path):
 
     turret = factory.create("laser", Coordinate(0, 0))
 
-    assert turret.range_radius == 120  # дефолт из самого класса LaserTurret
+    assert turret.range_radius == 120
     assert turret.cost == 50

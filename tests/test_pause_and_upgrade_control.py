@@ -1,7 +1,4 @@
-"""OrbitalModeController.pause_game() ('P') — рабочий функционал без
-единого теста. Заодно покрываем upgrade_selected() ('U'), которая
-связывает DefenseModule.can_upgrade/get_upgrade_cost/upgrade с тратой
-ресурсов — это реальный путь, которым апгрейд вызывается в игре."""
+"""OrbitalModeController.pause_game() ('P') и upgrade_selected() ('U')."""
 import pytest
 from src.core.game_session import GameSession
 from src.core.orbital_mode_controller import OrbitalModeController

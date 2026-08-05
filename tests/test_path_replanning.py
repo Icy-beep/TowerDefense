@@ -1,20 +1,11 @@
-"""Раньше путь врага до базы считался один раз при спавне
-(GameSession._spawn_enemy_factory -> nav_grid.find_path) и больше не
-пересчитывался, а сам find_path учитывал ВСЕ физически построенные башни
-сразу — враги были всеведущими.
-
-С введением тумана войны (fog of war, см. src/systems/faction_intel.py и
-Map.path_to_base/_update_vision) путь строится только с учётом башен,
-уже ИЗВЕСТНЫХ фракции врага — поэтому свежепостроенная и ещё никем не
-замеченная башня саму по себе путь не меняет: враги "не знают" о ней,
-пока не окажутся в радиусе обзора (это отдельно проверяется в
-test_fog_of_war.py). GameSession.place_turret() всё равно вызывает
-Map.replan_enemy_paths() на постройку — эта подстраховка нужна на
-случай, если башня строится в уже разведанной фракцией зоне."""
+"""Реплан пути врагов при постройке башни, с учётом тумана войны (fog of war)."""
 import pytest
 
 from src.core.game_session import GameSession
 from src.core.coordinate import Coordinate
+from src.core.map import Map
+from src.entities.turrets import LaserTurret
+from src.enums import Faction
 
 
 @pytest.fixture
@@ -39,15 +30,11 @@ def test_newly_built_undiscovered_tower_does_not_reroute_the_path(session):
 
     new_path = session.map.path_to_base(Coordinate(2000, 500), enemy.faction)
     assert len(new_path) > 0
-    # Путь пересчитан (реплан вызывается всегда), но он идёт так же
-    # напролом, как и раньше — башня ещё не обнаружена этой фракцией.
     assert not session.map.faction_intel[enemy.faction].knows(session.map.modules[0])
 
 
 def test_replan_reroutes_around_a_tower_already_known_to_the_faction(session):
-    """Если фракция уже знает о башне (например, её увидел другой юнит),
-    пересчёт маршрута должен её обходить — ровно так же, как раньше
-    работало для всех башен без исключения."""
+    """Если фракция уже знает о башне, пересчёт маршрута должен её обходить."""
     enemy = session.enemy_factory.create("drone_walker", Coordinate(2000, 500))
     original_path = session.map.nav_grid.find_path(enemy.position, session.base_position)
     enemy.set_path(original_path)
@@ -60,7 +47,7 @@ def test_replan_reroutes_around_a_tower_already_known_to_the_faction(session):
     assert success is True
 
     tower = session.map.modules[0]
-    session.map.faction_intel[enemy.faction].reveal(tower)  # фракция уже знает о башне
+    session.map.faction_intel[enemy.faction].reveal(tower)
 
     session.map.replan_enemy_paths()
 
@@ -81,7 +68,6 @@ def test_replan_only_touches_alive_enemies(session):
 
     session.place_turret("laser", Coordinate(2000, 900))
 
-    # Путь мёртвого врага не должен трогаться репланом.
     assert dead_enemy.path == [Coordinate(999, 999)]
 
 
@@ -96,3 +82,63 @@ def test_replan_keeps_old_path_if_no_new_path_found(session, monkeypatch):
     session.place_turret("laser", Coordinate(2000, 900))
 
     assert enemy.path == original_path
+
+
+
+def test_path_to_base_avoid_danger_never_enters_a_known_towers_range():
+    """С avoid_danger=True путь не должен заходить в радиус известной башни вообще."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 3500)
+    tower = LaserTurret(Coordinate(2000, 2000), range_radius=300)
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.CORPORATION].reveal(tower)
+
+    path = game_map.path_to_base(Coordinate(2000, 500), Faction.CORPORATION, avoid_danger=True)
+
+    assert path, "путь должен существовать - карта достаточно большая для обхода"
+    assert all(point.distance_to(tower.position) > tower.range_radius for point in path), \
+        "с avoid_danger=True маршрут не должен заходить в радиус известной башни вообще"
+
+
+def test_path_to_base_avoid_danger_returns_empty_when_fully_boxed_in():
+    """Если строгий запрет оставляет карту без пути, path_to_base не подменяет это компромиссом."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+    tower = LaserTurret(Coordinate(2000, 2000), range_radius=6000)
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.CORPORATION].reveal(tower)
+
+    path = game_map.path_to_base(Coordinate(500, 500), Faction.CORPORATION, avoid_danger=True)
+
+    assert path == [], "с полной блокировкой честного пути быть не должно - вызывающий код должен отступить"
+
+
+def test_path_to_base_avoid_danger_finds_a_detour_around_a_single_realistic_tower():
+    """Регрессия: с MAX_EXPANSIONS=400 честный объезд даже одной башни с боевым радиусом
+    (600, как у миномёта) регулярно не укладывался в лимит A* и path_to_base возвращал
+    пустой путь, хотя объезд в обе стороны по карте существовал - из-за этого избегающие
+    враги (разведчик) массово уходили в _advance_giving_up и "прилипали" к краю карты."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+    tower = LaserTurret(Coordinate(2000, 1200), range_radius=600)
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.CORPORATION].reveal(tower)
+
+    path = game_map.path_to_base(Coordinate(2000, 200), Faction.CORPORATION, avoid_danger=True)
+
+    assert path, "честный объезд одной башни должен находиться, а не упираться в лимит поиска"
+    assert all(point.distance_to(tower.position) > tower.range_radius for point in path)
+
+
+def test_path_to_base_default_does_not_hard_block_tower_coverage():
+    """Без avoid_danger поведение должно остаться прежним - боевые фракции
+    по-прежнему вольны срезать через мягко штрафуемую зону."""
+    game_map = Map(width=4000, height=4000)
+    game_map.base_position = Coordinate(2000, 2000)
+    tower = LaserTurret(Coordinate(1000, 500), range_radius=5000)
+    game_map.modules.append(tower)
+    game_map.faction_intel[Faction.FAUNA].reveal(tower)
+
+    path = game_map.path_to_base(Coordinate(0, 0), Faction.FAUNA, avoid_danger=False)
+
+    assert path, "с мягким избеганием путь должен находиться даже если вся карта под одной башней"

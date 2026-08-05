@@ -1,9 +1,4 @@
-"""Задания (src/systems/mission.py) — необязательный слой поверх волн:
-не заменяют и не блокируют victory/defeat (GameStateManager), просто
-дают дополнительную направленную цель и статус в HUD. Полный переход на
-"открытую песочницу" был отклонён как слишком рискованная перестройка
-работающего игрового цикла — это дешёвая альтернатива с тем же эффектом
-направленности."""
+"""Задания (src/systems/mission.py) - слой целей поверх victory/defeat, не блокирует их."""
 import types
 
 from src.core.coordinate import Coordinate
@@ -11,25 +6,21 @@ from src.core.game_session import GameSession
 from src.core.map import Map
 from src.entities.turrets import LaserTurret
 from src.enums import GameState
-from src.systems.mission import Objective, SurviveWavesObjective, ProtectTowersObjective
+from src.systems.mission import Objective, SurviveDurationObjective, ProtectTowersObjective
 
 
-def _fake_session(state=GameState.PLAYING, current_wave_idx=0, towers_lost=0, all_waves_complete=False):
+def _fake_session(state=GameState.PLAYING, elapsed_time=0.0, towers_lost=0):
     return types.SimpleNamespace(
         state=state,
-        wave_protocol=types.SimpleNamespace(
-            current_wave_idx=current_wave_idx,
-            is_all_waves_complete=lambda: all_waves_complete,
-        ),
+        elapsed_time=elapsed_time,
         map=types.SimpleNamespace(towers_lost_count=towers_lost),
     )
 
 
-# --------------------------------------------------------------- Objective
 
 def test_objective_is_active_until_completed_or_failed():
     session = _fake_session()
-    objective = SurviveWavesObjective(target_wave_count=3)
+    objective = SurviveDurationObjective(target_seconds=60)
 
     assert objective.is_active() is True
 
@@ -37,11 +28,10 @@ def test_objective_is_active_until_completed_or_failed():
     assert objective.is_active() is False
 
 
-# --------------------------------------------------------- SurviveWavesObjective
 
-def test_survive_waves_completes_once_target_reached():
-    objective = SurviveWavesObjective(target_wave_count=3)
-    session = _fake_session(current_wave_idx=3)
+def test_survive_duration_completes_once_target_reached():
+    objective = SurviveDurationObjective(target_seconds=60)
+    session = _fake_session(elapsed_time=60)
 
     objective.update(session)
 
@@ -49,18 +39,18 @@ def test_survive_waves_completes_once_target_reached():
     assert objective.failed is False
 
 
-def test_survive_waves_not_yet_completed_before_target():
-    objective = SurviveWavesObjective(target_wave_count=3)
-    session = _fake_session(current_wave_idx=2)
+def test_survive_duration_not_yet_completed_before_target():
+    objective = SurviveDurationObjective(target_seconds=60)
+    session = _fake_session(elapsed_time=30)
 
     objective.update(session)
 
     assert objective.completed is False
 
 
-def test_survive_waves_fails_on_game_over():
-    objective = SurviveWavesObjective(target_wave_count=3)
-    session = _fake_session(state=GameState.GAME_OVER, current_wave_idx=1)
+def test_survive_duration_fails_on_game_over():
+    objective = SurviveDurationObjective(target_seconds=60)
+    session = _fake_session(state=GameState.GAME_OVER, elapsed_time=10)
 
     objective.update(session)
 
@@ -68,16 +58,15 @@ def test_survive_waves_fails_on_game_over():
     assert objective.completed is False
 
 
-def test_survive_waves_describe_reports_progress():
-    objective = SurviveWavesObjective(target_wave_count=5)
-    session = _fake_session(current_wave_idx=2)
+def test_survive_duration_describe_reports_progress():
+    objective = SurviveDurationObjective(target_seconds=50)
+    session = _fake_session(elapsed_time=20)
 
     text = objective.describe(session)
 
-    assert "2" in text and "5" in text
+    assert "20" in text and "50" in text
 
 
-# --------------------------------------------------------- ProtectTowersObjective
 
 def test_protect_towers_fails_as_soon_as_one_tower_is_lost():
     objective = ProtectTowersObjective()
@@ -89,9 +78,9 @@ def test_protect_towers_fails_as_soon_as_one_tower_is_lost():
     assert objective.completed is False
 
 
-def test_protect_towers_completes_when_all_waves_done_and_none_lost():
+def test_protect_towers_completes_when_session_reaches_victory():
     objective = ProtectTowersObjective()
-    session = _fake_session(towers_lost=0, all_waves_complete=True)
+    session = _fake_session(towers_lost=0, state=GameState.VICTORY)
 
     objective.update(session)
 
@@ -100,7 +89,7 @@ def test_protect_towers_completes_when_all_waves_done_and_none_lost():
 
 def test_protect_towers_neither_completed_nor_failed_mid_game():
     objective = ProtectTowersObjective()
-    session = _fake_session(towers_lost=0, all_waves_complete=False)
+    session = _fake_session(towers_lost=0, state=GameState.PLAYING)
 
     objective.update(session)
 
@@ -108,7 +97,6 @@ def test_protect_towers_neither_completed_nor_failed_mid_game():
     assert objective.failed is False
 
 
-# --------------------------------------------------------------- Map.towers_lost_count
 
 def test_map_increments_towers_lost_count_when_a_tower_is_destroyed():
     game_map = Map(width=4000, height=4000)
@@ -131,14 +119,13 @@ def test_map_towers_lost_count_does_not_increment_for_healthy_towers():
     assert game_map.towers_lost_count == 0
 
 
-# --------------------------------------------------------------- GameSession wiring
 
 def test_setup_game_creates_default_objectives():
     session = GameSession()
     session.setup_game()
 
     assert len(session.objectives) == 2
-    assert any(isinstance(o, SurviveWavesObjective) for o in session.objectives)
+    assert any(isinstance(o, SurviveDurationObjective) for o in session.objectives)
     assert any(isinstance(o, ProtectTowersObjective) for o in session.objectives)
 
 
@@ -150,22 +137,19 @@ def test_game_session_update_ticks_active_objectives():
 
     session.update(delta_time=0.016)
 
-    # Тик произошёл без исключений и не сломал остальной игровой цикл —
-    # конкретное состояние задания зависит от рандомного числа волн,
-    # поэтому здесь просто проверяем, что update() дошёл до объекта.
     assert isinstance(objective, Objective)
 
 
-def test_game_session_survive_waves_completes_via_real_gameplay_progression():
+def test_game_session_survive_duration_completes_via_real_gameplay_progression():
     session = GameSession()
     session.setup_game()
-    milestone_objective = next(o for o in session.objectives if isinstance(o, SurviveWavesObjective))
+    duration_objective = next(o for o in session.objectives if isinstance(o, SurviveDurationObjective))
 
-    session.wave_protocol.current_wave_idx = milestone_objective.target_wave_count
+    session.elapsed_time = duration_objective.target_seconds
 
     session.update(delta_time=0.016)
 
-    assert milestone_objective.completed is True
+    assert duration_objective.completed is True
 
 
 def test_game_session_protect_towers_fails_after_tower_destroyed_via_real_update():
@@ -194,6 +178,5 @@ def test_inactive_objective_stops_receiving_updates():
 
     session.update(delta_time=0.016)
 
-    # Уже неактивное задание не должно повторно проверяться/меняться
     assert protect_objective.failed is True
     assert protect_objective.completed is False
