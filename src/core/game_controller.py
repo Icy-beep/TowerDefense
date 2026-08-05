@@ -48,6 +48,15 @@ class GameController:
         """Передаёт событие ввода активному режиму."""
         return self.active_mode.handle_input(event)
 
+    def select_tower(self, tower_type: str) -> bool:
+        """Выбирает тип постройки для размещения в активном режиме, если тот это
+        поддерживает (см. OrbitalModeController.select_tower) - нужно HUD-панели
+        построек, чтобы клик по иконке работал так же, как хоткей 1-5."""
+        select = getattr(self.active_mode, "select_tower", None)
+        if select is None:
+            return False
+        return select(tower_type)
+
     def get_game_state(self) -> dict:
         """Возвращает состояние игры для HUD."""
         return self.active_mode.get_game_state()

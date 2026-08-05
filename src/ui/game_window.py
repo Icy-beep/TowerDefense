@@ -85,7 +85,6 @@ class GameView:
             {"key": pygame.K_5, "type": "pylon", "name": "Pylon (60)", "color": (0, 200, 120)},
         ]
 
-        self.hud_renderer = HudRenderer()
         self.game_over_screen = GameOverScreen()
         self.menu_screen = MenuScreen()
         self.mode_select_screen = ModeSelectScreen()
@@ -103,6 +102,7 @@ class GameView:
         self._menu_music_pending = True
 
         self.map_renderer = MapRenderer(self.sprite_manager)
+        self.hud_renderer = HudRenderer(self.sprite_manager)
 
     def _on_sound_loading_progress(self, done: int, total: int):
         """Перерисовывает экран загрузки и откачивает события после каждого загруженного звука —
@@ -162,7 +162,21 @@ class GameView:
             elif self.session.state == GameState.PAUSED and self.pause_menu_open:
                 self._handle_pause_menu_input(event)
             elif self.controller:
-                self.controller.handle_input(event)
+                if not self._handle_build_panel_click(event):
+                    self.controller.handle_input(event)
+
+    def _handle_build_panel_click(self, event) -> bool:
+        """Перехватывает клик по иконке постройки в нижней HUD-панели раньше, чем
+        событие дойдёт до контроллера - иначе тот же клик ещё и пытался бы что-то
+        сделать на карте под панелью (поставить/выбрать башню). Возвращает True,
+        если клик пришёлся на панель и был обработан."""
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return False
+        tower_type = self.hud_renderer.handle_build_click(event.pos, self.tower_options, self.width, self.height)
+        if tower_type is None:
+            return False
+        self.controller.select_tower(tower_type)
+        return True
 
     def _handle_escape(self):
         """ESC: из настроек — назад в меню; во время игры — открыть/закрыть меню паузы; иначе — выход."""

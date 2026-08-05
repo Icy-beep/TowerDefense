@@ -43,3 +43,9 @@ class TowerFactory:
     def available_types(self) -> list:
         """Возвращает список зарегистрированных типов башен."""
         return list(self._registry.keys())
+
+    def get_cost(self, type_name: str) -> Optional[int]:
+        """Возвращает стоимость постройки заданного типа из конфига, не создавая
+        экземпляр - нужно UI (например, панели построек), чтобы показать цену и
+        подсветить недоступные по деньгам варианты."""
+        return self._config_loader.get_tower_config(type_name).get("cost")

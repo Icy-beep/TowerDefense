@@ -7,7 +7,7 @@
   "hud.camera_info": "Позиция камеры: {x}, {y} | Зум: {zoom}%",
   "hud.controls_move": "WASD: Перемещение камеры (+SHIFT: ускорение) | SCROLL: Зум",
   "hud.controls_drag": "ЛКМ по пустому месту: тащить камеру | R: Камеру на базу",
-  "hud.controls_build": "1-3: Выбрать башню",
+  "hud.controls_build": "1-5: Выбрать постройку (или клик по иконке снизу)",
   "hud.controls_select": "ЛКМ: Поставить/Выбрать | ПКМ: Отменить выбор",
   "hud.controls_misc": "U: Улучшить башню | P: Пауза | ESC: Меню паузы",
   "hud.controls_alt": "ALT (удерживать): показать радиусы всех башен",

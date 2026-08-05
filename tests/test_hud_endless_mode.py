@@ -32,7 +32,7 @@ def _requested_keys(endless):
 
     loc.get = spy_get
     try:
-        renderer._draw_status_panel(screen, _state(endless), controller=None, font=font, pad=10, alpha=170)
+        renderer._draw_top_bar(screen, _state(endless), font, width=900)
     finally:
         loc.get = original_get
     return requested
@@ -64,4 +64,4 @@ def test_status_panel_does_not_crash_without_endless_key():
     state = _state(endless=False)
     del state['endless']
 
-    renderer._draw_status_panel(screen, state, controller=None, font=font, pad=10, alpha=170)
+    renderer._draw_top_bar(screen, state, font, width=900)

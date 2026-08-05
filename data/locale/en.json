@@ -7,7 +7,7 @@
   "hud.camera_info": "Camera position: {x}, {y} | Zoom: {zoom}%",
   "hud.controls_move": "WASD: Move camera (+SHIFT: speed up) | SCROLL: Zoom",
   "hud.controls_drag": "LMB on empty space: drag camera | R: Camera to base",
-  "hud.controls_build": "1-3: Select tower",
+  "hud.controls_build": "1-5: Select building (or click icon below)",
   "hud.controls_select": "LMB: Place/Select | RMB: Deselect",
   "hud.controls_misc": "U: Upgrade tower | P: Pause | ESC: Pause menu",
   "hud.controls_alt": "ALT (hold): show all tower ranges",

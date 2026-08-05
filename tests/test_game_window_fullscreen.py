@@ -144,3 +144,54 @@ def test_escape_in_mode_select_returns_to_main_menu_without_quitting(view):
 
     assert view.menu_view == "main"
     assert view.running is True
+
+
+def test_build_panel_click_selects_tower_type_during_gameplay(view):
+    """Клик по иконке постройки в нижней HUD-панели должен выбирать тип башни так
+    же, как хоткей 1-5 (см. HudRenderer._layout_build_panel/handle_build_click и
+    GameController.select_tower)."""
+    view._start_game(endless=True)
+    slots = view.hud_renderer._layout_build_panel(view.tower_options, view.width, view.height)
+    rect, opt = slots[0]
+
+    consumed = view._handle_build_panel_click(_click_event(rect.center))
+
+    assert consumed is True
+    assert view.controller.selected_tower_type == opt["type"]
+
+
+def test_build_panel_click_outside_panel_is_not_consumed(view):
+    view._start_game(endless=True)
+
+    consumed = view._handle_build_panel_click(_click_event((5, 5)))
+
+    assert consumed is False
+    assert view.controller.selected_tower_type is None
+
+
+def test_full_render_does_not_crash_in_endless_mode(view):
+    """Прогоняет весь новый HUD (верхняя панель, нижняя панель с иконками построек,
+    подсказки) одним кадром - раньше это не проверялось ни одним тестом."""
+    view._start_game(endless=True)
+
+    view.render()
+
+
+def test_full_render_does_not_crash_with_missions_and_selected_tower(view):
+    """То же самое, но в обычном режиме (панель заданий видна) и с выбранным типом
+    постройки (панель информации о выборе показывает build_label)."""
+    view._start_game(endless=False)
+    view.controller.select_tower("laser")
+
+    view.render()
+
+
+def test_full_render_does_not_crash_with_selected_enemy(view):
+    from src.core.coordinate import Coordinate
+
+    view._start_game(endless=True)
+    enemy = view.session.enemy_factory.create("drone_walker", Coordinate(100, 100))
+    view.session.map.enemies.append(enemy)
+    view.controller.active_mode.selected_enemy = enemy
+
+    view.render()
