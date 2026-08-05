@@ -12,6 +12,11 @@ from src.enums import Faction
 def session():
     s = GameSession()
     s.setup_game()
+    # Эти тесты про туман войны и реплан пути, а не про секторы прогрессии
+    # (см. src/systems/sector.py) - открываем всю карту, чтобы точки блокировки
+    # пути вдалеке от базы не упирались в "сектор закрыт".
+    for sector in s.map.sectors:
+        sector.unlocked = True
     return s
 
 

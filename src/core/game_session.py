@@ -13,6 +13,7 @@ from src.entities.hostile_entity import HostileEntity
 from src.entities.fauna_nest import FaunaNest
 from src.core.coordinate import Coordinate
 from src.systems.mission import Objective, SurviveDurationObjective, ProtectTowersObjective
+from src.systems.sector import build_sector_grid
 
 
 class GameSession:
@@ -24,6 +25,14 @@ class GameSession:
     NEST_MAX_DISTANCE_FROM_BASE = 2600.0
     NEST_MIN_SPACING = 500.0
     NEST_PLACEMENT_ATTEMPTS_PER_NEST = 200
+
+    # Прогрессия открытия карты (см. docs/DESIGN_RTS_TRANSITION.md, раздел 10 и
+    # src/systems/sector.py) - сетка SECTOR_GRID_SIZE x SECTOR_GRID_SIZE секторов,
+    # стартовый (с базой) открыт бесплатно, остальные - за кредиты, дорожающие с каждым
+    # уже купленным (см. sector_unlock_cost).
+    SECTOR_GRID_SIZE = 3
+    SECTOR_UNLOCK_BASE_COST = 300
+    SECTOR_UNLOCK_COST_STEP = 150
 
     def __init__(self):
         """Создаёт пустую игровую сессию в главном меню."""
@@ -80,6 +89,8 @@ class GameSession:
         self.map.power_grid_enabled = True
         self.base_position = Coordinate(self.map.width / 2, self.map.height / 2)
         self.map.nav_grid.set_blocked(self.base_position.x, self.base_position.y, blocked=True)
+        self.map.sectors = build_sector_grid(self.map.width, self.map.height,
+                                              self.SECTOR_GRID_SIZE, self.base_position)
 
         margin = 200
         near_edge, far_edge_x, far_edge_y = margin, self.map.width - margin, self.map.height - margin
@@ -191,6 +202,25 @@ class GameSession:
             self.map.replan_enemy_paths()
             return True
         return False
+
+    def sector_unlock_cost(self) -> int:
+        """Стоимость открытия следующего сектора - растёт с числом уже купленных
+        (стартовый сектор с базой открыт бесплатно и в счёт не идёт, см. setup_game)."""
+        unlocked_count = sum(1 for sector in self.map.sectors if sector.unlocked)
+        already_purchased = max(0, unlocked_count - 1)
+        return self.SECTOR_UNLOCK_BASE_COST + already_purchased * self.SECTOR_UNLOCK_COST_STEP
+
+    def unlock_sector_at(self, position: Coordinate) -> bool:
+        """Пытается открыть за кредиты сектор, которому принадлежит точка (см.
+        sector_unlock_cost). Возвращает False и не трогает сессию, если там нет сектора,
+        он уже открыт, или не хватает кредитов."""
+        sector = self.map.sector_at(position)
+        if sector is None or sector.unlocked:
+            return False
+        if not self.resources.spend(self.sector_unlock_cost()):
+            return False
+        sector.unlocked = True
+        return True
 
     def _spawn_enemy_factory(self, enemy_type: str, position: Optional[Coordinate] = None) -> Optional[HostileEntity]:
         """Создаёт врага и прокладывает путь к базе, при необходимости выбирая точку спавна фракции."""

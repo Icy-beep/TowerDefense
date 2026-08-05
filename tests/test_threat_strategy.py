@@ -9,15 +9,25 @@ from src.systems.threat_strategy import ShipLandingStrategy, NestSpawnStrategy, 
 
 
 class _FakeMap:
-    """Минимальная замена Map: только то, что нужно стратегиям угроз."""
+    """Минимальная замена Map: только то, что нужно стратегиям угроз. По умолчанию
+    ведёт себя как карта без секторов прогрессии (см. src/systems/sector.py) - всё
+    открыто, ровно как настоящая Map с пустым self.sectors."""
 
-    def __init__(self, width=4000, height=4000):
+    def __init__(self, width=4000, height=4000, fauna_spawn_points=None, unlocked=True):
         self.width = width
         self.height = height
         self.enemies = []
+        self._fauna_spawn_points = fauna_spawn_points if fauna_spawn_points is not None else [Coordinate(0, 0)]
+        self._unlocked = unlocked
 
     def spawn_enemy(self, enemy):
         self.enemies.append(enemy)
+
+    def is_position_unlocked(self, position):
+        return self._unlocked
+
+    def unlocked_fauna_spawn_points(self):
+        return self._fauna_spawn_points
 
 
 def _spawn_factory_spy(calls, faction=Faction.CORPORATION):
@@ -198,6 +208,47 @@ def test_nest_spawn_ignores_dead_enemies_when_counting_population():
     strategy.update(1.0, game_map, _spawn_factory_spy(calls, faction=Faction.FAUNA))
 
     assert len(calls) == 1, "мёртвые враги не должны учитываться в лимите популяции"
+
+
+def test_nest_spawn_skips_cycle_when_no_nests_are_in_unlocked_sectors():
+    """Секторы прогрессии (см. src/systems/sector.py) - если ни одно гнездо не лежит в
+    открытом секторе, спавнить не из чего, и цикл просто пропускается."""
+    strategy = NestSpawnStrategy(enemy_types=["giant_roach"], base_interval=1.0)
+    game_map = _FakeMap(fauna_spawn_points=[])
+    calls = []
+
+    strategy.update(1.0, game_map, _spawn_factory_spy(calls, faction=Faction.FAUNA))
+
+    assert calls == []
+    assert game_map.enemies == []
+
+
+def test_nest_spawn_resumes_once_a_sector_with_nests_unlocks():
+    game_map = _FakeMap(fauna_spawn_points=[])
+    strategy = NestSpawnStrategy(enemy_types=["giant_roach"], base_interval=1.0, min_interval=1.0)
+    calls = []
+    spawn_factory = _spawn_factory_spy(calls, faction=Faction.FAUNA)
+
+    strategy.update(1.0, game_map, spawn_factory)
+    assert calls == []
+
+    game_map._fauna_spawn_points = [Coordinate(500, 500)]
+    strategy.update(1.0, game_map, spawn_factory)
+
+    assert len(calls) == 1
+    assert calls[0][1] == Coordinate(500, 500)
+
+
+def test_ship_landing_ignores_sector_lock_state_by_design():
+    """В отличие от гнёзд фауны, высадка Corporation намеренно не гейтится секторами -
+    см. докстринг ShipLandingStrategy.update. Даже если вся карта "заблокирована"
+    (is_position_unlocked всегда False), высадка всё равно происходит."""
+    strategy = ShipLandingStrategy(enemy_types=["drone_walker"], base_interval=1.0)
+    game_map = _FakeMap(unlocked=False)
+
+    strategy.update(1.0, game_map, _spawn_factory_spy([]))
+
+    assert len(strategy.pending_landings) == 1
 
 
 def test_nest_spawn_does_nothing_without_enemy_types():

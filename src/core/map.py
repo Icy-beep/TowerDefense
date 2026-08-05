@@ -10,6 +10,7 @@ from src.entities.power_infrastructure import PowerInfrastructure
 from src.entities.projectile import Projectile
 from src.core.navigation import NavigationGrid
 from src.systems.faction_intel import FactionIntel
+from src.systems.sector import Sector
 from src.enums import Faction
 
 
@@ -42,6 +43,12 @@ class Map:
         self.spawn_points = []
         self.spawn_points_by_faction: Dict[Faction, List[Coordinate]] = {}
         self.towers_lost_count = 0
+
+        # Секторы прогрессии открытия карты (см. src/systems/sector.py). Пустой список -
+        # прежнее поведение "всё открыто" для карт, созданных напрямую (как в большинстве
+        # существующих тестов) - см. is_position_unlocked. GameSession.setup_game()
+        # заполняет их через build_sector_grid.
+        self.sectors: List[Sector] = []
 
         # Энергосеть выключена по умолчанию, чтобы карты, созданные напрямую (как в
         # большинстве существующих тестов) без генераторов/пилонов, вели себя как
@@ -85,11 +92,38 @@ class Map:
             for dy in range(-radius, radius + 1)
         }
 
+    def sector_at(self, position: Coordinate) -> Optional[Sector]:
+        """Возвращает сектор, которому принадлежит точка, или None - если секторы не
+        заданы (self.sectors пуст, как на картах без прогрессии открытия) или точка вне
+        любого из них."""
+        for sector in self.sectors:
+            if sector.contains(position):
+                return sector
+        return None
+
+    def is_position_unlocked(self, position: Coordinate) -> bool:
+        """Проверяет, можно ли действовать в этой точке (строить, спавнить угрозу):
+        True, если секторы вообще не заданы (прежнее поведение "всё открыто" для карт без
+        прогрессии - см. self.sectors) или сектор, которому принадлежит точка, открыт."""
+        sector = self.sector_at(position)
+        return sector is None or sector.unlocked
+
+    def unlocked_fauna_spawn_points(self) -> List[Coordinate]:
+        """Позиции живых гнёзд фауны в открытых секторах - именно из них должны появляться
+        новые враги (см. NestSpawnStrategy.update). Гнёзда в закрытых секторах остаются на
+        карте (видны/лечат отступающих - см. spawn_points_for), но не рожают новых врагов,
+        пока игрок не откроет их сектор."""
+        return [nest.position for nest in self.fauna_nests
+                if nest.is_alive() and self.is_position_unlocked(nest.position)]
+
     def can_place_module(self, position: Coordinate) -> bool:
-        """Проверяет, можно ли поставить башню в этой точке: в пределах карты, без
-        пересечения её footprint (3x3 клетки) с уже стоящими башнями (чтобы спрайты
-        соседних башен не наезжали друг на друга) и не поверх ещё живого гнезда фауны."""
+        """Проверяет, можно ли поставить башню в этой точке: в пределах карты, в открытом
+        секторе (см. is_position_unlocked), без пересечения её footprint (3x3 клетки) с уже
+        стоящими башнями (чтобы спрайты соседних башен не наезжали друг на друга) и не
+        поверх ещё живого гнезда фауны."""
         if not (0 <= position.x <= self.width and 0 <= position.y <= self.height):
+            return False
+        if not self.is_position_unlocked(position):
             return False
         footprint = self._footprint_cells(position)
         if not footprint:

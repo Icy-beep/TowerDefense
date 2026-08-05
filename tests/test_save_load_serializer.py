@@ -135,6 +135,24 @@ def test_round_trip_restores_threat_strategy_elapsed(session):
     assert restored.threat_strategies[Faction.FAUNA].elapsed == 12.0
 
 
+def test_round_trip_restores_unlocked_sectors(session):
+    locked = next(s for s in session.map.sectors if not s.unlocked)
+    session.resources.credits = 100000
+    ok = session.unlock_sector_at(Coordinate(locked.bounds[0] + 1, locked.bounds[1] + 1))
+    assert ok is True
+
+    data = session_to_dict(session)
+    restored = GameSession()
+    apply_dict_to_session(restored, data)
+
+    restored_sector = next(s for s in restored.map.sectors if s.row == locked.row and s.col == locked.col)
+    assert restored_sector.unlocked is True
+    # Остальные (не открытые вручную) секторы, кроме стартового, должны остаться закрытыми.
+    still_locked = [s for s in restored.map.sectors
+                     if (s.row, s.col) not in {(locked.row, locked.col)} and not s.contains(restored.base_position)]
+    assert all(not s.unlocked for s in still_locked)
+
+
 def test_apply_dict_to_session_defaults_missing_fields_gracefully():
     """Минимальный словарь (как будто из более старой/урезанной версии формата) не
     должен приводить к падению - только к разумным значениям по умолчанию."""

@@ -77,6 +77,9 @@ class OrbitalModeController(IGameModeController):
             wx, wy = self.camera.screen_to_world(*event.pos)
             pos = Coordinate(wx, wy)
             if event.button == 1:
+                if pygame.key.get_mods() & pygame.KMOD_CTRL:
+                    self.try_unlock_sector(pos)
+                    return True
                 result = self.handle_click(pos)
                 if result == "none":
                     self.dragging_camera = True
@@ -124,6 +127,14 @@ class OrbitalModeController(IGameModeController):
                 self.selected_module = None
                 return "selected_enemy"
         return "none"
+
+    def try_unlock_sector(self, pos: Coordinate) -> bool:
+        """Пытается открыть за кредиты сектор под точкой (см. GameSession.unlock_sector_at).
+        Отдельный метод, а не часть handle_click - обычный клик по пустому месту служит для
+        перетаскивания камеры (см. handle_input), и молча тратить кредиты на любой такой
+        клик внутри закрытого сектора было бы неожиданным для игрока. Вызывается по
+        Ctrl+ЛКМ (см. handle_input)."""
+        return self.session.unlock_sector_at(pos)
 
     def place_tower(self, position: Coordinate) -> bool:
         """Ставит выбранную башню в указанную точку."""

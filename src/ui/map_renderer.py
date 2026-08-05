@@ -43,6 +43,9 @@ class MapRenderer:
     NEST_SPRITE_WORLD_SIZE = 34
     NEST_SPRITE_MIN_SCREEN_SIZE = 28
 
+    LOCKED_SECTOR_OVERLAY_COLOR = (0, 0, 0)
+    LOCKED_SECTOR_OVERLAY_ALPHA = 150
+
     def __init__(self, sprite_manager=None):
         """Запоминает SpriteManager; без него (или без спрайта под ключ) рисует примитивами."""
         self.sprite_manager = sprite_manager
@@ -118,6 +121,7 @@ class MapRenderer:
         alt_held = bool(keys[pygame.K_LALT] or keys[pygame.K_RALT])
 
         self._draw_background(screen, camera, width, height)
+        self._draw_sector_overlay(screen, camera, session, width, height)
         self._draw_placement_grid(screen, camera, session, controller, width, height)
         self._draw_base(screen, camera, session)
         self._draw_spawn_points(screen, camera, session)
@@ -127,6 +131,29 @@ class MapRenderer:
         self._draw_enemies(screen, camera, session, controller, width, height)
         self._draw_projectiles(screen, camera, session)
         self._draw_placement_preview(screen, camera, session, controller, tower_options)
+
+    def _draw_sector_overlay(self, screen, camera, session, width, height):
+        """Затемняет ещё не открытые секторы карты (см. src/systems/sector.py и
+        GameSession.unlock_sector_at) полупрозрачным тёмным прямоугольником поверх
+        каждого закрытого сектора, попавшего в кадр. Карты без секторов (session.map.sectors
+        пуст - старые/тестовые карты) не затрагиваются."""
+        sectors = getattr(session.map, "sectors", None)
+        if not sectors:
+            return
+        screen_rect = pygame.Rect(0, 0, width, height)
+        for sector in sectors:
+            if sector.unlocked:
+                continue
+            x_min, y_min, x_max, y_max = sector.bounds
+            sx1, sy1 = camera.world_to_screen(x_min, y_min)
+            sx2, sy2 = camera.world_to_screen(x_max, y_max)
+            rect = pygame.Rect(int(sx1), int(sy1), int(sx2 - sx1), int(sy2 - sy1))
+            clipped = rect.clip(screen_rect)
+            if clipped.width <= 0 or clipped.height <= 0:
+                continue
+            overlay = pygame.Surface((clipped.width, clipped.height), pygame.SRCALPHA)
+            overlay.fill((*self.LOCKED_SECTOR_OVERLAY_COLOR, self.LOCKED_SECTOR_OVERLAY_ALPHA))
+            screen.blit(overlay, (clipped.x, clipped.y))
 
     def _draw_placement_grid(self, screen, camera, session, controller, width, height):
         """Рисует сетку построек, пока выбрана башня для постройки."""

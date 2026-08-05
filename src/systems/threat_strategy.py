@@ -98,6 +98,16 @@ class ShipLandingStrategy(ThreatStrategy):
 
         self.timer -= delta_time
         if self.timer <= 0:
+            # Высадка Corporation намеренно НЕ гейтится секторами прогрессии (см.
+            # src/systems/sector.py), в отличие от гнёзд фауны (NestSpawnStrategy) -
+            # стартовый открытый сектор в сетке (там, где база) никогда не касается
+            # границы карты, а именно на границе всегда высаживается Corporation.
+            # Строгий гейтинг "точка высадки должна быть в открытом секторе" на практике
+            # означал бы полное отсутствие давления Corporation, пока игрок сам не
+            # додумается купить открытие какого-то из угловых/краевых секторов - реальный
+            # риск "мёртвого" начала партии, подтверждённый прогоном (~50% партий без
+            # единого спавна за 300 игровых секунд). Гнёзда фауны безопаснее: часть из них
+            # и так может оказаться в стартовом секторе по случайной генерации.
             self.pending_landings.append(PendingLanding(self._random_border_point(game_map), self.warning_time))
             self.timer = self._current_interval()
 
@@ -140,8 +150,18 @@ class NestSpawnStrategy(ThreatStrategy):
         if active_count >= self.max_active:
             return
 
+        # Секторы прогрессии (см. src/systems/sector.py) - спавнить можно только из гнёзд
+        # в уже открытых секторах; если таких нет (весь фронт ещё закрыт), просто
+        # пропускаем цикл - таймер уже сброшен выше. На картах без секторов (self.sectors
+        # пуст) unlocked_fauna_spawn_points возвращает все живые гнёзда - поведение не
+        # меняется.
+        spawn_points = game_map.unlocked_fauna_spawn_points()
+        if not spawn_points:
+            return
+
         enemy_type = self.enemy_types[self._spawn_count % len(self.enemy_types)]
         self._spawn_count += 1
-        enemy = spawn_factory(enemy_type)
+        position = self.rng.choice(spawn_points)
+        enemy = spawn_factory(enemy_type, position)
         if enemy is not None:
             game_map.spawn_enemy(enemy)

@@ -41,6 +41,7 @@ def session_to_dict(session) -> dict:
             "enemies": [_enemy_to_dict(enemy) for enemy in game_map.enemies
                         if enemy.is_alive() and getattr(enemy, "type_name", None)],
             "fauna_nests": [_nest_to_dict(nest) for nest in game_map.fauna_nests if nest.is_alive()],
+            "unlocked_sectors": [[sector.row, sector.col] for sector in game_map.sectors if sector.unlocked],
             "threat_strategy_elapsed": {
                 faction.value: getattr(strategy, "elapsed", 0.0)
                 for faction, strategy in session.threat_strategies.items()
@@ -111,6 +112,14 @@ def apply_dict_to_session(session, data: dict) -> None:
     for entry in map_data.get("fauna_nests", []):
         _restore_nest(game_map, entry)
     game_map.spawn_points_by_faction[Faction.FAUNA] = [nest.position for nest in game_map.fauna_nests]
+
+    # setup_game() уже построил свежую сетку секторов (только стартовый открыт) -
+    # без этого прогресс открытия карты (см. src/systems/sector.py) молча терялся бы
+    # при каждой загрузке.
+    unlocked_sectors = {tuple(pair) for pair in map_data.get("unlocked_sectors", [])}
+    for sector in game_map.sectors:
+        if (sector.row, sector.col) in unlocked_sectors:
+            sector.unlocked = True
 
     strategy_elapsed = map_data.get("threat_strategy_elapsed", {})
     for faction, strategy in session.threat_strategies.items():
