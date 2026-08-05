@@ -47,6 +47,11 @@
   "menu.settings": "Настройки",
   "menu.exit": "Выйти",
 
+  "menu.mode_select_title": "Выберите режим",
+  "menu.mode_endless": "Бесконечный режим",
+  "menu.mode_story": "Сюжет (Скоро)",
+  "menu.back": "Назад",
+
   "settings.title": "Настройки",
   "settings.display_mode": "Экран",
   "settings.display_windowed": "Оконный",

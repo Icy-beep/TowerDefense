@@ -47,6 +47,11 @@
   "menu.settings": "Settings",
   "menu.exit": "Exit",
 
+  "menu.mode_select_title": "Select mode",
+  "menu.mode_endless": "Endless mode",
+  "menu.mode_story": "Story (Soon)",
+  "menu.back": "Back",
+
   "settings.title": "Settings",
   "settings.display_mode": "Display",
   "settings.display_windowed": "Windowed",

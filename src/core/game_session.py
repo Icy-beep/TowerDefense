@@ -38,6 +38,7 @@ class GameSession:
         self.elapsed_time = 0.0
         self.survive_duration_target = 180.0
         self.objectives: List[Objective] = []
+        self.endless = False
         self.on_event: Optional[Callable[..., None]] = None
 
     def _emit(self, event_name: str, **data):
@@ -65,9 +66,13 @@ class GameSession:
         """Меняет состояние игры."""
         self.state_manager.change_state(new_state)
 
-    def setup_game(self):
-        """Готовит новую игру: карту, базу, ресурсы, источники угроз и задания."""
+    def setup_game(self, endless: bool = False):
+        """Готовит новую игру: карту, базу, ресурсы, источники угроз и задания.
+        endless=True - режим без ограничения по времени и без заданий (см. update):
+        победы по таймеру не будет, база остаётся уязвимой, поражение по-прежнему
+        возможно."""
         self.state = GameState.PLAYING
+        self.endless = endless
         self.base_health = self.max_base_health
         self.resources = ResourceBank(start_credits=1000)
 
@@ -103,7 +108,7 @@ class GameSession:
         }
 
         self.elapsed_time = 0.0
-        self.objectives = [
+        self.objectives = [] if endless else [
             SurviveDurationObjective(target_seconds=self.survive_duration_target),
             ProtectTowersObjective(),
         ]
@@ -163,8 +168,8 @@ class GameSession:
             self.state = GameState.GAME_OVER
             self._emit("defeat")
 
-        if self.state == GameState.PLAYING and self.state_manager.check_victory(
-                self.elapsed_time, self.survive_duration_target):
+        if (not self.endless and self.state == GameState.PLAYING
+                and self.state_manager.check_victory(self.elapsed_time, self.survive_duration_target)):
             self.state = GameState.VICTORY
             self._emit("victory")
 

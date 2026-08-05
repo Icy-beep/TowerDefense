@@ -92,3 +92,55 @@ def test_resize_in_windowed_mode_updates_resolution(view):
     view._handle_resize(1024, 768)
 
     assert view.settings.resolution == (1024, 768)
+
+
+def test_start_button_opens_mode_select_instead_of_starting_immediately(view):
+    view.menu_screen._layout(view.width, view.height)
+    x, y, w, h = view.menu_screen._start_rect
+
+    view._handle_menu_input(_click_event((x + w // 2, y + h // 2)))
+
+    assert view.menu_view == "mode_select"
+    assert view.controller is None, "игра не должна стартовать раньше выбора режима"
+
+
+def test_mode_select_endless_click_starts_an_endless_game(view):
+    view.menu_view = "mode_select"
+    view.mode_select_screen._layout(view.width, view.height)
+    x, y, w, h = view.mode_select_screen._endless_rect
+
+    view._handle_menu_input(_click_event((x + w // 2, y + h // 2)))
+
+    assert view.controller is not None
+    assert view.session.endless is True
+
+
+def test_mode_select_story_click_does_nothing(view):
+    """Кнопка "Сюжет" пока заглушка - клик по ней не должен запускать игру."""
+    view.menu_view = "mode_select"
+    view.mode_select_screen._layout(view.width, view.height)
+    x, y, w, h = view.mode_select_screen._story_rect
+
+    view._handle_menu_input(_click_event((x + w // 2, y + h // 2)))
+
+    assert view.menu_view == "mode_select"
+    assert view.controller is None
+
+
+def test_mode_select_back_click_returns_to_main_menu(view):
+    view.menu_view = "mode_select"
+    view.mode_select_screen._layout(view.width, view.height)
+    x, y, w, h = view.mode_select_screen._back_rect
+
+    view._handle_menu_input(_click_event((x + w // 2, y + h // 2)))
+
+    assert view.menu_view == "main"
+
+
+def test_escape_in_mode_select_returns_to_main_menu_without_quitting(view):
+    view.menu_view = "mode_select"
+
+    view._handle_escape()
+
+    assert view.menu_view == "main"
+    assert view.running is True

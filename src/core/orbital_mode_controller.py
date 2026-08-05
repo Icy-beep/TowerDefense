@@ -165,6 +165,7 @@ class OrbitalModeController(IGameModeController):
             "max_base_health": self.session.max_base_health,
             "elapsed_time": self.session.elapsed_time,
             "survive_duration_target": self.session.survive_duration_target,
+            "endless": self.session.endless,
             "game_state": self.session.state,
             "selected_tower": self.selected_tower_type,
         }

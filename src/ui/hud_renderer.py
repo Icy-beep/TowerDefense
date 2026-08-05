@@ -41,9 +41,12 @@ class HudRenderer:
         self._draw_selection_panel(screen, state, controller, tower_options, small_font, width, height)
 
     def _draw_status_panel(self, screen, state, controller, font, pad, alpha):
-        """Рисует панель с деньгами, здоровьем базы и прогрессом по времени
-        под давлением угроз."""
-        surf1 = pygame.Surface((360, 125), pygame.SRCALPHA)
+        """Рисует панель с деньгами, здоровьем базы и (кроме бесконечного режима -
+        там нет ограничения по времени, см. GameSession.setup_game) прогрессом по
+        времени под давлением угроз."""
+        endless = state.get('endless', False)
+        panel_height = 65 if endless else 125
+        surf1 = pygame.Surface((360, panel_height), pygame.SRCALPHA)
         surf1.fill((20, 25, 35, alpha))
         screen.blit(surf1, (pad, pad))
 
@@ -53,6 +56,9 @@ class HudRenderer:
             font.render(loc.get("hud.base_health", hp=state['base_health'], max_hp=state['max_base_health']),
                         True, (255, 100, 100)),
             (pad + 10, pad + 40))
+
+        if endless:
+            return
 
         target = state['survive_duration_target']
         current = min(state['elapsed_time'], target)

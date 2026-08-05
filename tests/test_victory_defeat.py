@@ -87,6 +87,44 @@ def test_game_session_stays_in_playing_state_during_normal_gameplay():
     assert session.state == GameState.PLAYING
 
 
+def test_setup_game_defaults_to_not_endless():
+    session = GameSession()
+    session.setup_game()
+
+    assert session.endless is False
+    assert len(session.objectives) == 2
+
+
+def test_endless_mode_has_no_objectives():
+    session = GameSession()
+    session.setup_game(endless=True)
+
+    assert session.endless is True
+    assert session.objectives == []
+
+
+def test_endless_mode_never_triggers_victory_by_time():
+    session = GameSession()
+    session.setup_game(endless=True)
+    session.elapsed_time = session.survive_duration_target * 10
+    session.map.enemies = []
+
+    session.update(delta_time=0.016)
+
+    assert session.state == GameState.PLAYING, "в бесконечном режиме не должно быть победы по таймеру"
+
+
+def test_endless_mode_base_can_still_be_destroyed():
+    session = GameSession()
+    session.setup_game(endless=True)
+    session.base_health = 5
+    session.map.enemies = [_enemy_that_reached_base()]
+
+    session.update(delta_time=0.016)
+
+    assert session.state == GameState.GAME_OVER, "база должна оставаться уязвимой и в бесконечном режиме"
+
+
 def test_defeat_takes_priority_when_both_conditions_true_simultaneously():
     """Если база уже разрушена в тот же тик, когда целевое время достигнуто —
     поражение должно иметь приоритет (игрок не успел выиграть)."""

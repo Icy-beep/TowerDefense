@@ -14,6 +14,7 @@ from src.ui.map_renderer import MapRenderer
 from src.ui.hud_renderer import HudRenderer
 from src.ui.game_over_screen import GameOverScreen
 from src.ui.menu_screen import MenuScreen
+from src.ui.mode_select_screen import ModeSelectScreen
 from src.ui.pause_menu_screen import PauseMenuScreen
 from src.ui.settings_screen import SettingsScreen
 from src.ui.sound_manager import SoundManager
@@ -87,6 +88,7 @@ class GameView:
         self.hud_renderer = HudRenderer()
         self.game_over_screen = GameOverScreen()
         self.menu_screen = MenuScreen()
+        self.mode_select_screen = ModeSelectScreen()
         self.settings_screen = SettingsScreen()
         self.pause_menu_screen = PauseMenuScreen()
 
@@ -166,7 +168,7 @@ class GameView:
         """ESC: из настроек — назад в меню; во время игры — открыть/закрыть меню паузы; иначе — выход."""
         state = self.session.state
         if state == GameState.MENU:
-            if self.menu_view == "settings":
+            if self.menu_view in ("settings", "mode_select"):
                 self.menu_view = "main"
             else:
                 self.running = False
@@ -311,17 +313,25 @@ class GameView:
                 self._apply_settings_action(action)
             return
 
+        if self.menu_view == "mode_select":
+            action = self.mode_select_screen.handle_click(event.pos, self.width, self.height)
+            if action == "endless":
+                self._start_game(endless=True)
+            elif action == "back":
+                self.menu_view = "main"
+            return
+
         action = self.menu_screen.handle_click(event.pos, self.width, self.height)
         if action == "start":
-            self._start_game()
+            self.menu_view = "mode_select"
         elif action == "settings":
             self.menu_view = "settings"
         elif action == "exit":
             self.running = False
 
-    def _start_game(self):
+    def _start_game(self, endless: bool = False):
         """Настраивает новую игру и создаёт контроллер."""
-        self.session.setup_game()
+        self.session.setup_game(endless=endless)
         self.session.on_event = self._handle_game_event
         self.controller = GameController(self.session, self.width, self.height)
         self.music_manager.play_category("gameplay")
@@ -347,6 +357,8 @@ class GameView:
             if self.menu_view == "settings":
                 self.settings_screen.render(self.screen, self.width, self.height,
                                              self.font, self.small_font, self.title_font, self.settings)
+            elif self.menu_view == "mode_select":
+                self.mode_select_screen.render(self.screen, self.width, self.height, self.font, self.title_font)
             else:
                 self.menu_screen.render(self.screen, self.width, self.height, self.font, self.title_font)
             return
