@@ -174,7 +174,8 @@ class GameView:
             elif self.session.state == GameState.PAUSED and self.pause_menu_open:
                 self._handle_pause_menu_input(event)
             elif self.controller:
-                if not self._handle_build_panel_click(event) and not self._handle_hud_toggle_click(event):
+                if not self._handle_build_panel_click(event) and not self._handle_hud_toggle_click(event) \
+                        and not self._handle_help_click(event):
                     self.controller.handle_input(event)
 
     def _tick_autosave(self, delta_time: float):
@@ -216,6 +217,13 @@ class GameView:
         elif key == "tower_ranges":
             self.controller.toggle_tower_ranges()
         return True
+
+    def _handle_help_click(self, event) -> bool:
+        """Перехватывает клик по кнопке '?' (подсказка по управлению) раньше
+        контроллера - тем же приёмом, что и остальные HUD-перехватчики выше."""
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return False
+        return self.hud_renderer.handle_help_click(event.pos, self.width, self.height)
 
     def _handle_escape(self):
         """ESC: из настроек — назад в меню; во время игры — открыть/закрыть меню паузы; иначе — выход."""

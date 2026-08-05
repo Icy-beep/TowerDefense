@@ -51,10 +51,20 @@ class HudRenderer:
     # (ключ состояния, хоткей) - порядок и есть порядок отрисовки слева направо.
     TOGGLE_BUTTONS = [("power_radii", "G"), ("tower_ranges", "T")]
 
+    HELP_BUTTON_SIZE = 28
+    HELP_POPUP_WIDTH = 380
+    HELP_POPUP_LINE_HEIGHT = 18
+    HELP_POPUP_PADDING = 10
+
     def __init__(self, sprite_manager=None):
         """Запоминает SpriteManager; без него (или без спрайта под ключ) иконки
         построек рисуются цветными плашками вместо картинки."""
         self.sprite_manager = sprite_manager
+        # Раньше подсказки по управлению висели статичным текстом в правом нижнем
+        # углу и при добавлении новой строки (см. hud.controls_ranges) стали вылезать
+        # за пределы экрана - теперь это всплывающая панель по кнопке "?" (см.
+        # запрос пользователя), состояние открытия - чисто UI, к сессии не относится.
+        self.show_help = False
 
     def _sprite_for(self, key, elapsed_time=0.0):
         """Возвращает статичный (первый) кадр спрайта для ключа, или None, если
@@ -292,7 +302,8 @@ class HudRenderer:
                                    16, bar_y + 10, build_left - 26, self.BOTTOM_BAR_HEIGHT - 20)
         self._draw_build_icons(screen, state, controller, slots, small_font)
         self._draw_controls_zone(screen, camera, small_font,
-                                  build_right + 16, bar_y + 10, width - 16, self.BOTTOM_BAR_HEIGHT - 20)
+                                  build_right + 16, bar_y + 10, width - 16, self.BOTTOM_BAR_HEIGHT - 20,
+                                  width, height)
 
     def _layout_build_panel(self, tower_options, width, height):
         """Считает прямоугольники иконок построек - используется и при отрисовке, и
@@ -427,21 +438,75 @@ class HudRenderer:
                 col = self.HIGHLIGHT_COLOR
             screen.blit(small_font.render(line, True, col), (x, y + i * line_height))
 
-    def _draw_controls_zone(self, screen, camera, small_font, left, y, right, h):
-        """Рисует компактные подсказки по управлению в правой зоне нижней панели."""
-        lines = [
-            (loc.get("hud.camera_info", x=int(camera.x), y=int(camera.y), zoom=int(camera.zoom * 100)),
-             (180, 180, 180)),
-            (loc.get("hud.controls_move"), self.DIM_TEXT_COLOR),
-            (loc.get("hud.controls_drag"), self.DIM_TEXT_COLOR),
-            (loc.get("hud.controls_build"), self.DIM_TEXT_COLOR),
-            (loc.get("hud.controls_select"), self.DIM_TEXT_COLOR),
-            (loc.get("hud.controls_misc"), self.DIM_TEXT_COLOR),
-            (loc.get("hud.controls_alt"), self.DIM_TEXT_COLOR),
-            (loc.get("hud.controls_ranges"), self.DIM_TEXT_COLOR),
+    def _draw_controls_zone(self, screen, camera, small_font, left, y, right, h, width, height):
+        """Рисует позицию камеры (живая информация) и кнопку '?' в правой зоне нижней
+        панели. Полный список подсказок по управлению раньше был статичным текстом
+        здесь же, но при добавлении новой строки стал вылезать за пределы экрана -
+        теперь это всплывающая панель по клику на кнопку (см. handle_help_click)."""
+        camera_text = loc.get("hud.camera_info", x=int(camera.x), y=int(camera.y), zoom=int(camera.zoom * 100))
+        surf = small_font.render(camera_text, True, (180, 180, 180))
+        rect = surf.get_rect(topright=(right, y))
+        screen.blit(surf, rect)
+
+        self._draw_help_button(screen, width, height, small_font)
+        if self.show_help:
+            self._draw_help_popup(screen, width, height, small_font)
+
+    def _help_lines(self):
+        """Полный список строк подсказок по управлению для всплывающей панели."""
+        return [
+            loc.get("hud.controls_move"),
+            loc.get("hud.controls_drag"),
+            loc.get("hud.controls_build"),
+            loc.get("hud.controls_select"),
+            loc.get("hud.controls_misc"),
+            loc.get("hud.controls_alt"),
+            loc.get("hud.controls_ranges"),
         ]
-        line_height = 16
-        for i, (text, color) in enumerate(lines):
-            surf = small_font.render(text, True, color)
-            rect = surf.get_rect(topright=(right, y + i * line_height))
-            screen.blit(surf, rect)
+
+    def _layout_help_button(self, width, height):
+        """Прямоугольник кнопки '?' - нижний правый угол экрана. Используется и при
+        отрисовке, и при обработке клика (handle_help_click)."""
+        size = self.HELP_BUTTON_SIZE
+        return pygame.Rect(width - 16 - size, height - 16 - size, size, size)
+
+    def handle_help_click(self, pos, width, height) -> bool:
+        """Переключает показ всплывающей подсказки по управлению, если клик пришёлся
+        на кнопку '?'. Возвращает True, если клик был обработан (нужно
+        GameView._handle_help_click, чтобы клик не долетал до карты под кнопкой)."""
+        if self._layout_help_button(width, height).collidepoint(pos):
+            self.show_help = not self.show_help
+            return True
+        return False
+
+    def _draw_help_button(self, screen, width, height, small_font):
+        """Рисует саму кнопку '?': золотая рамка, пока подсказка открыта."""
+        rect = self._layout_help_button(width, height)
+        bg_color = (55, 75, 40) if self.show_help else (34, 38, 48)
+        pygame.draw.rect(screen, bg_color, rect)
+        border_color = self.HIGHLIGHT_COLOR if self.show_help else self.BORDER_COLOR
+        border_width = 3 if self.show_help else self.BORDER_WIDTH
+        pygame.draw.rect(screen, border_color, rect, border_width)
+        label = small_font.render("?", True, (255, 255, 255))
+        screen.blit(label, label.get_rect(center=rect.center))
+
+    def _draw_help_popup(self, screen, width, height, small_font):
+        """Рисует панель с подсказками по управлению над кнопкой '?' - растёт вверх от
+        кнопки, поэтому не может вылезти ни за низ, ни за правый край экрана."""
+        lines = self._help_lines()
+        line_height = self.HELP_POPUP_LINE_HEIGHT
+        pad = self.HELP_POPUP_PADDING
+        w = self.HELP_POPUP_WIDTH
+        h = len(lines) * line_height + pad * 2
+        button_rect = self._layout_help_button(width, height)
+        x = width - 16 - w
+        y = button_rect.top - 8 - h
+
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        surf.fill(self.PANEL_BG)
+        screen.blit(surf, (x, y))
+        pygame.draw.rect(screen, self.BORDER_COLOR, (x, y, w, h), self.BORDER_WIDTH)
+
+        for i, line in enumerate(lines):
+            text_surf = small_font.render(line, True, self.TEXT_COLOR)
+            screen.blit(text_surf, (x + pad, y + pad + i * line_height))

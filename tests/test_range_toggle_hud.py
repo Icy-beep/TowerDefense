@@ -244,3 +244,149 @@ def test_render_passes_controller_toggle_state_into_draw_modules(monkeypatch):
     screen = pygame.Surface((WIDTH, HEIGHT))
 
     MapRenderer().render(screen, camera, session, controller, [], WIDTH, HEIGHT)
+
+
+def test_range_ring_is_blitted_to_screen_via_alpha_overlay(monkeypatch):
+    """Регрессия: pygame.draw.circle с альфа-цветом молча игнорирует альфу при
+    рисовании прямо на screen (у него нет per-pixel alpha) - раньше кольцо радиуса
+    рисовалось так напрямую и потому не показывалось на экране, хотя код "выполнялся
+    без ошибок". Теперь кольцо копится на отдельной SRCALPHA-поверхности и
+    блитится на screen - проверяем, что блит действительно происходит."""
+    tower = LaserTurret(Coordinate(500, 500))
+    camera = _camera()
+    session = types.SimpleNamespace(map=types.SimpleNamespace(modules=[tower]))
+    controller = types.SimpleNamespace(selected_module=None)
+
+    blitted = []
+    screen = pygame.Surface((100, 100))
+    original_blit = screen.blit
+
+    def spy_blit(source, dest, *a, **k):
+        blitted.append(source)
+        return original_blit(source, dest, *a, **k)
+
+    monkeypatch.setattr(screen, "blit", spy_blit)
+
+    MapRenderer()._draw_modules(screen, camera, session, controller, [],
+                                 alt_held=False, show_tower_ranges=True, show_power_radii=False)
+
+    assert any(getattr(s, "get_flags", lambda: 0)() & pygame.SRCALPHA for s in blitted), \
+        "полупрозрачное кольцо должно попадать на экран через блит SRCALPHA-поверхности"
+
+
+def test_range_overlay_not_blitted_when_nothing_to_show(monkeypatch):
+    """Если ни одно кольцо не должно рисоваться, лишнего блита на весь экран быть не
+    должно (см. any_ring_drawn в _draw_modules) - не тратим кадр впустую."""
+    tower = LaserTurret(Coordinate(500, 500))
+    camera = _camera()
+    session = types.SimpleNamespace(map=types.SimpleNamespace(modules=[tower]))
+    controller = types.SimpleNamespace(selected_module=None)
+
+    blitted = []
+    screen = pygame.Surface((100, 100))
+    original_blit = screen.blit
+
+    def spy_blit(source, dest, *a, **k):
+        blitted.append(source)
+        return original_blit(source, dest, *a, **k)
+
+    monkeypatch.setattr(screen, "blit", spy_blit)
+
+    MapRenderer()._draw_modules(screen, camera, session, controller, [],
+                                 alt_held=False, show_tower_ranges=False, show_power_radii=False)
+
+    assert not any(getattr(s, "get_flags", lambda: 0)() & pygame.SRCALPHA for s in blitted)
+
+
+# ---------------------------------------------------------------------------
+# Кнопка "?" (подсказка по управлению) - см. запрос пользователя: список
+# подсказок раньше вылезал за пределы экрана, теперь это всплывающая панель.
+# ---------------------------------------------------------------------------
+
+def test_help_button_starts_closed():
+    renderer = HudRenderer()
+    assert renderer.show_help is False
+
+
+def test_handle_help_click_on_button_opens_and_closes_popup():
+    renderer = HudRenderer()
+    rect = renderer._layout_help_button(WIDTH, HEIGHT)
+
+    handled = renderer.handle_help_click(rect.center, WIDTH, HEIGHT)
+    assert handled is True
+    assert renderer.show_help is True
+
+    handled = renderer.handle_help_click(rect.center, WIDTH, HEIGHT)
+    assert handled is True
+    assert renderer.show_help is False
+
+
+def test_handle_help_click_outside_button_does_not_toggle():
+    renderer = HudRenderer()
+
+    handled = renderer.handle_help_click((5, 5), WIDTH, HEIGHT)
+
+    assert handled is False
+    assert renderer.show_help is False
+
+
+def test_help_button_stays_within_screen_bounds():
+    renderer = HudRenderer()
+    rect = renderer._layout_help_button(WIDTH, HEIGHT)
+
+    assert 0 <= rect.left and rect.right <= WIDTH
+    assert 0 <= rect.top and rect.bottom <= HEIGHT
+
+
+def test_help_popup_stays_within_screen_bounds_even_with_all_hint_lines():
+    """Регрессия: раньше список подсказок был статичным текстом внизу справа и с
+    добавлением новой строки съезжал за пределы окна. Всплывающая панель растёт
+    вверх от кнопки, поэтому должна помещаться в экран по вертикали и горизонтали
+    независимо от числа строк подсказок."""
+    renderer = HudRenderer()
+    button_rect = renderer._layout_help_button(WIDTH, HEIGHT)
+    lines = renderer._help_lines()
+    popup_h = len(lines) * renderer.HELP_POPUP_LINE_HEIGHT + renderer.HELP_POPUP_PADDING * 2
+    popup_x = WIDTH - 16 - renderer.HELP_POPUP_WIDTH
+    popup_y = button_rect.top - 8 - popup_h
+
+    assert popup_x >= 0, "подсказка не должна вылезать за левый край"
+    assert popup_x + renderer.HELP_POPUP_WIDTH <= WIDTH, "подсказка не должна вылезать за правый край"
+    assert popup_y >= 0, "подсказка не должна вылезать за верхний край при таком количестве строк"
+
+
+def test_draw_help_button_and_popup_do_not_crash():
+    renderer = HudRenderer()
+    renderer.show_help = True
+    pygame.init()
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    small_font = pygame.font.SysFont("Arial", 14)
+
+    renderer._draw_help_button(screen, WIDTH, HEIGHT, small_font)
+    renderer._draw_help_popup(screen, WIDTH, HEIGHT, small_font)
+
+
+def test_controls_zone_only_draws_help_button_when_closed(monkeypatch):
+    """Регрессия для самой жалобы пользователя: без открытой подсказки в правой зоне
+    нижней панели должна рисоваться только одна строка (позиция камеры) и кнопка -
+    никакого длинного статичного списка, который может вылезти за экран."""
+    renderer = HudRenderer()
+    pygame.init()
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    small_font = pygame.font.SysFont("Arial", 14)
+    camera = types.SimpleNamespace(x=0, y=0, zoom=1.0)
+
+    blit_calls = []
+    original_blit = screen.blit
+
+    def spy_blit(source, dest, *a, **k):
+        blit_calls.append(dest)
+        return original_blit(source, dest, *a, **k)
+
+    monkeypatch.setattr(screen, "blit", spy_blit)
+
+    renderer._draw_controls_zone(screen, camera, small_font, 0, 500, WIDTH - 16, 100, WIDTH, HEIGHT)
+
+    # Камера (1 блит) + кнопка "?" (значок "?", 1 блит) - без открытой панели
+    # никаких дополнительных строк подсказок рисоваться не должно.
+    assert len(blit_calls) == 2

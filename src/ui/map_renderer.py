@@ -49,6 +49,22 @@ class MapRenderer:
     def __init__(self, sprite_manager=None):
         """Запоминает SpriteManager; без него (или без спрайта под ключ) рисует примитивами."""
         self.sprite_manager = sprite_manager
+        self._range_overlay = None
+
+    def _range_overlay_surface(self, size):
+        """Возвращает переиспользуемую SRCALPHA-поверхность размером с экран для
+        полупрозрачных колец радиуса (см. _draw_modules). pygame.draw.circle с
+        альфа-цветом молча игнорирует альфу при рисовании прямо на обычный screen
+        (у него нет по-пиксельного альфа-канала) - тем же способом уже обходили это
+        для секторов, см. _draw_sector_overlay. Держим одну поверхность на кадр
+        вместо новой на каждую башню - иначе при постоянном показе радиусов у
+        десятков построек будет создаваться и уничтожаться десяток поверхностей
+        каждый кадр."""
+        if self._range_overlay is None or self._range_overlay.get_size() != size:
+            self._range_overlay = pygame.Surface(size, pygame.SRCALPHA)
+        else:
+            self._range_overlay.fill((0, 0, 0, 0))
+        return self._range_overlay
 
     def _sprite_for(self, key, elapsed_time):
         """Возвращает текущий кадр спрайта для ключа, или None, если спрайтов нет/не подключены."""
@@ -298,7 +314,11 @@ class MapRenderer:
         показывается: у выделенной постройки - всегда, у всех построек разом - пока
         держишь ALT, а также постоянно у своей категории отдельно от ALT - у боевых
         башен при show_tower_ranges, у энергосети (пилоны/генераторы, IS_COMBAT_TOWER=False -
-        см. power_infrastructure.py) при show_power_radii (кнопки/хоткеи T и G в HUD)."""
+        см. power_infrastructure.py) при show_power_radii (кнопки/хоткеи T и G в HUD).
+        Полупрозрачные кольца копятся на отдельной overlay-поверхности и блитятся одним
+        куском в конце (см. _range_overlay_surface) - иначе альфа молча игнорируется."""
+        range_overlay = self._range_overlay_surface(screen.get_size())
+        any_ring_drawn = False
         for module in session.map.modules:
             color = (100, 100, 100)
             is_selected = (module == controller.selected_module)
@@ -327,8 +347,9 @@ class MapRenderer:
                                    (int(sx), int(sy)), int(module.range_radius * camera.zoom) + 5, 2)
 
             if is_selected or alt_held or persistent_range:
-                pygame.draw.circle(screen, (*color[:3], 40),
-                                   (int(sx), int(sy)), int(module.range_radius * camera.zoom), 1)
+                pygame.draw.circle(range_overlay, (*color[:3], 90),
+                                   (int(sx), int(sy)), int(module.range_radius * camera.zoom), 2)
+                any_ring_drawn = True
 
             tower_size = self._tower_screen_size(camera, cell_size)
             sprite = self._sprite_for_angle(f"tower_{getattr(module, 'type_name', '')}",
@@ -350,6 +371,9 @@ class MapRenderer:
                 pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 16, int(sy) - 28, 32, 5))
                 pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
                                   (int(sx) - 16, int(sy) - 28, int(32 * hp_ratio), 5))
+
+        if any_ring_drawn:
+            screen.blit(range_overlay, (0, 0))
 
     def _draw_landing_module(self, screen, camera, module, color, cell_size):
         """Рисует падающую с орбиты башню: тень на земле, зону удара и опускающийся спрайт."""
