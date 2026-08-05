@@ -166,7 +166,15 @@ class MapRenderer:
             x_min, y_min, x_max, y_max = sector.bounds
             sx1, sy1 = camera.world_to_screen(x_min, y_min)
             sx2, sy2 = camera.world_to_screen(x_max, y_max)
-            rect = pygame.Rect(int(sx1), int(sy1), int(sx2 - sx1), int(sy2 - sy1))
+            # int() каждого угла ОТДЕЛЬНО, а не int(sx2 - sx1) для ширины: соседний
+            # сектор считает свою левую границу как int() от ТОЙ ЖЕ мировой координаты
+            # (общая граница x_max этого сектора == x_min соседнего), так что квадраты
+            # обязаны сходиться день в день. int(sx2 - sx1) же округляет разность
+            # независимо от округления самих углов и мог отличаться от соседского
+            # int() на 1px - отсюда тонкая мерцающая при зуме щель между секторами.
+            left, top = int(sx1), int(sy1)
+            right, bottom = int(sx2), int(sy2)
+            rect = pygame.Rect(left, top, right - left, bottom - top)
             clipped = rect.clip(screen_rect)
             if clipped.width <= 0 or clipped.height <= 0:
                 continue

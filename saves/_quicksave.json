@@ -1,0 +1,942 @@
+{
+  "version": 1,
+  "endless": true,
+  "elapsed_time": 540.1759999999966,
+  "survive_duration_target": 180.0,
+  "base_health": 100,
+  "max_base_health": 100,
+  "credits": 5205,
+  "scrap": 0,
+  "map": {
+    "width": 6000,
+    "height": 6000,
+    "towers_lost_count": 4,
+    "modules": [
+      {
+        "type": "pylon",
+        "x": 3024.0,
+        "y": 3184.0,
+        "level": 1,
+        "health": 60
+      },
+      {
+        "type": "generator",
+        "x": 3568.0,
+        "y": 3088.0,
+        "level": 1,
+        "health": 150
+      },
+      {
+        "type": "laser",
+        "x": 3696.0,
+        "y": 3152.0,
+        "level": 3,
+        "health": 71.16999999999985
+      },
+      {
+        "type": "bullet",
+        "x": 3056.0,
+        "y": 3312.0,
+        "level": 3,
+        "health": 79.36000000000016
+      },
+      {
+        "type": "mortar",
+        "x": 3152.0,
+        "y": 3184.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "mortar",
+        "x": 3536.0,
+        "y": 3216.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "laser",
+        "x": 2864.0,
+        "y": 3184.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "laser",
+        "x": 2576.0,
+        "y": 2928.0,
+        "level": 3,
+        "health": 74.41999999999994
+      },
+      {
+        "type": "bullet",
+        "x": 2672.0,
+        "y": 2864.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "bullet",
+        "x": 2768.0,
+        "y": 2864.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "bullet",
+        "x": 3696.0,
+        "y": 2736.0,
+        "level": 3,
+        "health": 67.30999999999962
+      },
+      {
+        "type": "mortar",
+        "x": 3696.0,
+        "y": 2832.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "laser",
+        "x": 3792.0,
+        "y": 2736.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "mortar",
+        "x": 2672.0,
+        "y": 2960.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "laser",
+        "x": 3216.0,
+        "y": 2704.0,
+        "level": 3,
+        "health": 85.80000000000003
+      },
+      {
+        "type": "bullet",
+        "x": 3088.0,
+        "y": 2704.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "bullet",
+        "x": 3792.0,
+        "y": 3152.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "pylon",
+        "x": 2640.0,
+        "y": 2736.0,
+        "level": 1,
+        "health": 60
+      },
+      {
+        "type": "bullet",
+        "x": 2512.0,
+        "y": 2544.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "bullet",
+        "x": 2416.0,
+        "y": 2544.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "bullet",
+        "x": 2320.0,
+        "y": 2544.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "laser",
+        "x": 2416.0,
+        "y": 2448.0,
+        "level": 3,
+        "health": 100.0
+      },
+      {
+        "type": "bullet",
+        "x": 2512.0,
+        "y": 3376.0,
+        "level": 3,
+        "health": 58.26000000000002
+      },
+      {
+        "type": "laser",
+        "x": 2576.0,
+        "y": 3472.0,
+        "level": 3,
+        "health": 100.0
+      }
+    ],
+    "enemies": [
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 89.5,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 2425.470972005497,
+        "y": -86.62915842521352,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 2484.6420993199954,
+        "y": -78.12426367370875,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 2374.061382272104,
+        "y": -57.80443634124253,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 3702.8804779388906,
+        "y": 3887.3521063133962,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 3702.8804779388906,
+        "y": 3887.3521063133962,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 3704.3804779388906,
+        "y": 3926.323249483696,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 3747.313379964644,
+        "y": 3901.984113110414,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 3864.526063792158,
+        "y": 4013.382281632564,
+        "health": 40.5,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 3707.350830495135,
+        "y": 3775.2461535096036,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 3761.017148666992,
+        "y": 3770.331405181595,
+        "health": 60,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 3019.252918212872,
+        "y": 2168.8529246920643,
+        "health": 109.69199999999985,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 2484.345471714933,
+        "y": -80.92480957192268,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 2908.8489437223,
+        "y": 1936.5573853441194,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 2483.874078708744,
+        "y": -73.02792351432105,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 3458.4668393621055,
+        "y": 3632.8445820844927,
+        "health": 16.0,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 3726.9694477292996,
+        "y": 3886.3410131542882,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 1983.3216740699995,
+        "y": 1556.031040194899,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 2033.3216740699995,
+        "y": 1556.031040194899,
+        "health": 60,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 1671.978968234946,
+        "y": 4637.0959672492345,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 3691.0885741864377,
+        "y": 3795.148459627585,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 4187.495757787363,
+        "y": 4673.931369339414,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 4237.495757787363,
+        "y": 4673.931369339414,
+        "health": 60,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 1875.3650936991735,
+        "y": 4800.009794152459,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 3702.9694477292996,
+        "y": 3886.3410131542882,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 1220.7417208596921,
+        "y": 2174.1798949536815,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 1270.7417208596921,
+        "y": 2174.1798949536815,
+        "health": 60,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 1044.790720808322,
+        "y": 2110.4066737016287,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 3018.2642792652173,
+        "y": 2209.27146517443,
+        "health": 62.28720000000002,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 5061.475426346546,
+        "y": 1813.4898349273908,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 4983.604435586612,
+        "y": 2038.153604658897,
+        "health": 60,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 5257.773721618823,
+        "y": 1929.8191548059056,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 1959.3216740699995,
+        "y": 1556.031040194899,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 681.4521388686185,
+        "y": 1661.2232154130431,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 731.4521388686185,
+        "y": 1661.2232154130431,
+        "health": 60,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 5398.060035880664,
+        "y": 276.55110273402175,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 1920.3650936991735,
+        "y": 4800.009794152459,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 2258.7108426490354,
+        "y": 5554.424291911181,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 2308.7108426490354,
+        "y": 5554.424291911181,
+        "health": 60,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 0.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 1456.5377351397922,
+        "y": 18.80090690602335,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 1959.3216740699995,
+        "y": 1556.031040194899,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 1479.731159679306,
+        "y": 21.999743659652818,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 4011.7309365542733,
+        "y": -124.70326690403058,
+        "health": 60,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 3986.1542688832524,
+        "y": -79.88870501806201,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 2484.816872890468,
+        "y": -81.36491216600392,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 5921.906737577318,
+        "y": 2193.582713402556,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 5889.379364035865,
+        "y": 2187.1998013270577,
+        "health": 60,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 6000.0,
+        "y": 6000.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 6078.272517375335,
+        "y": 5492.649946370435,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 5186.462966448716,
+        "y": 5518.19721518748,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 5770.739378904746,
+        "y": 5904.670318123578,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 5803.914143361383,
+        "y": 5875.487564871866,
+        "health": 60,
+        "path_index": 0
+      },
+      {
+        "type": "scout_drone",
+        "x": 4110.266307856732,
+        "y": 0.0,
+        "health": 100,
+        "path_index": 0
+      },
+      {
+        "type": "heavy_assault_drone",
+        "x": 3394.904042864677,
+        "y": 58.79621690859052,
+        "health": 180,
+        "path_index": 0
+      },
+      {
+        "type": "medic_drone",
+        "x": 2995.026274013566,
+        "y": -40.053131873937616,
+        "health": 90,
+        "path_index": 0
+      },
+      {
+        "type": "sniper_drone",
+        "x": 6053.170658961852,
+        "y": 4662.550419638564,
+        "health": 70,
+        "path_index": 0
+      },
+      {
+        "type": "drone_walker",
+        "x": 6048.461171935975,
+        "y": 4685.235516266909,
+        "health": 60,
+        "path_index": 0
+      }
+    ],
+    "fauna_nests": [
+      {
+        "x": 2756.376313825034,
+        "y": 1557.2405196509421,
+        "health": 150.0,
+        "max_health": 150.0,
+        "reward": 200
+      },
+      {
+        "x": 4328.50672709513,
+        "y": 2226.5800314238713,
+        "health": 150.0,
+        "max_health": 150.0,
+        "reward": 200
+      },
+      {
+        "x": 4691.5783100050785,
+        "y": 3540.803140722518,
+        "health": 150.0,
+        "max_health": 150.0,
+        "reward": 200
+      },
+      {
+        "x": 4147.996386836063,
+        "y": 4718.809557928501,
+        "health": 150.0,
+        "max_health": 150.0,
+        "reward": 200
+      },
+      {
+        "x": 873.3948706697552,
+        "y": 2778.957040521143,
+        "health": 150.0,
+        "max_health": 150.0,
+        "reward": 200
+      },
+      {
+        "x": 4045.2442278123244,
+        "y": 1811.8396819846532,
+        "health": 114.0,
+        "max_health": 150.0,
+        "reward": 200
+      },
+      {
+        "x": 2019.5601655615278,
+        "y": 880.9200153950324,
+        "health": 150.0,
+        "max_health": 150.0,
+        "reward": 200
+      }
+    ],
+    "unlocked_sectors": [
+      [
+        1,
+        1
+      ]
+    ],
+    "threat_strategy_elapsed": {
+      "Corporation": 540.1759999999966,
+      "Fauna": 540.1759999999966
+    }
+  },
+  "saved_at": "2026-08-06T00:44:18"
+}

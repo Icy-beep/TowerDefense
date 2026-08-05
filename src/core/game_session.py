@@ -199,7 +199,18 @@ class GameSession:
         if self.resources.spend(turret.cost):
             turret.start_landing()
             self.map.add_module(turret)
-            self.map.replan_enemy_paths()
+            # Раньше здесь был self.map.replan_enemy_paths() - полный пересчёт пути
+            # КАЖДОГО живого врага синхронно на каждый клик постройки. Это было не
+            # только дорого (freeze на 2-3с через ~5 минут игры при полусотне врагов -
+            # см. жалобу игрока), но и бессмысленно: свежепостроенная башня физически
+            # не может быть в чьём-либо faction_intel.known_towers() ещё до первого
+            # _update_vision (см. add_module выше - никакого reveal там нет), а
+            # path_to_base реагирует только на known_towers. То есть пересчитанный
+            # путь ГАРАНТИРОВАННО совпадал бы со старым для всех врагов. Реальный,
+            # уже открытый факциям приход новой башни в поле зрения и так подхватывается
+            # каждый кадр через Map.update -> _update_vision -> replan_enemy_paths
+            # (changed_factions) - с задержкой не больше одного кадра и без лишней
+            # работы для факций, которым нечего пересчитывать.
             return True
         return False
 
