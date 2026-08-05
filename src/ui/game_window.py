@@ -66,7 +66,7 @@ class GameView:
         self.width, self.height = self.settings.resolution
         self.screen = None
         self._apply_display_mode()
-        pygame.display.set_caption("Tower Defense - Camera & Zoom")
+        pygame.display.set_caption("Concession")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("Arial", 18)
         self.small_font = pygame.font.SysFont("Arial", 14)

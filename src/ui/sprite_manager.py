@@ -1,10 +1,24 @@
 """Загрузка и отдача спрайтов из assets/sprites/."""
 import os
+import sys
+from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 import pygame
 
-DEFAULT_SPRITES_ROOT = os.path.join("assets", "sprites")
+
+def _default_sprites_root() -> str:
+    """Путь к папке спрайтов: внутри временной распаковки PyInstaller (_MEIPASS)
+    при сборке в .exe, иначе в корне проекта при запуске из исходников (тот же
+    принцип, что и у ConfigLoader/Loc - см. src/config/config_loader.py)."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        base = Path(sys._MEIPASS)
+    else:
+        base = Path(__file__).resolve().parent.parent.parent
+    return str(base / "assets" / "sprites")
+
+
+DEFAULT_SPRITES_ROOT = _default_sprites_root()
 SUPPORTED_EXTENSIONS = (".png", ".jpg", ".jpeg", ".bmp")
 
 

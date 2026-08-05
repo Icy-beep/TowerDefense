@@ -2,13 +2,27 @@
 import array
 import os
 import random
+import sys
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
 import pygame
 
 from src.systems.pitch_shift import resample_pitch
 
-DEFAULT_SOUNDS_ROOT = os.path.join("assets", "sounds")
+
+def _default_sounds_root() -> str:
+    """Путь к папке звуков: внутри временной распаковки PyInstaller (_MEIPASS)
+    при сборке в .exe, иначе в корне проекта при запуске из исходников (тот же
+    принцип, что и у ConfigLoader/Loc - см. src/config/config_loader.py)."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        base = Path(sys._MEIPASS)
+    else:
+        base = Path(__file__).resolve().parent.parent.parent
+    return str(base / "assets" / "sounds")
+
+
+DEFAULT_SOUNDS_ROOT = _default_sounds_root()
 SUPPORTED_EXTENSIONS = (".wav", ".ogg", ".mp3")
 RARE_SUBFOLDER_NAME = "rare"
 COMMON_FILE_WEIGHT = 1.0

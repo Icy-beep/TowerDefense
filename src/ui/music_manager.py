@@ -1,11 +1,25 @@
 """Загрузка и проигрывание фоновой музыки (OST) из assets/music/."""
 import os
 import random
+import sys
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import pygame
 
-DEFAULT_MUSIC_ROOT = os.path.join("assets", "music")
+
+def _default_music_root() -> str:
+    """Путь к папке музыки: внутри временной распаковки PyInstaller (_MEIPASS)
+    при сборке в .exe, иначе в корне проекта при запуске из исходников (тот же
+    принцип, что и у ConfigLoader/Loc - см. src/config/config_loader.py)."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        base = Path(sys._MEIPASS)
+    else:
+        base = Path(__file__).resolve().parent.parent.parent
+    return str(base / "assets" / "music")
+
+
+DEFAULT_MUSIC_ROOT = _default_music_root()
 SUPPORTED_EXTENSIONS = (".mp3", ".ogg", ".wav")
 
 
