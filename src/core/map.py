@@ -4,6 +4,7 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 from src.core.coordinate import Coordinate
 from src.entities.defense_module import DefenseModule
 from src.entities.hostile_entity import HostileEntity
+from src.entities.fauna_nest import FaunaNest
 from src.entities.projectile import Projectile
 from src.core.navigation import NavigationGrid
 from src.systems.faction_intel import FactionIntel
@@ -13,7 +14,7 @@ from src.enums import Faction
 class Map:
     """Игровая карта: башни, враги, снаряды, разведка и пути."""
 
-    def __init__(self, width=4000, height=4000, group_formation=None, on_event=None, rng=None):
+    def __init__(self, width=6000, height=6000, group_formation=None, on_event=None, rng=None):
         """Создаёт пустую карту заданного размера."""
         self.width = width
         self.height = height
@@ -23,6 +24,7 @@ class Map:
 
         self.modules: List[DefenseModule] = []
         self.enemies: List[HostileEntity] = []
+        self.fauna_nests: List[FaunaNest] = []
         self.projectiles: List[Projectile] = []
 
         self.nav_grid = NavigationGrid(width, height, cell_size=32)
@@ -45,6 +47,10 @@ class Map:
     def add_module(self, module: DefenseModule):
         """Добавляет башню на карту."""
         self.modules.append(module)
+
+    def add_fauna_nest(self, nest: FaunaNest):
+        """Добавляет гнездо фауны на карту."""
+        self.fauna_nests.append(nest)
 
     def _emit(self, event_name: str, **data):
         """Уведомляет подписчика (например, звуковую систему) об игровом событии."""
@@ -71,15 +77,18 @@ class Map:
         }
 
     def can_place_module(self, position: Coordinate) -> bool:
-        """Проверяет, можно ли поставить башню в этой точке: в пределах карты и без
-        пересечения её footprint (3x3 клетки) с уже стоящими башнями, чтобы спрайты
-        соседних башен не наезжали друг на друга."""
+        """Проверяет, можно ли поставить башню в этой точке: в пределах карты, без
+        пересечения её footprint (3x3 клетки) с уже стоящими башнями (чтобы спрайты
+        соседних башен не наезжали друг на друга) и не поверх ещё живого гнезда фауны."""
         if not (0 <= position.x <= self.width and 0 <= position.y <= self.height):
             return False
         footprint = self._footprint_cells(position)
         if not footprint:
             return False
-        return all(not footprint & self._footprint_cells(module.position) for module in self.modules)
+        if not all(not footprint & self._footprint_cells(module.position) for module in self.modules):
+            return False
+        return all(not footprint & self._footprint_cells(nest.position)
+                   for nest in self.fauna_nests if nest.is_alive())
 
     def snap_to_grid(self, position: Coordinate) -> Coordinate:
         """Привязывает точку к центру ближайшей клетки сетки."""
@@ -769,8 +778,10 @@ class Map:
         if changed_factions:
             self.replan_enemy_paths(factions=changed_factions)
 
+        attackable_targets = self.enemies + self.fauna_nests
+
         for module in self.modules:
-            projectile = module.update(delta_time, self.enemies)
+            projectile = module.update(delta_time, attackable_targets)
             if projectile:
                 self.projectiles.append(projectile)
                 self._emit("tower_fired", tower_type=getattr(module, "type_name", None), position=module.position)
@@ -780,7 +791,7 @@ class Map:
         surviving_projectiles = []
         spawned_projectiles = []
         for projectile in self.projectiles:
-            alive = projectile.update(delta_time, self.enemies)
+            alive = projectile.update(delta_time, attackable_targets)
             spawned_projectiles.extend(projectile.collect_spawned())
             if alive:
                 surviving_projectiles.append(projectile)
@@ -789,5 +800,12 @@ class Map:
                 if event_name:
                     self._emit(event_name, position=projectile.position)
         self.projectiles = surviving_projectiles + spawned_projectiles
+
+        if self.fauna_nests:
+            destroyed_nests = [nest for nest in self.fauna_nests if not nest.is_alive()]
+            for nest in destroyed_nests:
+                self._emit("nest_destroyed", position=nest.position)
+            self.fauna_nests = [nest for nest in self.fauna_nests if nest.is_alive()]
+            self.spawn_points_by_faction[Faction.FAUNA] = [nest.position for nest in self.fauna_nests]
 
         return enemies_reached_base, killed_enemies

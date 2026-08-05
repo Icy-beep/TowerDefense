@@ -376,7 +376,7 @@ def test_game_session_emits_base_hit_event():
     session.on_event = lambda name, **data: events.append((name, data))
     session.update(delta_time=0.016)
 
-    assert ("base_hit", {"position": Coordinate(2000, 2000)}) in events
+    assert ("base_hit", {"position": session.base_position}) in events
 
 
 def test_game_session_emits_victory_event():

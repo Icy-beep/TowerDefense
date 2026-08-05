@@ -1,3 +1,4 @@
+import math
 import random
 from typing import Callable, Dict, List, Optional
 
@@ -9,12 +10,20 @@ from src.factories.tower_factory import TowerFactory
 from src.factories.enemy_factory import EnemyFactory
 from src.enums import Faction, GameState
 from src.entities.hostile_entity import HostileEntity
+from src.entities.fauna_nest import FaunaNest
 from src.core.coordinate import Coordinate
 from src.systems.mission import Objective, SurviveDurationObjective, ProtectTowersObjective
 
 
 class GameSession:
     """Модель игры: правила, состояние, фабрики башен и врагов."""
+
+    NEST_COUNT_MIN = 6
+    NEST_COUNT_MAX = 10
+    NEST_MIN_DISTANCE_FROM_BASE = 600.0
+    NEST_MAX_DISTANCE_FROM_BASE = 2400.0
+    NEST_MIN_SPACING = 500.0
+    NEST_PLACEMENT_ATTEMPTS_PER_NEST = 200
 
     def __init__(self):
         """Создаёт пустую игровую сессию в главном меню."""
@@ -62,18 +71,24 @@ class GameSession:
         self.base_health = self.max_base_health
         self.resources = ResourceBank(start_credits=1000)
 
-        self.map = Map(width=4000, height=4000, on_event=self._emit)
-        self.base_position = Coordinate(2000, 2000)
+        self.map = Map(on_event=self._emit)
+        self.base_position = Coordinate(self.map.width / 2, self.map.height / 2)
         self.map.nav_grid.set_blocked(self.base_position.x, self.base_position.y, blocked=True)
+
+        margin = 200
+        near_edge, far_edge_x, far_edge_y = margin, self.map.width - margin, self.map.height - margin
         self.map.spawn_points = [
-            Coordinate(200, 200),
-            Coordinate(3800, 200),
-            Coordinate(200, 3800),
-            Coordinate(3800, 3800)
+            Coordinate(near_edge, near_edge),
+            Coordinate(far_edge_x, near_edge),
+            Coordinate(near_edge, far_edge_y),
+            Coordinate(far_edge_x, far_edge_y),
         ]
+
+        fauna_nests = self._generate_fauna_nests()
+        self.map.fauna_nests = fauna_nests
         self.map.spawn_points_by_faction = {
             Faction.CORPORATION: [],
-            Faction.FAUNA: [Coordinate(3800, 200), Coordinate(200, 3800)],
+            Faction.FAUNA: [nest.position for nest in fauna_nests],
         }
 
         print(f"Карта инициализирована")
@@ -91,6 +106,31 @@ class GameSession:
             SurviveDurationObjective(target_seconds=self.survive_duration_target),
             ProtectTowersObjective(),
         ]
+
+    def _generate_fauna_nests(self, rng: Optional[random.Random] = None) -> List[FaunaNest]:
+        """Расставляет гнёзда фауны один раз при старте игры (новые не появляются, а
+        уничтоженные исчезают навсегда - см. Map.update). Случайное число гнёзд в
+        диапазоне [NEST_COUNT_MIN, NEST_COUNT_MAX], каждое не дальше
+        NEST_MAX_DISTANCE_FROM_BASE и не ближе NEST_MIN_DISTANCE_FROM_BASE от базы
+        игрока, и не ближе NEST_MIN_SPACING к уже поставленным гнёздам."""
+        rng = rng or random
+        count = rng.randint(self.NEST_COUNT_MIN, self.NEST_COUNT_MAX)
+        nests: List[FaunaNest] = []
+        max_attempts = count * self.NEST_PLACEMENT_ATTEMPTS_PER_NEST
+        attempts = 0
+        while len(nests) < count and attempts < max_attempts:
+            attempts += 1
+            angle = rng.uniform(0, 2 * math.pi)
+            distance = rng.uniform(self.NEST_MIN_DISTANCE_FROM_BASE, self.NEST_MAX_DISTANCE_FROM_BASE)
+            x = self.base_position.x + math.cos(angle) * distance
+            y = self.base_position.y + math.sin(angle) * distance
+            if not (0 <= x <= self.map.width and 0 <= y <= self.map.height):
+                continue
+            candidate = Coordinate(x, y)
+            if any(candidate.distance_to(nest.position) < self.NEST_MIN_SPACING for nest in nests):
+                continue
+            nests.append(FaunaNest(candidate))
+        return nests
 
     def _enemy_types_for_faction(self, faction: Faction) -> List[str]:
         """Возвращает зарегистрированные типы врагов, принадлежащие фракции."""

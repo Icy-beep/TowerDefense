@@ -33,9 +33,16 @@ class OrbitalModeController(IGameModeController):
         if session.base_position is not None:
             self.camera.center_on(session.base_position)
 
+    DEFAULT_MAP_SIZE = 6000
+
     def _create_camera(self):
-        """Создаёт камеру для орбитального режима под текущий размер окна."""
-        return Camera(self.screen_w, self.screen_h, map_w=4000, map_h=4000)
+        """Создаёт камеру для орбитального режима под текущий размер окна и реальный
+        размер карты сессии (а не зашитую константу - иначе камера не узнает об
+        увеличенной карте и будет считать себя на маленькой). DEFAULT_MAP_SIZE - только
+        запасной вариант на случай, если камера создаётся до setup_game()."""
+        map_w = self.session.map.width if self.session.map else self.DEFAULT_MAP_SIZE
+        map_h = self.session.map.height if self.session.map else self.DEFAULT_MAP_SIZE
+        return Camera(self.screen_w, self.screen_h, map_w=map_w, map_h=map_h)
 
     def update(self, delta_time: float):
         """Обновляет камеру и снимает выделение с исчезнувшего врага."""

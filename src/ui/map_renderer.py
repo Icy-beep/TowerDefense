@@ -7,9 +7,6 @@ from src.entities.projectile import HitscanBeam, MortarShell, ShrapnelPellet
 from src.enums import Faction
 from src.systems.threat_strategy import ShipLandingStrategy
 
-MAP_WIDTH = 4000
-MAP_HEIGHT = 4000
-
 ENEMY_COLORS = {
     "drone_walker": (220, 50, 50),
     "giant_roach": (120, 200, 60),
@@ -113,7 +110,6 @@ class MapRenderer:
         alt_held = bool(keys[pygame.K_LALT] or keys[pygame.K_RALT])
 
         self._draw_background(screen, camera, width, height)
-        self._draw_border(screen, camera)
         self._draw_placement_grid(screen, camera, session, controller, width, height)
         self._draw_base(screen, camera, session)
         self._draw_spawn_points(screen, camera, session)
@@ -122,16 +118,6 @@ class MapRenderer:
         self._draw_enemies(screen, camera, session, controller, width, height)
         self._draw_projectiles(screen, camera, session)
         self._draw_placement_preview(screen, camera, session, controller, tower_options)
-
-    def _draw_border(self, screen, camera):
-        """Рисует границу карты."""
-        border_rect = pygame.Rect(
-            -camera.x * camera.zoom,
-            -camera.y * camera.zoom,
-            MAP_WIDTH * camera.zoom,
-            MAP_HEIGHT * camera.zoom
-        )
-        pygame.draw.rect(screen, (50, 50, 50), border_rect, 3)
 
     def _draw_placement_grid(self, screen, camera, session, controller, width, height):
         """Рисует сетку построек, пока выбрана башня для постройки."""
@@ -159,12 +145,19 @@ class MapRenderer:
                 pygame.draw.line(screen, color, (0, sy), (width, sy))
 
     def _draw_spawn_points(self, screen, camera, session):
-        """Рисует точки спавна врагов по фракциям, кроме высаживающихся кораблями."""
+        """Рисует точки спавна врагов по фракциям, кроме высаживающихся кораблями и
+        гнёзд фауны (у них своя отрисовка с полоской здоровья - см. _draw_fauna_nests)."""
+        fauna_nests = getattr(session.map, "fauna_nests", None)
+        if fauna_nests:
+            self._draw_fauna_nests(screen, camera, fauna_nests)
+
         by_faction = getattr(session.map, "spawn_points_by_faction", {}) or {}
         threat_strategies = getattr(session, "threat_strategies", {}) or {}
         if by_faction:
             for faction, points in by_faction.items():
                 if isinstance(threat_strategies.get(faction), ShipLandingStrategy):
+                    continue
+                if faction == Faction.FAUNA and fauna_nests:
                     continue
                 color = FACTION_SPAWN_COLORS.get(faction, DEFAULT_SPAWN_COLOR)
                 for point in points:
@@ -184,6 +177,22 @@ class MapRenderer:
         ]
         pygame.draw.polygon(screen, color, triangle)
         pygame.draw.polygon(screen, (255, 255, 255), triangle, 2)
+
+    def _draw_fauna_nests(self, screen, camera, nests):
+        """Рисует гнёзда фауны маркером точки спавна и полоской здоровья - в отличие от
+        обычных точек спавна, гнёзда можно уничтожить (см. FaunaNest, Map.update)."""
+        color = FACTION_SPAWN_COLORS.get(Faction.FAUNA, DEFAULT_SPAWN_COLOR)
+        for nest in nests:
+            if not nest.is_alive():
+                continue
+            self._draw_spawn_marker(screen, camera, nest.position, color)
+
+            sx, sy = camera.world_to_screen(nest.position.x, nest.position.y)
+            hp_ratio = max(0.0, nest.health / nest.max_health)
+            bar_y = int(sy) - int(14 * camera.zoom) - 10
+            pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 16, bar_y, 32, 5))
+            pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
+                              (int(sx) - 16, bar_y, int(32 * hp_ratio), 5))
 
     LANDING_WARNING_MAX_RADIUS = 55.0
 
