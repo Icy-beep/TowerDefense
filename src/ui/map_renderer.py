@@ -40,6 +40,9 @@ class MapRenderer:
     ENEMY_SPRITE_WORLD_SIZE = 20
     ENEMY_SPRITE_MIN_SCREEN_SIZE = 20
 
+    BASE_SPRITE_WORLD_SIZE = 60
+    BASE_SPRITE_MIN_SCREEN_SIZE = 50
+
     def __init__(self, sprite_manager=None):
         """Запоминает SpriteManager; без него (или без спрайта под ключ) рисует примитивами."""
         self.sprite_manager = sprite_manager
@@ -76,6 +79,12 @@ class MapRenderer:
         зафиксирован, из-за чего при приближении враг визуально становился мельче на фоне
         выросшей остальной карты), но не мельче ENEMY_SPRITE_MIN_SCREEN_SIZE при отдалении."""
         return max(self.ENEMY_SPRITE_WORLD_SIZE * camera.zoom, self.ENEMY_SPRITE_MIN_SCREEN_SIZE)
+
+    def _base_screen_size(self, camera):
+        """Диаметр спрайта базы в пикселях: растёт вместе с зумом камеры, как башни и враги -
+        раньше был жёстко зафиксирован в 50px на экране и при приближении визуально "терялся"
+        на фоне выросших построек и карты, но не мельче BASE_SPRITE_MIN_SCREEN_SIZE при отдалении."""
+        return max(self.BASE_SPRITE_WORLD_SIZE * camera.zoom, self.BASE_SPRITE_MIN_SCREEN_SIZE)
 
     def _draw_background(self, screen, camera, width, height):
         """Рисует фон карты под всеми объектами: тайлит спрайт грунта, иначе — заливка цветом,
@@ -213,7 +222,7 @@ class MapRenderer:
         sx, sy = camera.world_to_screen(session.base_position.x, session.base_position.y)
         sprite = self._sprite_for("base", getattr(session, "elapsed_time", 0.0))
         if sprite:
-            self._blit_scaled(screen, sprite, sx, sy, target_size=50)
+            self._blit_scaled(screen, sprite, sx, sy, target_size=self._base_screen_size(camera))
         else:
             pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 25)
             pygame.draw.circle(screen, (255, 200, 200), (int(sx), int(sy)), 30, 3)
