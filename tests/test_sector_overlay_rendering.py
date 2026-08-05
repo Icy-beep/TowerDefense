@@ -1,6 +1,8 @@
-"""Затемнение закрытых секторов (MapRenderer._draw_sector_overlay) - в частности,
-регрессия на щель между соседними закрытыми секторами, которая появлялась/пропадала
-при смене зума (см. жалобу игрока)."""
+"""Затемнение закрытых секторов и цветные границы сетки секторов
+(MapRenderer._draw_sector_overlay) - в частности, регрессия на щель между соседними
+закрытыми секторами, которая появлялась/пропадала при смене зума (см. жалобу игрока),
+и границы, которые теперь рисуются у ЛЮБОГО сектора (не только закрытого), чтобы
+сетка была видна и после открытия (см. запрос пользователя про цветную полосу)."""
 import types
 
 import pygame
@@ -38,6 +40,16 @@ def _spy_blits(monkeypatch, screen):
         return original_blit(source, dest, *a, **k)
 
     monkeypatch.setattr(screen, "blit", spy_blit)
+    return calls
+
+
+def _spy_draw_rects(monkeypatch):
+    calls = []
+
+    def spy_rect(screen, color, rect, width=0):
+        calls.append((tuple(color), (rect.left, rect.top, rect.width, rect.height), width))
+
+    monkeypatch.setattr(pygame.draw, "rect", spy_rect)
     return calls
 
 
@@ -103,6 +115,57 @@ def test_map_without_sectors_draws_nothing(monkeypatch):
     MapRenderer()._draw_sector_overlay(screen, camera, session, WIDTH, HEIGHT)
 
     assert calls == []
+
+
+def test_locked_sector_border_uses_locked_color(monkeypatch):
+    session, left, right = _session_with_two_adjacent_locked_sectors()
+    camera = _camera()
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    rect_calls = _spy_draw_rects(monkeypatch)
+
+    MapRenderer()._draw_sector_overlay(screen, camera, session, WIDTH, HEIGHT)
+
+    colors_used = {c for c, _rect, _w in rect_calls}
+    assert MapRenderer.SECTOR_BORDER_COLOR_LOCKED in colors_used
+    assert MapRenderer.SECTOR_BORDER_COLOR_UNLOCKED not in colors_used
+
+
+def test_unlocked_sector_border_uses_unlocked_color(monkeypatch):
+    """Регрессия для запроса пользователя: сетка секторов должна оставаться видна и
+    после открытия - границу рисуем даже у sector.unlocked=True (просто без тёмной
+    заливки, которая осталась только у закрытых)."""
+    session, left, right = _session_with_two_adjacent_locked_sectors()
+    left.unlocked = True
+    right.unlocked = True
+    camera = _camera()
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    blit_calls = _spy_blits(monkeypatch, screen)
+    rect_calls = _spy_draw_rects(monkeypatch)
+
+    MapRenderer()._draw_sector_overlay(screen, camera, session, WIDTH, HEIGHT)
+
+    assert blit_calls == [], "у открытых секторов не должно быть тёмной заливки"
+    colors_used = {c for c, _rect, _w in rect_calls}
+    assert MapRenderer.SECTOR_BORDER_COLOR_UNLOCKED in colors_used
+    assert MapRenderer.SECTOR_BORDER_COLOR_LOCKED not in colors_used
+
+
+def test_border_between_locked_and_unlocked_sector_prefers_locked_color(monkeypatch):
+    """На общей границе открытого и закрытого сектора должен быть виден более важный
+    сигнал "закрыто" - закрытый цвет рисуется вторым проходом поверх открытого."""
+    session, left, right = _session_with_two_adjacent_locked_sectors()
+    left.unlocked = True  # правый (right) остаётся закрытым
+    camera = _camera()
+    screen = pygame.Surface((WIDTH, HEIGHT))
+    rect_calls = _spy_draw_rects(monkeypatch)
+
+    MapRenderer()._draw_sector_overlay(screen, camera, session, WIDTH, HEIGHT)
+
+    # Последний нарисованный на общей границе x=300 прямоугольник должен быть
+    # закрытого сектора (правого) - т.к. закрытые рисуются вторым проходом.
+    shared_edge_calls = [call for call in rect_calls if call[1][0] == 300 or call[1][0] + call[1][2] == 300]
+    assert shared_edge_calls, "должна быть хотя бы одна граница, задевающая общий стык x=300"
+    assert shared_edge_calls[-1][0] == MapRenderer.SECTOR_BORDER_COLOR_LOCKED
 
 
 def test_sector_fully_off_screen_is_skipped_without_crashing():

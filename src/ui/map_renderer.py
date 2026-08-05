@@ -45,6 +45,9 @@ class MapRenderer:
 
     LOCKED_SECTOR_OVERLAY_COLOR = (0, 0, 0)
     LOCKED_SECTOR_OVERLAY_ALPHA = 150
+    SECTOR_BORDER_COLOR_LOCKED = (255, 90, 40)
+    SECTOR_BORDER_COLOR_UNLOCKED = (90, 200, 255)
+    SECTOR_BORDER_WIDTH = 2
 
     def __init__(self, sprite_manager=None):
         """Запоминает SpriteManager; без него (или без спрайта под ключ) рисует примитивами."""
@@ -153,16 +156,18 @@ class MapRenderer:
 
     def _draw_sector_overlay(self, screen, camera, session, width, height):
         """Затемняет ещё не открытые секторы карты (см. src/systems/sector.py и
-        GameSession.unlock_sector_at) полупрозрачным тёмным прямоугольником поверх
-        каждого закрытого сектора, попавшего в кадр. Карты без секторов (session.map.sectors
-        пуст - старые/тестовые карты) не затрагиваются."""
+        GameSession.unlock_sector_at) полупрозрачным тёмным прямоугольником и рисует
+        цветную границу вокруг КАЖДОГО сектора - не только закрытого, но и уже
+        открытого - чтобы сетка секторов оставалась видна и после открытия (иначе
+        по клику Ctrl+ЛКМ было не понять, где именно проходит граница следующего
+        сектора на продажу). Карты без секторов (session.map.sectors пуст - старые/
+        тестовые карты) не затрагиваются."""
         sectors = getattr(session.map, "sectors", None)
         if not sectors:
             return
         screen_rect = pygame.Rect(0, 0, width, height)
+        visible = []
         for sector in sectors:
-            if sector.unlocked:
-                continue
             x_min, y_min, x_max, y_max = sector.bounds
             sx1, sy1 = camera.world_to_screen(x_min, y_min)
             sx2, sy2 = camera.world_to_screen(x_max, y_max)
@@ -175,12 +180,28 @@ class MapRenderer:
             left, top = int(sx1), int(sy1)
             right, bottom = int(sx2), int(sy2)
             rect = pygame.Rect(left, top, right - left, bottom - top)
+            if not rect.colliderect(screen_rect):
+                continue
+            visible.append((rect, sector))
+
+            if sector.unlocked:
+                continue
             clipped = rect.clip(screen_rect)
             if clipped.width <= 0 or clipped.height <= 0:
                 continue
             overlay = pygame.Surface((clipped.width, clipped.height), pygame.SRCALPHA)
             overlay.fill((*self.LOCKED_SECTOR_OVERLAY_COLOR, self.LOCKED_SECTOR_OVERLAY_ALPHA))
             screen.blit(overlay, (clipped.x, clipped.y))
+
+        # Границы - отдельным проходом поверх всех затемнений: сначала открытые
+        # (тихий цвет), потом закрытые (яркий) - на общей границе открытого и
+        # закрытого сектора должен победить более заметный "закрыто" цвет.
+        for rect, sector in visible:
+            if sector.unlocked:
+                pygame.draw.rect(screen, self.SECTOR_BORDER_COLOR_UNLOCKED, rect, self.SECTOR_BORDER_WIDTH)
+        for rect, sector in visible:
+            if not sector.unlocked:
+                pygame.draw.rect(screen, self.SECTOR_BORDER_COLOR_LOCKED, rect, self.SECTOR_BORDER_WIDTH)
 
     def _draw_placement_grid(self, screen, camera, session, controller, width, height):
         """Рисует сетку построек, пока выбрана башня для постройки."""
