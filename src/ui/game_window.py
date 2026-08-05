@@ -143,6 +143,9 @@ class GameView:
             dt = self.clock.tick(60) / 1000.0
             self.handle_events()
             self._pause_notice_timer = max(0.0, self._pause_notice_timer - dt)
+            # Не завязано на state/controller как звуки и автосейв ниже - плейлист должен
+            # переключать треки и в главном меню, и на паузе, а не только во время PLAYING.
+            self.music_manager.update(dt)
             if self.session.state != GameState.MENU and self.controller:
                 self.controller.update(dt)
                 self.session.update(dt)

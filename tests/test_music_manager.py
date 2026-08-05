@@ -30,6 +30,9 @@ class _FakeMusic:
         self.play_calls = []
         self.volume = None
         self.fadeout_calls = []
+        # Свежепоставленный трек считается играющим, пока тест явно не скажет,
+        # что он закончился (см. update() в MusicManager).
+        self.busy = True
 
     def load(self, path):
         if self._fail_load:
@@ -38,6 +41,10 @@ class _FakeMusic:
 
     def play(self, loops=0, fade_ms=0):
         self.play_calls.append((loops, fade_ms))
+        self.busy = True
+
+    def get_busy(self):
+        return self.busy
 
     def fadeout(self, ms):
         self.fadeout_calls.append(ms)
@@ -89,7 +96,9 @@ def test_music_manager_plays_random_track_from_category_with_fade_in(tmp_path, m
     manager.play_category("menu")
 
     assert fake_pygame.mixer.music.loaded_path.endswith("a.mp3")
-    assert fake_pygame.mixer.music.play_calls == [(-1, manager.FADE_IN_MS)]
+    # loops=0, а не -1: один и тот же трек больше не крутится бесконечно сам по себе -
+    # следующий выбирает update(), когда текущий доиграет (см. тесты ниже).
+    assert fake_pygame.mixer.music.play_calls == [(0, manager.FADE_IN_MS)]
     assert manager.current_category == "menu"
 
 
@@ -174,6 +183,74 @@ def test_music_manager_disables_itself_when_mixer_init_fails(tmp_path, monkeypat
     assert manager.enabled is False
     manager.play_category("menu")
     assert manager.current_category is None
+
+
+def test_update_starts_next_track_when_current_one_finishes(tmp_path, monkeypatch):
+    root = _make_music_root(tmp_path, "gameplay", ["a.mp3", "b.mp3"])
+    fake_pygame = _FakePygame()
+    monkeypatch.setattr("src.ui.music_manager.pygame", fake_pygame)
+
+    manager = MusicManager(music_root=root, rng=_FirstChoiceRng())
+    manager.play_category("gameplay")
+    fake_pygame.mixer.music.busy = False
+
+    manager.update(0.1)
+
+    assert len(fake_pygame.mixer.music.play_calls) == 2
+
+
+def test_update_does_nothing_while_track_still_playing(tmp_path, monkeypatch):
+    root = _make_music_root(tmp_path, "gameplay", ["a.mp3", "b.mp3"])
+    fake_pygame = _FakePygame()
+    monkeypatch.setattr("src.ui.music_manager.pygame", fake_pygame)
+
+    manager = MusicManager(music_root=root, rng=_FirstChoiceRng())
+    manager.play_category("gameplay")
+
+    manager.update(0.1)
+
+    assert len(fake_pygame.mixer.music.play_calls) == 1
+
+
+def test_update_avoids_repeating_same_track_immediately_when_alternatives_exist(tmp_path, monkeypatch):
+    root = _make_music_root(tmp_path, "gameplay", ["a.mp3", "b.mp3"])
+    fake_pygame = _FakePygame()
+    monkeypatch.setattr("src.ui.music_manager.pygame", fake_pygame)
+
+    manager = MusicManager(music_root=root, rng=_FirstChoiceRng())
+    manager.play_category("gameplay")
+    first_track = fake_pygame.mixer.music.loaded_path
+    fake_pygame.mixer.music.busy = False
+
+    manager.update(0.1)
+
+    assert fake_pygame.mixer.music.loaded_path != first_track
+
+
+def test_update_does_not_advance_when_loop_is_false(tmp_path, monkeypatch):
+    root = _make_music_root(tmp_path, "gameplay", ["a.mp3", "b.mp3"])
+    fake_pygame = _FakePygame()
+    monkeypatch.setattr("src.ui.music_manager.pygame", fake_pygame)
+
+    manager = MusicManager(music_root=root, rng=_FirstChoiceRng())
+    manager.play_category("gameplay", loop=False)
+    fake_pygame.mixer.music.busy = False
+
+    manager.update(0.1)
+
+    assert len(fake_pygame.mixer.music.play_calls) == 1
+
+
+def test_update_is_a_no_op_when_nothing_is_playing(tmp_path, monkeypatch):
+    root = _make_music_root(tmp_path, "gameplay", ["a.mp3"])
+    fake_pygame = _FakePygame()
+    monkeypatch.setattr("src.ui.music_manager.pygame", fake_pygame)
+
+    manager = MusicManager(music_root=root, rng=_FirstChoiceRng())
+
+    manager.update(0.1)  # не должно падать
+
+    assert fake_pygame.mixer.music.play_calls == []
 
 
 def test_music_manager_has_tracks_for(tmp_path, monkeypatch):
