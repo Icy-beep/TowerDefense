@@ -798,13 +798,17 @@ class Map:
                 elif in_combat:
                     distance = enemy.position.distance_to(combat_target.position)
                     if distance <= enemy.ATTACK_RANGE:
-                        enemy.attack_enemy(combat_target, delta_time)
+                        projectile = enemy.attack_enemy(combat_target, delta_time)
+                        if projectile:
+                            self.projectiles.append(projectile)
                     else:
                         enemy.move_towards_point(combat_target.position, delta_time)
                 elif hunting_tower:
                     distance = enemy.position.distance_to(target_tower.position)
                     if distance <= enemy.ATTACK_RANGE:
-                        enemy.attack_tower(target_tower, delta_time)
+                        projectile = enemy.attack_tower(target_tower, delta_time)
+                        if projectile:
+                            self.projectiles.append(projectile)
                     else:
                         enemy.move_towards_point(target_tower.position, delta_time)
                 elif enemy.is_staging:

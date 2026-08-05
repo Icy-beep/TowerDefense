@@ -1,6 +1,7 @@
 from typing import Optional
 from src.entities.hostile_entity import HostileEntity
-from src.enums import ArmorType, Faction
+from src.entities.projectile import HitscanBeam, EnemyHitscanBeam
+from src.enums import ArmorType, DamageType, Faction
 from src.core.coordinate import Coordinate
 
 class DroneWalker(HostileEntity):
@@ -83,6 +84,25 @@ class SniperDrone(HostileEntity):
     def act(self, delta_time: float, in_danger: bool = False):
         """Не выполняет особых действий - дальнобойность реализована через ATTACK_RANGE."""
         pass
+
+    def attack_tower(self, tower, delta_time: float):
+        """Стреляет по башне лучом - урон мгновенный, как и у базовой реализации, но
+        выстрел виден на карте так же, как у LaserTurret (см. EnemyHitscanBeam)."""
+        return EnemyHitscanBeam(
+            position=self.position,
+            target=tower,
+            damage=self.ATTACK_DAMAGE_PER_SECOND * delta_time,
+            damage_type=DamageType.KINETIC,
+        )
+
+    def attack_enemy(self, other: HostileEntity, delta_time: float):
+        """Стреляет по вражескому юниту лучом с тем же видимым эффектом выстрела."""
+        return HitscanBeam(
+            position=self.position,
+            target=other,
+            damage=self.ATTACK_DAMAGE_PER_SECOND * delta_time,
+            damage_type=DamageType.KINETIC,
+        )
 
 class MedicDrone(HostileEntity):
     """Дрон-медик корпорации: не атакует, ищет ближайшую группу союзников,

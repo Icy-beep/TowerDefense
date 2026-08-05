@@ -92,6 +92,25 @@ class HitscanBeam(Projectile):
         return "laser_hit" if self._hit else None
 
 
+class EnemyHitscanBeam(HitscanBeam):
+    """Мгновенный лучевой выстрел врага (например, SniperDrone) по башне - тот же
+    визуальный эффект, что и у HitscanBeam лазерной башни (MapRenderer различает их
+    только по классу, отрисовка общая). Отдельный класс нужен потому, что целью здесь
+    является DefenseModule, а не HostileEntity: у башни другой интерфейс проверки
+    жизни - is_destroyed(), а не is_alive()."""
+
+    def __init__(self, position: Coordinate, target, damage: float, damage_type: DamageType):
+        """Создаёт луч от врага до башни-цели и сразу наносит ей урон."""
+        Projectile.__init__(self, Coordinate(position.x, position.y), damage, damage_type)
+        self.origin = Coordinate(position.x, position.y)
+        self.end = Coordinate(target.position.x, target.position.y)
+        self._target = target
+        self._time_left = self.BEAM_LIFETIME
+        self._hit = not target.is_destroyed()
+        if self._hit:
+            target.take_damage(self.damage, self.damage_type)
+
+
 class _LinearProjectile(Projectile):
     """Снаряд, летящий по прямой в фиксированном направлении."""
 

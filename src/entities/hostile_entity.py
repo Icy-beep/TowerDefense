@@ -103,13 +103,19 @@ class HostileEntity(Entity, ABC):
             return self.group_leader.target_tower
         return None
 
-    def attack_tower(self, tower, delta_time: float):
-        """Наносит урон башне."""
+    def attack_tower(self, tower, delta_time: float) -> Optional["Projectile"]:
+        """Наносит урон башне. По умолчанию урон мгновенный и без видимого снаряда;
+        подклассы могут вернуть Projectile для визуального эффекта выстрела (см.
+        SniperDrone.attack_tower) - Map добавит его в self.projectiles, если он есть."""
         tower.take_damage(self.ATTACK_DAMAGE_PER_SECOND * delta_time, DamageType.KINETIC)
+        return None
 
-    def attack_enemy(self, other: "HostileEntity", delta_time: float):
-        """Наносит урон врагу вражеской фракции."""
+    def attack_enemy(self, other: "HostileEntity", delta_time: float) -> Optional["Projectile"]:
+        """Наносит урон врагу вражеской фракции. По умолчанию урон мгновенный и без
+        видимого снаряда; подклассы могут вернуть Projectile для визуального эффекта
+        выстрела (см. SniperDrone.attack_enemy)."""
         other.take_damage(self.ATTACK_DAMAGE_PER_SECOND * delta_time, DamageType.KINETIC)
+        return None
 
     def has_reached_end_of_path(self) -> bool:
         """Проверяет, дошёл ли враг до конца своего маршрута."""
