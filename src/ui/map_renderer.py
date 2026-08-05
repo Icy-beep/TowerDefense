@@ -216,7 +216,7 @@ class MapRenderer:
             self._blit_scaled(screen, sprite, sx, sy, target_size=50)
         else:
             pygame.draw.circle(screen, (255, 50, 50), (int(sx), int(sy)), 25)
-        pygame.draw.circle(screen, (255, 200, 200), (int(sx), int(sy)), 30, 3)
+            pygame.draw.circle(screen, (255, 200, 200), (int(sx), int(sy)), 30, 3)
         hp_ratio = session.base_health / session.max_base_health
         pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 20, int(sy) - 40, 40, 6))
         pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
