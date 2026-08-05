@@ -2,6 +2,8 @@
 from src.core.coordinate import Coordinate
 from src.core.map import Map
 from src.entities.enemies import DroneWalker
+from src.entities.power_generator import PowerGenerator
+from src.entities.power_pylon import PowerPylon
 from src.entities.turrets import LaserTurret, MortarTurret
 from src.enums import DamageType
 
@@ -109,6 +111,20 @@ def test_landing_impact_ignores_already_dead_enemies():
     turret.update(turret.LANDING_DURATION + 0.1, [dead_enemy])
 
     assert dead_enemy.health == 0
+
+
+def test_power_infrastructure_landing_does_not_crash_or_damage_nearby_enemies():
+    """Регрессия: PowerPylon/PowerGenerator никогда не задают self.damage_type (см.
+    PowerInfrastructure - damage=0.0, они не умеют атаковать), а _deal_landing_impact
+    раньше безусловно к нему обращался - приземление рядом с врагом роняло игру
+    с AttributeError."""
+    for tower in (PowerPylon(Coordinate(0, 0)), PowerGenerator(Coordinate(0, 0))):
+        tower.start_landing()
+        nearby_enemy = _enemy(10, 0)
+
+        tower.update(tower.LANDING_DURATION + 0.1, [nearby_enemy])
+
+        assert nearby_enemy.health == 1000
 
 
 def test_map_emits_tower_placed_only_after_the_module_lands():

@@ -126,7 +126,13 @@ class DefenseModule(Entity, ABC):
             self._deal_landing_impact(enemies)
 
     def _deal_landing_impact(self, enemies: List['HostileEntity']):
-        """Наносит урон всем врагам, оказавшимся под точкой приземления."""
+        """Наносит урон всем врагам, оказавшимся под точкой приземления. Инфраструктура
+        энергосети (генератор/пилон) создаётся с damage=0.0 и никогда не задаёт
+        self.damage_type (см. PowerInfrastructure) - она физически не может атаковать,
+        поэтому при её приземлении удар по врагам пропускается вообще, а не считается
+        с несуществующим типом урона."""
+        if self.damage <= 0:
+            return
         impact_damage = self.damage * 2
         for enemy in enemies:
             if enemy.is_alive() and self.position.distance_to(enemy.position) <= self.LANDING_IMPACT_RADIUS:
