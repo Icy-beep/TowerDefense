@@ -44,7 +44,7 @@ class Settings:
     display_mode: str = DISPLAY_MODE_WINDOWED
     resolution: Tuple[int, int] = (900, 600)
     music_volume: float = 0.35
-    sfx_volume: float = 0.45
+    sfx_volume: float = 0.15
     language: str = "ru"
     autosave_interval_seconds: float = 60.0
 
