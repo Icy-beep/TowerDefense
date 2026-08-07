@@ -43,7 +43,6 @@ def test_two_nearby_clicks_in_same_cell_snap_to_identical_position():
 
 
 def test_place_turret_snaps_position_to_grid(session):
-    cell = session.map.nav_grid.cell_size
     off_grid_pos = Coordinate(2300 + 3, 2000 + 3)
 
     success = session.place_turret("laser", off_grid_pos)

@@ -19,7 +19,6 @@ def _fake_session(state=GameState.PLAYING, elapsed_time=0.0, towers_lost=0):
 
 
 def test_objective_is_active_until_completed_or_failed():
-    session = _fake_session()
     objective = SurviveDurationObjective(target_seconds=60)
 
     assert objective.is_active() is True

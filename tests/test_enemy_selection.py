@@ -44,7 +44,7 @@ def test_click_on_module_takes_priority_over_nearby_enemy(controller):
     controller.place_tower(Coordinate(2300, 2000))
     controller.deselect()
     module_pos = controller.session.map.modules[0].position
-    enemy = _spawn_enemy(controller, Coordinate(module_pos.x + 2, module_pos.y))
+    _spawn_enemy(controller, Coordinate(module_pos.x + 2, module_pos.y))
 
     result = controller.handle_click(module_pos)
 
@@ -59,7 +59,7 @@ def test_selecting_tower_type_takes_priority_over_enemy_click():
     session = GameSession()
     session.setup_game()
     controller = OrbitalModeController(session)
-    enemy = _spawn_enemy(controller, Coordinate(2300, 2000))
+    _spawn_enemy(controller, Coordinate(2300, 2000))
     controller.select_tower("laser")
 
     controller.handle_click(Coordinate(2300, 2000))

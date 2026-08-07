@@ -61,7 +61,6 @@ def test_zooming_out_to_min_zoom_reveals_map_border():
         camera.zoom_at_mouse(450, 300, 0.5)
 
     assert camera.zoom == pytest.approx(camera.min_zoom)
-    vis_w = camera.screen_w / camera.zoom
     vis_h = camera.screen_h / camera.zoom
     assert vis_h == pytest.approx(camera.map_h, rel=0.01)
     assert camera.y == pytest.approx(0.0)

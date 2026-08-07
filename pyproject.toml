@@ -31,3 +31,9 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# __init__.py реэкспортирует символы для публичного API пакета (from src.entities
+# import DefenseModule и т.п.) - импорты формально "неиспользуемые" в самом файле,
+# но это и есть их назначение.
+"__init__.py" = ["F401"]
