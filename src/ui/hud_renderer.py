@@ -1,10 +1,14 @@
 """HUD-панели поверх игрового поля: единый RTS-стиль - панель ресурсов сверху,
 командная панель (выбор/постройки/подсказки) снизу (см. обсуждение с пользователем:
 раньше HUD был чисто текстовым, без кликабельных иконок построек)."""
+import logging
+
 import pygame
 
 from src.enums import ArmorType, Faction
 from src.localization.loc import loc
+
+logger = logging.getLogger(__name__)
 
 ENEMY_DISPLAY_KEYS = {
     "drone_walker": "enemy.drone_walker",
@@ -386,6 +390,7 @@ class HudRenderer:
         try:
             return pygame.key.name(key).upper()
         except Exception:
+            logger.warning("Не удалось получить имя клавиши для хоткея %r", key, exc_info=True)
             return None
 
     def _build_selection_info(self, state, controller, tower_options):

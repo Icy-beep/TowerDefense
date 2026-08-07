@@ -1,10 +1,13 @@
 """Загрузка и отдача спрайтов из assets/sprites/."""
+import logging
 import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
 
 import pygame
+
+logger = logging.getLogger(__name__)
 
 
 def _default_sprites_root() -> str:
@@ -89,6 +92,7 @@ class SpriteManager:
         try:
             bounds_list = [frame.get_bounding_rect(min_alpha=1) for frame in frames]
         except Exception:
+            logger.warning("Не удалось вычислить общую рамку обрезки спрайтов", exc_info=True)
             return frames
         bounds_list = [b for b in bounds_list if b.width > 0 and b.height > 0]
         if not bounds_list:
@@ -107,6 +111,7 @@ class SpriteManager:
         try:
             return [frame.subsurface(union_rect).copy() for frame in frames]
         except Exception:
+            logger.warning("Не удалось обрезать спрайты по общей рамке %r", union_rect, exc_info=True)
             return frames
 
     def has_sprite_for(self, key: str) -> bool:
