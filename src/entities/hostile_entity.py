@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
 
 from src.core.coordinate import Coordinate
-from src.enums import ArmorType, DamageType, Faction
+from src.enums import ArmorType, DamageType, Faction, damage_reduction_for
 
 from .entity import Entity
 
@@ -151,13 +151,7 @@ class HostileEntity(Entity, ABC):
     def take_damage(self, amount: float, damage_type: DamageType):
         """Наносит врагу урон с учётом сопротивления брони."""
         if not self.is_alive(): return
-        reduction = 0.0
-        if self.armor == ArmorType.HEAVY and damage_type == DamageType.KINETIC:
-            reduction = 0.5
-        elif self.armor == ArmorType.ENERGY_SHIELDED and damage_type == DamageType.ENERGY:
-            reduction = 0.5
-        elif self.armor == ArmorType.ORGANIC and damage_type == DamageType.EXPLOSIVE:
-            reduction = 0.5
+        reduction = damage_reduction_for(self.armor, damage_type)
         self.health -= amount * (1 - reduction)
 
     def is_alive(self) -> bool:

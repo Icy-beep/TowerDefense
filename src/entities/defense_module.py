@@ -5,7 +5,7 @@ from typing import Optional
 from src.core.coordinate import Coordinate
 from src.entities.hostile_entity import HostileEntity
 from src.entities.projectile import Projectile
-from src.enums import DamageType, ModuleStatus
+from src.enums import DamageType, ModuleStatus, damage_reduction_for
 
 from .entity import Entity
 
@@ -24,6 +24,18 @@ class DefenseModule(Entity, ABC):
     # PowerInfrastructure - генераторы и пилоны не стреляют, поэтому враги не должны
     # шарахаться от них и обходить их радиус как радиус атаки.
     IS_COMBAT_TOWER = True
+
+    # ИИ-модули за scrap (см. ResourceBank.spend_scrap, OrbitalModeController.
+    # install_ai_module) - один модуль на башню, меняет логику find_target ниже:
+    #   finish_wounded  - добивать раненых (минимум оставшегося HP)
+    #   ignore_resistant - игнорировать цели, стойкие к своему типу урона, если
+    #                      в радиусе есть кто-то без сопротивления
+    #   hunt_leaders    - предпочитать лидеров вражеских групп
+    AI_MODULE_COSTS = {
+        "finish_wounded": 100,
+        "ignore_resistant": 100,
+        "hunt_leaders": 150,
+    }
 
     def __init__(self, position: Coordinate, range_radius: float, damage: float, cost: int, attack_speed: float = 1.0):
         """Создаёт башню с базовыми характеристиками."""
@@ -61,6 +73,10 @@ class DefenseModule(Entity, ABC):
         # применяется только на картах с включённой энергосетью
         # (Map.power_grid_enabled).
         self.is_powered = True
+
+        # Установленный ИИ-модуль (см. AI_MODULE_COSTS) или None - без модуля
+        # find_target ведёт себя как раньше (просто ближайший враг).
+        self.ai_module: str | None = None
 
     def start_landing(self):
         """Запускает высадку с орбиты: башня неуязвима и не стреляет, пока не приземлится."""
@@ -142,14 +158,32 @@ class DefenseModule(Entity, ABC):
                 enemy.take_damage(impact_damage, self.damage_type)
 
     def find_target(self, enemies: list[HostileEntity]) -> Optional[HostileEntity]:
-        """Находит ближайшего врага в радиусе действия."""
+        """Находит цель в радиусе действия: без ИИ-модуля - просто ближайшего
+        врага, с модулем - по правилу конкретного модуля (см. AI_MODULE_COSTS)."""
         valid_targets = [
             e for e in enemies
             if self.position.distance_to(e.position) <= self.range_radius
         ]
         if not valid_targets:
             return None
-        return min(valid_targets, key=lambda e: self.position.distance_to(e.position))
+
+        if self.ai_module == "finish_wounded":
+            return min(valid_targets, key=lambda e: e.health)
+
+        if self.ai_module == "ignore_resistant":
+            preferred = [e for e in valid_targets
+                         if damage_reduction_for(e.armor, self.damage_type) == 0.0]
+            return self._nearest(preferred or valid_targets)
+
+        if self.ai_module == "hunt_leaders":
+            leaders = [e for e in valid_targets if getattr(e, "is_group_leader", False)]
+            return self._nearest(leaders or valid_targets)
+
+        return self._nearest(valid_targets)
+
+    def _nearest(self, candidates: list[HostileEntity]) -> HostileEntity:
+        """Возвращает ближайшего к башне из уже отфильтрованных кандидатов."""
+        return min(candidates, key=lambda e: self.position.distance_to(e.position))
 
     @abstractmethod
     def fire(self, target: HostileEntity) -> Projectile | None:

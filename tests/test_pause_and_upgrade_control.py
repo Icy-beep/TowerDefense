@@ -84,3 +84,53 @@ def test_upgrade_selected_fails_at_max_level(controller):
 def test_upgrade_selected_fails_when_nothing_selected(controller):
     controller.selected_module = None
     assert controller.upgrade_selected() is False
+
+
+def test_install_ai_module_spends_scrap_and_sets_module(controller):
+    module = _place_and_select(controller)
+    controller.session.resources.scrap = 1000
+    cost = module.AI_MODULE_COSTS["finish_wounded"]
+
+    result = controller.install_ai_module("finish_wounded")
+
+    assert result is True
+    assert module.ai_module == "finish_wounded"
+    assert controller.session.resources.scrap == 1000 - cost
+
+
+def test_install_ai_module_fails_without_enough_scrap(controller):
+    module = _place_and_select(controller)
+    controller.session.resources.scrap = 0
+
+    result = controller.install_ai_module("finish_wounded")
+
+    assert result is False
+    assert module.ai_module is None
+
+
+def test_install_ai_module_fails_when_already_installed(controller):
+    module = _place_and_select(controller)
+    controller.session.resources.scrap = 1000
+    controller.install_ai_module("finish_wounded")
+
+    result = controller.install_ai_module("hunt_leaders")
+
+    assert result is False
+    assert module.ai_module == "finish_wounded", \
+        "повторная установка не должна заменять уже стоящий модуль"
+
+
+def test_install_ai_module_fails_for_unknown_module_key(controller):
+    module = _place_and_select(controller)
+    controller.session.resources.scrap = 1000
+
+    result = controller.install_ai_module("does_not_exist")
+
+    assert result is False
+    assert module.ai_module is None
+
+
+def test_install_ai_module_fails_when_nothing_selected(controller):
+    controller.selected_module = None
+    controller.session.resources.scrap = 1000
+    assert controller.install_ai_module("finish_wounded") is False

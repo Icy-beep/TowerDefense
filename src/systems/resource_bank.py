@@ -13,6 +13,13 @@ class ResourceBank:
             return True
         return False
 
+    def spend_scrap(self, amount: int) -> bool:
+        """Списывает scrap, если его достаточно (см. DefenseModule.AI_MODULE_COSTS)."""
+        if self.scrap >= amount:
+            self.scrap -= amount
+            return True
+        return False
+
     def add_reward(self, amount: int):
         """Начисляет кредиты за убитого врага."""
         self.credits += amount

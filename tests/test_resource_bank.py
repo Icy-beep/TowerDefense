@@ -41,3 +41,23 @@ def test_add_reward_increases_credits():
     bank.add_reward(40)
 
     assert bank.credits == 55
+
+
+def test_spend_scrap_succeeds_when_enough_scrap():
+    bank = ResourceBank()
+    bank.scrap = 150
+
+    result = bank.spend_scrap(100)
+
+    assert result is True
+    assert bank.scrap == 50
+
+
+def test_spend_scrap_fails_when_not_enough_scrap():
+    bank = ResourceBank()
+    bank.scrap = 50
+
+    result = bank.spend_scrap(100)
+
+    assert result is False
+    assert bank.scrap == 50, "scrap не должен списываться при неудачной попытке"

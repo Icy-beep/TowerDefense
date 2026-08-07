@@ -25,6 +25,22 @@ class ArmorType(Enum):
     ORGANIC = "Organic"
 
 
+# У каждого типа урона есть один "жёсткий контр" среди типов брони - 50% сопротивление.
+# Общая таблица нужна и HostileEntity.take_damage (расчёт урона), и DefenseModule.find_target
+# (ИИ-модуль "игнорировать стойких к себе") - раньше значения были захардкожены только в
+# take_damage, второму месту взять их было неоткуда.
+ARMOR_RESISTANCE: dict[tuple[ArmorType, DamageType], float] = {
+    (ArmorType.HEAVY, DamageType.KINETIC): 0.5,
+    (ArmorType.ENERGY_SHIELDED, DamageType.ENERGY): 0.5,
+    (ArmorType.ORGANIC, DamageType.EXPLOSIVE): 0.5,
+}
+
+
+def damage_reduction_for(armor: ArmorType, damage_type: DamageType) -> float:
+    """Возвращает долю снижения урона (0.0-1.0) от брони armor против damage_type."""
+    return ARMOR_RESISTANCE.get((armor, damage_type), 0.0)
+
+
 class Faction(Enum):
     """Фракция врага."""
     CORPORATION = "Corporation"
