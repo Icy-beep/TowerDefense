@@ -12,6 +12,7 @@
   "hud.controls_misc": "U: Улучшить башню | P: Пауза | ESC: Меню паузы",
   "hud.controls_alt": "ALT (удерживать): показать радиусы всех башен",
   "hud.controls_ranges": "G: Радиусы энергосети | T: Радиусы атаки башен (кнопки сверху)",
+  "hud.controls_tech_tree": "K: Дерево технологий башен",
 
   "hud.build_label": "Строить: {name}",
   "hud.build_hint": "ЛКМ: Поставить | ПКМ: Отмена",
@@ -53,6 +54,12 @@
   "menu.mode_story": "Сюжет (Скоро)",
   "menu.back": "Назад",
   "menu.continue": "Продолжить",
+
+  "tech_tree.title": "Дерево технологий",
+  "tech_tree.branch_radius": "Радиус",
+  "tech_tree.branch_damage": "Урон",
+  "tech_tree.branch_attack_speed": "Скорострельность",
+  "tech_tree.stub_hint": "Скоро",
 
   "settings.title": "Настройки",
   "settings.display_mode": "Экран",

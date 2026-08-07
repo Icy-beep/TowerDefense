@@ -12,6 +12,7 @@
   "hud.controls_misc": "U: Upgrade tower | P: Pause | ESC: Pause menu",
   "hud.controls_alt": "ALT (hold): show all tower ranges",
   "hud.controls_ranges": "G: Power grid radii | T: Tower attack radii (buttons above)",
+  "hud.controls_tech_tree": "K: Tower tech tree",
 
   "hud.build_label": "Building: {name}",
   "hud.build_hint": "LMB: Place | RMB: Cancel",
@@ -53,6 +54,12 @@
   "menu.mode_story": "Story (Soon)",
   "menu.back": "Back",
   "menu.continue": "Continue",
+
+  "tech_tree.title": "Tech Tree",
+  "tech_tree.branch_radius": "Range",
+  "tech_tree.branch_damage": "Damage",
+  "tech_tree.branch_attack_speed": "Fire rate",
+  "tech_tree.stub_hint": "Soon",
 
   "settings.title": "Settings",
   "settings.display_mode": "Display",

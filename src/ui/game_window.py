@@ -29,6 +29,7 @@ from src.ui.save_load_screen import SaveLoadScreen
 from src.ui.settings_screen import SettingsScreen
 from src.ui.sound_manager import SoundManager
 from src.ui.sprite_manager import SpriteManager
+from src.ui.tech_tree_screen import TechTreeScreen
 
 
 class GameView:
@@ -58,6 +59,12 @@ class GameView:
     }
     ALWAYS_AUDIBLE_EVENTS = {"base_hit"}
 
+    # Дерево технологий (см. tech_tree_open) открывается и хоткеем, и кнопкой в
+    # HUD (см. запрос пользователя) - пока экран-заготовка без реального
+    # содержимого, параллельно ИИ-модулям за scrap (DefenseModule.AI_MODULE_COSTS).
+    TECH_TREE_KEY = pygame.K_k
+    COMBAT_TOWER_TYPES = ("laser", "bullet", "mortar")
+
     def __init__(self, session: GameSession, settings: Settings | None = None):
         """Создаёт окно и рендереры для заданной игровой сессии.
         Параметр settings позволяет тестам подставить свой объект настроек, не трогая
@@ -84,6 +91,7 @@ class GameView:
         self.pause_view = "menu"
         self._pause_notice = ""
         self._pause_notice_timer = 0.0
+        self.tech_tree_open = False
 
         self.save_manager = SaveManager()
         self._save_load_mode = "save"
@@ -96,6 +104,7 @@ class GameView:
             {"key": pygame.K_4, "type": "generator", "name": "Generator (220)", "color": (255, 215, 0)},
             {"key": pygame.K_5, "type": "pylon", "name": "Pylon (60)", "color": (0, 200, 120)},
         ]
+        self.combat_tower_options = [opt for opt in self.tower_options if opt["type"] in self.COMBAT_TOWER_TYPES]
 
         self.game_over_screen = GameOverScreen()
         self.menu_screen = MenuScreen()
@@ -103,6 +112,7 @@ class GameView:
         self.settings_screen = SettingsScreen()
         self.pause_menu_screen = PauseMenuScreen()
         self.save_load_screen = SaveLoadScreen()
+        self.tech_tree_screen = TechTreeScreen()
 
         self._show_loading_screen("Loading sounds...")
         self.sound_manager = SoundManager(on_progress=self._on_sound_loading_progress)
@@ -179,9 +189,13 @@ class GameView:
                 self._handle_menu_input(event)
             elif self.session.state == GameState.PAUSED and self.pause_menu_open:
                 self._handle_pause_menu_input(event)
+            elif self.controller and self.tech_tree_open:
+                self._handle_tech_tree_input(event)
+            elif self.controller and event.type == pygame.KEYDOWN and event.key == self.TECH_TREE_KEY:
+                self.tech_tree_open = True
             elif self.controller:
                 if not self._handle_build_panel_click(event) and not self._handle_hud_toggle_click(event) \
-                        and not self._handle_help_click(event):
+                        and not self._handle_tech_tree_button_click(event) and not self._handle_help_click(event):
                     self.controller.handle_input(event)
 
     def _tick_autosave(self, delta_time: float):
@@ -224,6 +238,33 @@ class GameView:
             self.controller.toggle_tower_ranges()
         return True
 
+    def _handle_tech_tree_button_click(self, event) -> bool:
+        """Перехватывает клик по кнопке дерева технологий в верхней HUD-панели
+        раньше контроллера - тем же приёмом, что и остальные HUD-перехватчики."""
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return False
+        if not self.hud_renderer.handle_tech_tree_click(event.pos, self.width):
+            return False
+        self.tech_tree_open = not self.tech_tree_open
+        return True
+
+    def _handle_tech_tree_input(self, event):
+        """Обрабатывает ввод, пока открыт экран дерева технологий (см.
+        tech_tree_open) - K и повторный клик по кнопке в HUD закрывают экран так
+        же, как открывают; ESC обрабатывается раньше в handle_events (см.
+        _handle_escape)."""
+        if event.type == pygame.KEYDOWN and event.key == self.TECH_TREE_KEY:
+            self.tech_tree_open = False
+            return
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return
+        if self.hud_renderer.handle_tech_tree_click(event.pos, self.width):
+            self.tech_tree_open = False
+            return
+        action = self.tech_tree_screen.handle_click(event.pos, self.width, self.height, self.combat_tower_options)
+        if action and action[0] == "back":
+            self.tech_tree_open = False
+
     def _handle_help_click(self, event) -> bool:
         """Перехватывает клик по кнопке '?' (подсказка по управлению) раньше
         контроллера - тем же приёмом, что и остальные HUD-перехватчики выше."""
@@ -232,13 +273,16 @@ class GameView:
         return self.hud_renderer.handle_help_click(event.pos, self.width, self.height)
 
     def _handle_escape(self):
-        """ESC: из настроек — назад в меню; во время игры — открыть/закрыть меню паузы; иначе — выход."""
+        """ESC: из настроек — назад в меню; из дерева технологий — закрыть его; во
+        время игры — открыть/закрыть меню паузы; иначе — выход."""
         state = self.session.state
         if state == GameState.MENU:
             if self.menu_view in ("settings", "mode_select"):
                 self.menu_view = "main"
             else:
                 self.running = False
+        elif self.tech_tree_open:
+            self.tech_tree_open = False
         elif state in (GameState.PLAYING, GameState.PAUSED):
             self._toggle_pause_menu()
         else:
@@ -537,9 +581,15 @@ class GameView:
         )
         self.hud_renderer.render(
             self.screen, self.camera, self.session, self.controller,
-            self.tower_options, self.width, self.height, self.font, self.small_font
+            self.tower_options, self.width, self.height, self.font, self.small_font,
+            tech_tree_open=self.tech_tree_open,
         )
         self.game_over_screen.render(self.screen, self.session, self.width, self.height)
+
+        if self.tech_tree_open:
+            self.tech_tree_screen.render(self.screen, self.width, self.height,
+                                          self.font, self.small_font, self.title_font,
+                                          self.combat_tower_options)
 
         if self.session.state == GameState.PAUSED and self.pause_menu_open:
             if self.pause_view == "settings":

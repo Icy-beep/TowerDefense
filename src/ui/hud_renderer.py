@@ -55,6 +55,8 @@ class HudRenderer:
     # (ключ состояния, хоткей) - порядок и есть порядок отрисовки слева направо.
     TOGGLE_BUTTONS = [("power_radii", "G"), ("tower_ranges", "T")]
 
+    TECH_TREE_HOTKEY = "K"
+
     HELP_BUTTON_SIZE = 28
     HELP_POPUP_WIDTH = 380
     HELP_POPUP_LINE_HEIGHT = 18
@@ -77,12 +79,14 @@ class HudRenderer:
             return None
         return self.sprite_manager.get_frame(key, elapsed_time)
 
-    def render(self, screen, camera, session, controller, tower_options, width, height, font, small_font):
+    def render(self, screen, camera, session, controller, tower_options, width, height, font, small_font,
+               tech_tree_open=False):
         """Рисует все панели HUD."""
         state = controller.get_game_state()
 
         self._draw_top_bar(screen, state, font, width)
         self._draw_toggle_buttons(screen, state, width, small_font)
+        self._draw_tech_tree_button(screen, width, small_font, tech_tree_open)
         self._draw_missions_panel(screen, session, small_font, width)
         self._draw_bottom_bar(screen, state, controller, tower_options, camera, small_font, width, height)
 
@@ -232,6 +236,32 @@ class HudRenderer:
 
             badge = small_font.render(hotkey, True, (255, 255, 255))
             screen.blit(badge, (rect.x + 3, rect.y + 1))
+
+    def _layout_tech_tree_button(self, width):
+        """Прямоугольник кнопки дерева технологий - сразу справа от переключателей
+        радиусов в верхней панели. Используется и при отрисовке, и при обработке
+        клика (handle_tech_tree_click), чтобы раскладка совпадала."""
+        last_toggle_rect = self._layout_toggle_buttons(width)[-1][0]
+        size = self.TOGGLE_BUTTON_SIZE
+        y = (self.TOP_BAR_HEIGHT - size) // 2
+        x = last_toggle_rect.right + self.TOGGLE_BUTTON_GAP * 3
+        return pygame.Rect(x, y, size, size)
+
+    def handle_tech_tree_click(self, pos, width) -> bool:
+        """True, если клик пришёлся на кнопку дерева технологий (см.
+        GameView._handle_tech_tree_button_click)."""
+        return self._layout_tech_tree_button(width).collidepoint(pos)
+
+    def _draw_tech_tree_button(self, screen, width, small_font, is_open):
+        """Рисует кнопку дерева технологий - золотая рамка, пока экран открыт."""
+        rect = self._layout_tech_tree_button(width)
+        bg_color = (55, 75, 40) if is_open else (34, 38, 48)
+        pygame.draw.rect(screen, bg_color, rect)
+        border_color = self.HIGHLIGHT_COLOR if is_open else self.BORDER_COLOR
+        border_width = 3 if is_open else self.BORDER_WIDTH
+        pygame.draw.rect(screen, border_color, rect, border_width)
+        label = small_font.render(self.TECH_TREE_HOTKEY, True, (255, 255, 255))
+        screen.blit(label, label.get_rect(center=rect.center))
 
     def _draw_power_toggle_icon(self, screen, rect):
         """Иконка кнопки радиусов энергосети - молния."""
@@ -467,6 +497,7 @@ class HudRenderer:
             loc.get("hud.controls_misc"),
             loc.get("hud.controls_alt"),
             loc.get("hud.controls_ranges"),
+            loc.get("hud.controls_tech_tree"),
         ]
 
     def _layout_help_button(self, width, height):
