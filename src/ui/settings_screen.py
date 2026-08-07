@@ -1,7 +1,7 @@
 """Экран настроек, открывается из главного меню: экран, звук, язык, автосохранение."""
 import pygame
 
-from src.core.settings import AUTOSAVE_STEP_SECONDS, DISPLAY_MODE_BORDERLESS, DISPLAY_MODES
+from src.core.settings import DISPLAY_MODE_BORDERLESS, DISPLAY_MODES
 from src.localization.loc import loc
 
 PANEL_WIDTH = 560

@@ -1,8 +1,9 @@
 """Нанесение урона, удаление уничтоженных врагов, награда за убийство."""
 from src.core.coordinate import Coordinate
-from src.entities.enemies import DroneWalker, GiantRoach, BioTitan
-from src.enums import DamageType
 from src.core.map import Map
+from src.entities.enemies import BioTitan, DroneWalker, GiantRoach
+from src.enums import DamageType
+
 
 def test_take_damage_reduces_health():
     enemy = DroneWalker(Coordinate(0, 0))

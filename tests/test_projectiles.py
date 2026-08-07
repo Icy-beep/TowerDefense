@@ -1,14 +1,18 @@
 """Снаряды по типу оружия: лазер мгновенный, пуля летит по прямой, мортира по параболе."""
 import math
+
 import pytest
 
 from src.core.coordinate import Coordinate
 from src.core.map import Map
 from src.entities.enemies import DroneWalker
-from src.entities.turrets import LaserTurret, BulletTurret, MortarTurret
 from src.entities.projectile import (
-    HitscanBeam, BulletProjectile, MortarShell, ShrapnelPellet,
+    BulletProjectile,
+    HitscanBeam,
+    MortarShell,
+    ShrapnelPellet,
 )
+from src.entities.turrets import BulletTurret, LaserTurret, MortarTurret
 from src.enums import DamageType
 
 

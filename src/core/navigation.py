@@ -1,7 +1,7 @@
 import heapq
 import itertools
 import math
-from typing import Dict, Optional, Set, Tuple
+
 from src.core.coordinate import Coordinate
 
 
@@ -69,8 +69,8 @@ class NavigationGrid:
     # в этот лимит.
     MAX_EXPANSIONS = 1500
 
-    def find_path(self, start_pos, end_pos, extra_blocked: Optional[Set[Tuple[int, int]]] = None,
-                  extra_cost: Optional[Dict[Tuple[int, int], float]] = None):
+    def find_path(self, start_pos, end_pos, extra_blocked: set[tuple[int, int]] | None = None,
+                  extra_cost: dict[tuple[int, int], float] | None = None):
         """Ищет путь между двумя точками алгоритмом A*."""
         extra_blocked = extra_blocked or set()
         extra_cost = extra_cost or {}

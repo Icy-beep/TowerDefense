@@ -1,8 +1,8 @@
 """Корректность определения противников, находящихся
 в зоне действия башни (DefenseModule.find_target)"""
 from src.core.coordinate import Coordinate
-from src.entities.turrets import BulletTurret
 from src.entities.enemies import DroneWalker
+from src.entities.turrets import BulletTurret
 
 
 def test_enemy_inside_radius_is_detected():

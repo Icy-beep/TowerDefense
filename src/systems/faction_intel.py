@@ -1,5 +1,5 @@
 """Разведданные одной фракции о постройках игрока."""
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.entities.defense_module import DefenseModule
@@ -10,7 +10,7 @@ class FactionIntel:
 
     def __init__(self):
         """Создаёт пустые разведданные."""
-        self._known_towers: Dict[int, "DefenseModule"] = {}
+        self._known_towers: dict[int, DefenseModule] = {}
 
     def reveal(self, tower: "DefenseModule") -> bool:
         """Отмечает башню как известную. Возвращает True, если она стала известна только сейчас."""
@@ -24,6 +24,6 @@ class FactionIntel:
         """Проверяет, известна ли башня."""
         return id(tower) in self._known_towers
 
-    def known_towers(self) -> List["DefenseModule"]:
+    def known_towers(self) -> list["DefenseModule"]:
         """Возвращает список известных башен."""
         return list(self._known_towers.values())

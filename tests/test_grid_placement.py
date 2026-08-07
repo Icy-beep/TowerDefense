@@ -1,8 +1,9 @@
 """Привязка построек к сетке (Map.snap_to_grid) вместо произвольной точки."""
 import pytest
+
+from src.core.coordinate import Coordinate
 from src.core.game_session import GameSession
 from src.core.map import Map
-from src.core.coordinate import Coordinate
 
 
 @pytest.fixture

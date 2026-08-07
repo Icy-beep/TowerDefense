@@ -7,7 +7,7 @@ from src.core.coordinate import Coordinate
 from src.core.game_session import GameSession
 from src.enums import Faction
 from src.systems.threat_strategy import PendingLanding
-from src.ui.map_renderer import MapRenderer, FACTION_SPAWN_COLORS
+from src.ui.map_renderer import FACTION_SPAWN_COLORS, MapRenderer
 
 
 def _camera():

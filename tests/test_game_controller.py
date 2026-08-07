@@ -1,8 +1,8 @@
 """GameController: делегирование в активный режим (OrbitalModeController по
 умолчанию) - в частности select_tower, нужный HUD-панели построек, чтобы клик по
 иконке работал так же, как хоткей 1-5 (см. src/ui/hud_renderer.py)."""
-from src.core.game_session import GameSession
 from src.core.game_controller import GameController
+from src.core.game_session import GameSession
 
 
 def _controller():

@@ -1,5 +1,4 @@
 """Разрушаемые башни: только сформированные эскорты сносят известные башни в радиусе охоты."""
-import pytest
 
 from src.core.coordinate import Coordinate
 from src.core.map import Map

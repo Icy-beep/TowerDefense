@@ -1,5 +1,4 @@
 """Туман войны: фракция узнаёт о башне только когда юнит окажется в радиусе обзора."""
-import pytest
 
 from src.core.coordinate import Coordinate
 from src.core.map import Map
@@ -8,7 +7,6 @@ from src.entities.enemies import DroneWalker, GiantRoach, ScoutDrone
 from src.entities.turrets import LaserTurret
 from src.enums import Faction
 from src.systems.faction_intel import FactionIntel
-
 
 
 def test_reveal_returns_true_only_the_first_time():

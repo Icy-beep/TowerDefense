@@ -3,7 +3,6 @@ import os
 import random
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import pygame
 
@@ -23,9 +22,9 @@ DEFAULT_MUSIC_ROOT = _default_music_root()
 SUPPORTED_EXTENSIONS = (".mp3", ".ogg", ".wav")
 
 
-def discover_music_files(music_root: str) -> Dict[str, List[str]]:
+def discover_music_files(music_root: str) -> dict[str, list[str]]:
     """Сканирует music_root и возвращает {категория: [пути к трекам]}."""
-    result: Dict[str, List[str]] = {}
+    result: dict[str, list[str]] = {}
     if not os.path.isdir(music_root):
         return result
 
@@ -53,14 +52,14 @@ class MusicManager:
     FADE_IN_MS = 800
 
     def __init__(self, music_root: str = DEFAULT_MUSIC_ROOT, volume: float = 0.35,
-                 rng: Optional[random.Random] = None):
+                 rng: random.Random | None = None):
         """Индексирует доступные треки по категориям, не начиная проигрывание."""
         self._rng = rng or random
         self.volume = volume
         self.enabled = True
         self._tracks = discover_music_files(music_root)
-        self.current_category: Optional[str] = None
-        self._current_track: Optional[str] = None
+        self.current_category: str | None = None
+        self._current_track: str | None = None
         self._loop_playlist = True
 
         try:
@@ -99,7 +98,7 @@ class MusicManager:
             return
         self._start_track(self._pick_track(tracks, avoid=self._current_track))
 
-    def _pick_track(self, tracks: List[str], avoid: Optional[str] = None) -> str:
+    def _pick_track(self, tracks: list[str], avoid: str | None = None) -> str:
         """Выбирает случайный трек из списка, по возможности не совпадающий с avoid -
         чтобы плейлист не проигрывал одну и ту же композицию два раза подряд, когда в
         категории есть другие варианты."""

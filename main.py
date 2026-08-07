@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 project_root = os.path.dirname(current_dir)

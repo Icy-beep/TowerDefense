@@ -1,5 +1,5 @@
 """Настройки игрока: загрузка/сохранение в JSON, значения по умолчанию, клэмп громкости."""
-from src.core.settings import Settings, DISPLAY_MODE_WINDOWED, DISPLAY_MODE_FULLSCREEN
+from src.core.settings import DISPLAY_MODE_FULLSCREEN, DISPLAY_MODE_WINDOWED, Settings
 
 
 def test_load_returns_defaults_when_file_missing(tmp_path):

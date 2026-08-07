@@ -1,8 +1,9 @@
 """OrbitalModeController.pause_game() ('P') и upgrade_selected() ('U')."""
 import pytest
+
+from src.core.coordinate import Coordinate
 from src.core.game_session import GameSession
 from src.core.orbital_mode_controller import OrbitalModeController
-from src.core.coordinate import Coordinate
 from src.enums import GameState
 
 

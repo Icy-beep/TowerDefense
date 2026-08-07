@@ -1,5 +1,6 @@
 """корректность движения противника по маршруту"""
 import pytest
+
 from src.core.coordinate import Coordinate
 from src.entities.enemies import DroneWalker
 

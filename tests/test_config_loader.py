@@ -1,12 +1,13 @@
 """ConfigLoader и применение параметров башен/врагов из data/config/*.json."""
 import json
+
 import pytest
 
 from src.config.config_loader import ConfigLoader
-from src.factories.tower_factory import TowerFactory
-from src.factories.enemy_factory import EnemyFactory
 from src.core.coordinate import Coordinate
 from src.enums import ArmorType
+from src.factories.enemy_factory import EnemyFactory
+from src.factories.tower_factory import TowerFactory
 
 
 def test_config_loader_reads_real_tower_config():

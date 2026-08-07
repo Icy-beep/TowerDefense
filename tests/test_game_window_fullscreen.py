@@ -5,7 +5,12 @@ import pygame
 import pytest
 
 from src.core.game_session import GameSession
-from src.core.settings import DISPLAY_MODE_BORDERLESS, DISPLAY_MODE_FULLSCREEN, DISPLAY_MODE_WINDOWED, Settings
+from src.core.settings import (
+    DISPLAY_MODE_BORDERLESS,
+    DISPLAY_MODE_FULLSCREEN,
+    DISPLAY_MODE_WINDOWED,
+    Settings,
+)
 from src.ui.game_window import GameView
 
 

@@ -1,14 +1,11 @@
 """Отдельные точки спавна по фракциям через Map.spawn_points_by_faction."""
-import random
 
-import pytest
 
 from src.core.coordinate import Coordinate
-from src.core.map import Map
 from src.core.game_session import GameSession
+from src.core.map import Map
 from src.enums import Faction
 from src.factories.enemy_factory import EnemyFactory
-
 
 
 def test_faction_for_matches_configured_faction_for_every_registered_type():
@@ -113,9 +110,11 @@ def test_spawn_factory_returns_none_when_faction_has_no_spawn_points_at_all():
 
 def test_map_renderer_does_not_draw_stale_corporation_spawn_markers():
     """Старые точки спавна Corporation не должны рисоваться на карте."""
-    from src.ui.map_renderer import MapRenderer, FACTION_SPAWN_COLORS
     import types
+
     import pygame
+
+    from src.ui.map_renderer import FACTION_SPAWN_COLORS, MapRenderer
 
     session = GameSession()
     session.setup_game()

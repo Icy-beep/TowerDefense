@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING
+
 import pygame
 
-from src.core.game_mode_controller import IGameModeController
 from src.core.camera import Camera
 from src.core.coordinate import Coordinate
+from src.core.game_mode_controller import IGameModeController
 from src.enums import GameState
 
 if TYPE_CHECKING:

@@ -1,7 +1,8 @@
 from src.core.coordinate import Coordinate
-from .entity import Entity
+
 from .defense_module import DefenseModule
-from .projectile import Projectile
-from .hostile_entity import HostileEntity
-from .turrets import LaserTurret, BulletTurret, MortarTurret
 from .enemies import DroneWalker, GiantRoach, ScoutDrone
+from .entity import Entity
+from .hostile_entity import HostileEntity
+from .projectile import Projectile
+from .turrets import BulletTurret, LaserTurret, MortarTurret

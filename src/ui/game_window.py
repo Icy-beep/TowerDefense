@@ -1,28 +1,34 @@
 """Окно приложения и игровой цикл."""
-import pygame
 import sys
 
-from src.core.game_session import GameSession
+import pygame
+
 from src.core.game_controller import GameController
+from src.core.game_session import GameSession
 from src.core.settings import (
-    AUTOSAVE_STEP_SECONDS, DISPLAY_MODE_BORDERLESS, DISPLAY_MODE_FULLSCREEN, DISPLAY_MODE_WINDOWED,
-    RESOLUTIONS, Settings, VOLUME_STEP,
+    AUTOSAVE_STEP_SECONDS,
+    DISPLAY_MODE_BORDERLESS,
+    DISPLAY_MODE_FULLSCREEN,
+    DISPLAY_MODE_WINDOWED,
+    RESOLUTIONS,
+    VOLUME_STEP,
+    Settings,
 )
 from src.enums import GameState
 from src.localization.loc import loc
-from src.ui.map_renderer import MapRenderer
-from src.ui.hud_renderer import HudRenderer
+from src.save_load.save_manager import SaveManager
+from src.systems.spatial_audio import volume_for_position, volume_for_zoom
 from src.ui.game_over_screen import GameOverScreen
+from src.ui.hud_renderer import HudRenderer
+from src.ui.map_renderer import MapRenderer
 from src.ui.menu_screen import MenuScreen
 from src.ui.mode_select_screen import ModeSelectScreen
+from src.ui.music_manager import MusicManager
 from src.ui.pause_menu_screen import PauseMenuScreen
 from src.ui.save_load_screen import SaveLoadScreen
 from src.ui.settings_screen import SettingsScreen
 from src.ui.sound_manager import SoundManager
-from src.ui.music_manager import MusicManager
 from src.ui.sprite_manager import SpriteManager
-from src.save_load.save_manager import SaveManager
-from src.systems.spatial_audio import volume_for_position, volume_for_zoom
 
 
 class GameView:

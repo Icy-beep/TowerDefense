@@ -1,7 +1,6 @@
 """Групповое поведение врагов."""
 import math
 import random
-from typing import Dict, List, Optional
 
 from src.core.coordinate import Coordinate
 from src.entities.hostile_entity import HostileEntity
@@ -19,7 +18,7 @@ class GroupFormationSystem:
     MAX_ESCORT_SIZE = 3
     FORMATION_RADIUS = 45.0
 
-    FACTION_OVERRIDES: Dict[Faction, dict] = {
+    FACTION_OVERRIDES: dict[Faction, dict] = {
         Faction.FAUNA: {
             "leader_types": {"giant_roach", "bio_titan"},
             "solo_types": set(),
@@ -30,7 +29,7 @@ class GroupFormationSystem:
         },
     }
 
-    def __init__(self, rng: Optional[random.Random] = None):
+    def __init__(self, rng: random.Random | None = None):
         """Создаёт систему формирования групп."""
         self._rng = rng or random
         self._next_group_id = 1
@@ -55,7 +54,7 @@ class GroupFormationSystem:
             "formation_radius": override.get("formation_radius", self.FORMATION_RADIUS),
         }
 
-    def update(self, delta_time: float, enemies: List[HostileEntity]):
+    def update(self, delta_time: float, enemies: list[HostileEntity]):
         """Обновляет формирование групп на один кадр."""
         for enemy in enemies:
             if not enemy.is_alive():

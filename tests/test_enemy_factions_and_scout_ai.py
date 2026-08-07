@@ -1,11 +1,12 @@
 """Фракции врагов и бегство ScoutDrone от башен через avoids_danger()."""
 import pytest
+
+from src.core.coordinate import Coordinate
+from src.core.map import Map
 from src.entities.enemies import DroneWalker, GiantRoach, ScoutDrone
 from src.entities.hostile_entity import HostileEntity
 from src.entities.turrets import LaserTurret
-from src.core.coordinate import Coordinate
-from src.core.map import Map
-from src.enums import Faction, ArmorType, DamageType
+from src.enums import ArmorType, DamageType, Faction
 from src.factories.enemy_factory import EnemyFactory
 
 
@@ -87,8 +88,9 @@ def test_map_update_moves_scout_towards_base_when_no_tower_covers_it():
 
 
 def test_hud_selection_panel_shows_enemy_faction():
-    from src.ui.hud_renderer import HudRenderer
     import types
+
+    from src.ui.hud_renderer import HudRenderer
 
     enemy = GiantRoach(Coordinate(0, 0))
     enemy.type_name = "giant_roach"

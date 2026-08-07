@@ -1,13 +1,11 @@
 """Уклонение лёгких врагов от выстрелов и отступление раненых на лечение к спавну."""
-import math
 
 import pytest
 
 from src.core.coordinate import Coordinate
 from src.core.map import Map
-from src.entities.enemies import DroneWalker, GiantRoach, HeavyAssaultDrone, ScoutDrone, BioTitan
+from src.entities.enemies import BioTitan, DroneWalker, GiantRoach, HeavyAssaultDrone, ScoutDrone
 from src.enums import Faction
-
 
 
 def test_only_light_armor_enemies_dodge_projectiles():

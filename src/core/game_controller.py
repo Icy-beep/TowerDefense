@@ -1,8 +1,8 @@
 """Прослойка между GameSession и View."""
-from src.core.game_session import GameSession
-from src.core.game_mode_controller import IGameModeController
-from src.core.orbital_mode_controller import OrbitalModeController
 from src.core.coordinate import Coordinate
+from src.core.game_mode_controller import IGameModeController
+from src.core.game_session import GameSession
+from src.core.orbital_mode_controller import OrbitalModeController
 
 
 class GameController:

@@ -1,9 +1,11 @@
 import math
 from abc import ABC, abstractmethod
-from .entity import Entity
+from typing import Optional
+
 from src.core.coordinate import Coordinate
-from src.enums import DamageType, ArmorType, Faction
-from typing import List, Optional
+from src.enums import ArmorType, DamageType, Faction
+
+from .entity import Entity
 
 
 class HostileEntity(Entity, ABC):
@@ -15,7 +17,7 @@ class HostileEntity(Entity, ABC):
     ATTACK_DAMAGE_PER_SECOND = 20.0
 
     def __init__(self, position: Coordinate, max_health: float, speed: float, armor: ArmorType, reward: int,
-                 faction: Optional[Faction] = None, vision_radius: Optional[float] = None):
+                 faction: Faction | None = None, vision_radius: float | None = None):
         """Создаёт врага с базовыми характеристиками."""
         super().__init__(position)
         self.max_health = max_health
@@ -25,18 +27,18 @@ class HostileEntity(Entity, ABC):
         self.reward = reward
         self.faction = faction or Faction.FAUNA
         self.vision_radius = vision_radius if vision_radius is not None else self.VISION_RADIUS
-        self.path: List[Coordinate] = []
+        self.path: list[Coordinate] = []
         self.path_index = 0
 
-        self.group_id: Optional[int] = None
+        self.group_id: int | None = None
         self.is_group_leader: bool = False
-        self.group_leader: Optional["HostileEntity"] = None
+        self.group_leader: HostileEntity | None = None
         self.formation_offset: Coordinate = Coordinate(0.0, 0.0)
 
         self.target_tower = None
 
         self.is_patrolling: bool = False
-        self.patrol_angle: Optional[float] = None
+        self.patrol_angle: float | None = None
         self.patrol_direction: int = 1
 
         self.is_healing: bool = False
@@ -46,9 +48,9 @@ class HostileEntity(Entity, ABC):
         self.replan_failure_streak: int = 0
 
         self.is_staging: bool = False
-        self.stage_angle: Optional[float] = None
+        self.stage_angle: float | None = None
         self.stage_direction: int = 1
-        self.stage_anchor: Optional[Coordinate] = None
+        self.stage_anchor: Coordinate | None = None
 
         self.dodge_timer: float = 0.0
         self._dodge_offset: float = 0.0
@@ -87,7 +89,7 @@ class HostileEntity(Entity, ABC):
         """Проверяет, должен ли враг уклоняться из стороны в сторону под обстрелом башен."""
         return self.armor == ArmorType.LIGHT
 
-    def set_path(self, path: List[Coordinate]):
+    def set_path(self, path: list[Coordinate]):
         """Назначает врагу маршрут."""
         self.path = path
         self.path_index = 0

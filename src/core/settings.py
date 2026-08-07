@@ -3,7 +3,6 @@ import json
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Optional, Tuple
 
 DISPLAY_MODE_WINDOWED = "windowed"
 DISPLAY_MODE_BORDERLESS = "borderless"
@@ -42,14 +41,14 @@ class Settings:
     (оконный режим 900x600, прежние базовые громкости SoundManager/MusicManager)."""
 
     display_mode: str = DISPLAY_MODE_WINDOWED
-    resolution: Tuple[int, int] = (900, 600)
+    resolution: tuple[int, int] = (900, 600)
     music_volume: float = 0.35
     sfx_volume: float = 0.15
     language: str = "ru"
     autosave_interval_seconds: float = 60.0
 
     @classmethod
-    def load(cls, path: Optional[Path] = None) -> "Settings":
+    def load(cls, path: Path | None = None) -> "Settings":
         """Читает настройки из JSON; при отсутствии файла или ошибке чтения — значения
         по умолчанию. Неизвестные ключи в файле игнорируются, чтобы старый settings.json
         не ломал загрузку после добавления новых полей."""
@@ -73,7 +72,7 @@ class Settings:
 
         return settings
 
-    def save(self, path: Optional[Path] = None):
+    def save(self, path: Path | None = None):
         """Сохраняет настройки в JSON. Ошибки записи (нет прав на диск и т.п.) тихо
         игнорируются — отсутствие сохранения не должно ронять игру."""
         path = path or default_settings_path()

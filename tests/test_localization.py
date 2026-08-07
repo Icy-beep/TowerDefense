@@ -1,6 +1,5 @@
 """Loc — единая точка хранения текста интерфейса (data/locale/*.json)."""
 import json
-import pytest
 
 from src.localization.loc import Loc, loc
 

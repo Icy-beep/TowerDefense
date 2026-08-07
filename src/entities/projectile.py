@@ -2,7 +2,7 @@
 import math
 import random
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Optional
 
 from src.core.coordinate import Coordinate
 from src.enums import DamageType
@@ -20,20 +20,20 @@ class Projectile(ABC):
         self.damage_type = damage_type
 
     @abstractmethod
-    def update(self, delta_time: float, enemies: List["HostileEntity"]) -> bool:
+    def update(self, delta_time: float, enemies: list["HostileEntity"]) -> bool:
         """Обновляет снаряд на один кадр. Возвращает False, если снаряд нужно убрать с карты."""
         pass
 
-    def collect_spawned(self) -> List["Projectile"]:
+    def collect_spawned(self) -> list["Projectile"]:
         """Возвращает снаряды, порождённые этим (например, шрапнель)."""
         return []
 
-    def landed_event_name(self) -> Optional[str]:
+    def landed_event_name(self) -> str | None:
         """Имя звукового события при исчезновении снаряда с карты, если оно есть."""
         return None
 
-    def _find_collision(self, enemies: List["HostileEntity"],
-                         hit_radius: Optional[float] = None) -> Optional["HostileEntity"]:
+    def _find_collision(self, enemies: list["HostileEntity"],
+                         hit_radius: float | None = None) -> Optional["HostileEntity"]:
         """Находит ближайшего живого врага в радиусе поражения снаряда."""
         radius = hit_radius if hit_radius is not None else self.HIT_RADIUS
         candidates = [e for e in enemies if e.is_alive() and self.position.distance_to(e.position) <= radius]
@@ -42,7 +42,7 @@ class Projectile(ABC):
         return min(candidates, key=lambda e: self.position.distance_to(e.position))
 
     @staticmethod
-    def _find_path_collision(start: Coordinate, end: Coordinate, enemies: List["HostileEntity"],
+    def _find_path_collision(start: Coordinate, end: Coordinate, enemies: list["HostileEntity"],
                               hit_radius: float) -> Optional["HostileEntity"]:
         """Находит врага, столкнувшегося со снарядом на пути от start до end."""
         dx, dy = end.x - start.x, end.y - start.y
@@ -82,12 +82,12 @@ class HitscanBeam(Projectile):
         if self._hit:
             self._target.take_damage(self.damage, self.damage_type)
 
-    def update(self, delta_time: float, enemies: List["HostileEntity"]) -> bool:
+    def update(self, delta_time: float, enemies: list["HostileEntity"]) -> bool:
         """Отсчитывает время жизни луча на экране (урон уже нанесён при создании)."""
         self._time_left -= delta_time
         return self._time_left > 0
 
-    def landed_event_name(self) -> Optional[str]:
+    def landed_event_name(self) -> str | None:
         """Имя звукового события попадания лазера, если цель была поражена."""
         return "laser_hit" if self._hit else None
 
@@ -125,7 +125,7 @@ class _LinearProjectile(Projectile):
         self.traveled = 0.0
         self._hit_something = False
 
-    def update(self, delta_time: float, enemies: List["HostileEntity"]) -> bool:
+    def update(self, delta_time: float, enemies: list["HostileEntity"]) -> bool:
         """Двигает снаряд вперёд и проверяет столкновение с врагами."""
         step = self.speed * delta_time
         start = Coordinate(self.position.x, self.position.y)
@@ -147,7 +147,7 @@ class BulletProjectile(_LinearProjectile):
 
     def __init__(self, position: Coordinate, target: "HostileEntity", damage: float, damage_type: DamageType,
                  speed: float, max_distance: float = 900.0, spread_degrees: float = 0.0,
-                 rng: Optional[random.Random] = None):
+                 rng: random.Random | None = None):
         """Создаёт пулю, летящую в сторону цели с необязательным случайным
         разбросом направления в пределах ±spread_degrees/2."""
         direction = (target.position.x - position.x, target.position.y - position.y)
@@ -161,7 +161,7 @@ class BulletProjectile(_LinearProjectile):
             )
         super().__init__(Coordinate(position.x, position.y), direction, damage, damage_type, speed, max_distance)
 
-    def landed_event_name(self) -> Optional[str]:
+    def landed_event_name(self) -> str | None:
         """Имя звукового события попадания пули, если она во что-то попала."""
         return "bullet_hit" if self._hit_something else None
 
@@ -181,7 +181,7 @@ class MortarShell(Projectile):
     SHRAPNEL_SPEED = 200.0
 
     def __init__(self, position: Coordinate, target: "HostileEntity", damage: float, damage_type: DamageType,
-                 rng: Optional[random.Random] = None):
+                 rng: random.Random | None = None):
         """Создаёт миномётный снаряд, летящий в точку цели на момент выстрела."""
         super().__init__(Coordinate(position.x, position.y), damage, damage_type)
         self.start = Coordinate(position.x, position.y)
@@ -191,7 +191,7 @@ class MortarShell(Projectile):
         self.elapsed = 0.0
         self.height = 0.0
         self._landed = False
-        self._spawned: List[Projectile] = []
+        self._spawned: list[Projectile] = []
         self._rng = rng or random
 
     @property
@@ -199,7 +199,7 @@ class MortarShell(Projectile):
         """Доля пройденного пути полёта от 0 до 1."""
         return min(1.0, self.elapsed / self.flight_time)
 
-    def update(self, delta_time: float, enemies: List["HostileEntity"]) -> bool:
+    def update(self, delta_time: float, enemies: list["HostileEntity"]) -> bool:
         """Двигает снаряд по параболе и взрывается по приземлении."""
         if self._landed:
             return False
@@ -215,7 +215,7 @@ class MortarShell(Projectile):
             return False
         return True
 
-    def landed_event_name(self) -> Optional[str]:
+    def landed_event_name(self) -> str | None:
         """Имя звукового события взрыва миномётного снаряда."""
         return "mortar_explosion"
 
@@ -237,7 +237,7 @@ class MortarShell(Projectile):
                 max_distance=self.SHRAPNEL_RANGE,
             ))
 
-    def collect_spawned(self) -> List[Projectile]:
+    def collect_spawned(self) -> list[Projectile]:
         """Возвращает и очищает список созданных осколков шрапнели."""
         spawned, self._spawned = self._spawned, []
         return spawned

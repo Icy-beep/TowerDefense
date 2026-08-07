@@ -1,8 +1,8 @@
 """Реплан пути врагов при постройке башни, с учётом тумана войны (fog of war)."""
 import pytest
 
-from src.core.game_session import GameSession
 from src.core.coordinate import Coordinate
+from src.core.game_session import GameSession
 from src.core.map import Map
 from src.entities.turrets import LaserTurret
 from src.enums import Faction

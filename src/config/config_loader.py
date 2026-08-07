@@ -1,7 +1,6 @@
 import json
 import sys
 from pathlib import Path
-from typing import Dict
 
 
 def _default_config_dir() -> Path:
@@ -22,7 +21,7 @@ class ConfigLoader:
     def __init__(self, config_dir: Path = None):
         """Создаёт загрузчик с заданной или стандартной папкой конфигов."""
         self.config_dir = Path(config_dir) if config_dir else DEFAULT_CONFIG_DIR
-        self._cache: Dict[str, dict] = {}
+        self._cache: dict[str, dict] = {}
 
     def _load_file(self, filename: str) -> dict:
         """Загружает и кэширует JSON-файл конфига."""

@@ -1,10 +1,12 @@
 import math
 from abc import ABC, abstractmethod
-from typing import Optional, List
-from .entity import Entity
+from typing import Optional
+
 from src.core.coordinate import Coordinate
-from src.enums import DamageType, ModuleStatus
 from src.entities.projectile import Projectile
+from src.enums import DamageType, ModuleStatus
+
+from .entity import Entity
 
 
 class DefenseModule(Entity, ABC):
@@ -43,7 +45,7 @@ class DefenseModule(Entity, ABC):
 
         self.level = 1
         self.max_level = 3
-        self.upgrade_costs: List[int] = []
+        self.upgrade_costs: list[int] = []
 
         self.is_landing = False
         self.landing_elapsed = 0.0
@@ -77,7 +79,7 @@ class DefenseModule(Entity, ABC):
             return True
         return False
 
-    def update(self, delta_time: float, enemies: List['HostileEntity']) -> Optional[Projectile]:
+    def update(self, delta_time: float, enemies: list['HostileEntity']) -> Projectile | None:
         """Обновляет башню на один кадр и стреляет по цели, если готова."""
         if self.is_landing:
             self._advance_landing(delta_time, enemies)
@@ -113,7 +115,7 @@ class DefenseModule(Entity, ABC):
             return
         self.facing_angle = math.degrees(math.atan2(dx, -dy)) % 360.0
 
-    def _advance_landing(self, delta_time: float, enemies: List['HostileEntity']):
+    def _advance_landing(self, delta_time: float, enemies: list['HostileEntity']):
         """Двигает башню вниз по высоте и наносит урон при приземлении."""
         self.landing_elapsed += delta_time
         t = self.landing_progress
@@ -125,7 +127,7 @@ class DefenseModule(Entity, ABC):
             self._pending_landed_event = True
             self._deal_landing_impact(enemies)
 
-    def _deal_landing_impact(self, enemies: List['HostileEntity']):
+    def _deal_landing_impact(self, enemies: list['HostileEntity']):
         """Наносит урон всем врагам, оказавшимся под точкой приземления. Инфраструктура
         энергосети (генератор/пилон) создаётся с damage=0.0 и никогда не задаёт
         self.damage_type (см. PowerInfrastructure) - она физически не может атаковать,
@@ -138,7 +140,7 @@ class DefenseModule(Entity, ABC):
             if enemy.is_alive() and self.position.distance_to(enemy.position) <= self.LANDING_IMPACT_RADIUS:
                 enemy.take_damage(impact_damage, self.damage_type)
 
-    def find_target(self, enemies: List['HostileEntity']) -> Optional['HostileEntity']:
+    def find_target(self, enemies: list['HostileEntity']) -> Optional['HostileEntity']:
         """Находит ближайшего врага в радиусе действия."""
         valid_targets = [
             e for e in enemies
@@ -149,11 +151,11 @@ class DefenseModule(Entity, ABC):
         return min(valid_targets, key=lambda e: self.position.distance_to(e.position))
 
     @abstractmethod
-    def fire(self, target: 'HostileEntity') -> Optional[Projectile]:
+    def fire(self, target: 'HostileEntity') -> Projectile | None:
         """Создаёт снаряд по цели."""
         pass
 
-    def get_upgrade_cost(self) -> Optional[int]:
+    def get_upgrade_cost(self) -> int | None:
         """Возвращает стоимость следующего уровня или None, если максимум."""
         if self.level >= self.max_level:
             return None

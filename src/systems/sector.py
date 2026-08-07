@@ -6,7 +6,6 @@ grid_size x grid_size секторов; сектор, где стоит база
 отрисовываются (см. MapRenderer). Открываются за кредиты (GameSession.unlock_sector_at) -
 задания, привязанные к сектору, пока не реализованы (см. дизайн-док)."""
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 
 @dataclass
@@ -18,7 +17,7 @@ class Sector:
 
     row: int
     col: int
-    bounds: Tuple[float, float, float, float]
+    bounds: tuple[float, float, float, float]
     unlocked: bool = False
 
     def contains(self, position) -> bool:
@@ -28,7 +27,7 @@ class Sector:
 
 
 def build_sector_grid(width: float, height: float, grid_size: int,
-                       base_position: Optional[object] = None) -> List[Sector]:
+                       base_position: object | None = None) -> list[Sector]:
     """Строит равномерную сетку grid_size x grid_size секторов над картой
     width x height (последняя строка/столбец растягивается до точного края карты,
     чтобы не терять полоску от деления с остатком). Сектор, содержащий
@@ -36,7 +35,7 @@ def build_sector_grid(width: float, height: float, grid_size: int,
     игрока; все остальные закрыты."""
     cell_w = width / grid_size
     cell_h = height / grid_size
-    sectors: List[Sector] = []
+    sectors: list[Sector] = []
     for row in range(grid_size):
         for col in range(grid_size):
             x_min = col * cell_w

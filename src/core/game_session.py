@@ -1,19 +1,19 @@
 import math
 import random
-from typing import Callable, Dict, List, Optional
+from collections.abc import Callable
 
-from src.core.map import Map
-from src.core.game_state import GameStateManager
-from src.systems.resource_bank import ResourceBank
-from src.systems.threat_strategy import ThreatStrategy, ShipLandingStrategy, NestSpawnStrategy
-from src.factories.tower_factory import TowerFactory
-from src.factories.enemy_factory import EnemyFactory
-from src.enums import Faction, GameState
-from src.entities.hostile_entity import HostileEntity
-from src.entities.fauna_nest import FaunaNest
 from src.core.coordinate import Coordinate
-from src.systems.mission import Objective, SurviveDurationObjective, ProtectTowersObjective
+from src.core.game_state import GameStateManager
+from src.core.map import Map
+from src.entities.fauna_nest import FaunaNest
+from src.entities.hostile_entity import HostileEntity
+from src.enums import Faction, GameState
+from src.factories.enemy_factory import EnemyFactory
+from src.factories.tower_factory import TowerFactory
+from src.systems.mission import Objective, ProtectTowersObjective, SurviveDurationObjective
+from src.systems.resource_bank import ResourceBank
 from src.systems.sector import build_sector_grid
+from src.systems.threat_strategy import NestSpawnStrategy, ShipLandingStrategy, ThreatStrategy
 
 
 class GameSession:
@@ -38,7 +38,7 @@ class GameSession:
         """Создаёт пустую игровую сессию в главном меню."""
         self.map = None
         self.resources = ResourceBank()
-        self.threat_strategies: Dict[Faction, ThreatStrategy] = {}
+        self.threat_strategies: dict[Faction, ThreatStrategy] = {}
         self.tower_factory = TowerFactory()
         self.enemy_factory = EnemyFactory()
         self.state_manager = GameStateManager(GameState.MENU)
@@ -46,9 +46,9 @@ class GameSession:
         self.max_base_health = 100
         self.elapsed_time = 0.0
         self.survive_duration_target = 180.0
-        self.objectives: List[Objective] = []
+        self.objectives: list[Objective] = []
         self.endless = False
-        self.on_event: Optional[Callable[..., None]] = None
+        self.on_event: Callable[..., None] | None = None
 
     def _emit(self, event_name: str, **data):
         """Уведомляет подписчика (например, звуковую систему) об игровом событии."""
@@ -56,7 +56,7 @@ class GameSession:
             self.on_event(event_name, **data)
 
     @property
-    def base_position(self) -> Optional[Coordinate]:
+    def base_position(self) -> Coordinate | None:
         """Позиция базы."""
         return self.map.base_position if self.map else None
 
@@ -108,7 +108,7 @@ class GameSession:
             Faction.FAUNA: [nest.position for nest in fauna_nests],
         }
 
-        print(f"Карта инициализирована")
+        print("Карта инициализирована")
         print(f"База: {self.base_position}")
 
         corp_types = self._enemy_types_for_faction(Faction.CORPORATION)
@@ -124,7 +124,7 @@ class GameSession:
             ProtectTowersObjective(),
         ]
 
-    def _generate_fauna_nests(self, rng: Optional[random.Random] = None) -> List[FaunaNest]:
+    def _generate_fauna_nests(self, rng: random.Random | None = None) -> list[FaunaNest]:
         """Расставляет гнёзда фауны один раз при старте игры (новые не появляются, а
         уничтоженные исчезают навсегда - см. Map.update). Случайное число гнёзд в
         диапазоне [NEST_COUNT_MIN, NEST_COUNT_MAX], каждое не дальше
@@ -132,7 +132,7 @@ class GameSession:
         игрока, и не ближе NEST_MIN_SPACING к уже поставленным гнёздам."""
         rng = rng or random
         count = rng.randint(self.NEST_COUNT_MIN, self.NEST_COUNT_MAX)
-        nests: List[FaunaNest] = []
+        nests: list[FaunaNest] = []
         max_attempts = count * self.NEST_PLACEMENT_ATTEMPTS_PER_NEST
         attempts = 0
         while len(nests) < count and attempts < max_attempts:
@@ -149,7 +149,7 @@ class GameSession:
             nests.append(FaunaNest(candidate))
         return nests
 
-    def _enemy_types_for_faction(self, faction: Faction) -> List[str]:
+    def _enemy_types_for_faction(self, faction: Faction) -> list[str]:
         """Возвращает зарегистрированные типы врагов, принадлежащие фракции."""
         return [t for t in self.enemy_factory.available_types()
                 if self.enemy_factory.faction_for(t) == faction]
@@ -233,7 +233,7 @@ class GameSession:
         sector.unlocked = True
         return True
 
-    def _spawn_enemy_factory(self, enemy_type: str, position: Optional[Coordinate] = None) -> Optional[HostileEntity]:
+    def _spawn_enemy_factory(self, enemy_type: str, position: Coordinate | None = None) -> HostileEntity | None:
         """Создаёт врага и прокладывает путь к базе, при необходимости выбирая точку спавна фракции."""
         faction = self.enemy_factory.faction_for(enemy_type)
         if position is None:
@@ -259,6 +259,6 @@ class GameSession:
             if path:
                 enemy.set_path(path)
             elif not enemy.avoids_danger():
-                print(f"Ошибка пути! Враг застрянет.")
+                print("Ошибка пути! Враг застрянет.")
 
         return enemy

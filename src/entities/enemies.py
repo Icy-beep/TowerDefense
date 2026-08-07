@@ -1,15 +1,16 @@
-from typing import Optional
-from src.entities.hostile_entity import HostileEntity
-from src.entities.projectile import HitscanBeam, EnemyHitscanBeam
-from src.enums import ArmorType, DamageType, Faction
+
 from src.core.coordinate import Coordinate
+from src.entities.hostile_entity import HostileEntity
+from src.entities.projectile import EnemyHitscanBeam, HitscanBeam
+from src.enums import ArmorType, DamageType, Faction
+
 
 class DroneWalker(HostileEntity):
     """Быстрый и слабый механический дрон корпорации."""
 
     def __init__(self, position: Coordinate, max_health: float = 60, speed: float = 50,
                  armor: ArmorType = ArmorType.LIGHT, reward: int = 15,
-                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None):
         """Создаёт лёгкого дрона."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
                           vision_radius=vision_radius)
@@ -23,7 +24,7 @@ class HeavyAssaultDrone(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 180, speed: float = 35,
                  armor: ArmorType = ArmorType.HEAVY, reward: int = 45,
-                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None):
         """Создаёт тяжёлого штурмового дрона."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
                           vision_radius=vision_radius)
@@ -42,7 +43,7 @@ class GiantRoach(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 250, speed: float = 25,
                  armor: ArmorType = ArmorType.HEAVY, reward: int = 40,
-                 faction: Faction = Faction.FAUNA, vision_radius: Optional[float] = None):
+                 faction: Faction = Faction.FAUNA, vision_radius: float | None = None):
         """Создаёт гигантского таракана."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
                           vision_radius=vision_radius)
@@ -69,7 +70,7 @@ class ScoutDrone(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 100, speed: float = 70,
                  armor: ArmorType = ArmorType.ENERGY_SHIELDED, reward: int = 60,
-                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None):
         """Создаёт дрона-разведчика."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
                           vision_radius=vision_radius)
@@ -92,7 +93,7 @@ class SniperDrone(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 70, speed: float = 40,
                  armor: ArmorType = ArmorType.LIGHT, reward: int = 55,
-                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None):
         """Создаёт дрона-снайпера."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
                           vision_radius=vision_radius)
@@ -126,7 +127,7 @@ class MedicDrone(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 90, speed: float = 55,
                  armor: ArmorType = ArmorType.ENERGY_SHIELDED, reward: int = 50,
-                 faction: Faction = Faction.CORPORATION, vision_radius: Optional[float] = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None):
         """Создаёт дрона-медика."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
                           vision_radius=vision_radius)
@@ -155,7 +156,7 @@ class BioTitan(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 400, speed: float = 20,
                  armor: ArmorType = ArmorType.ORGANIC, reward: int = 70,
-                 faction: Faction = Faction.FAUNA, vision_radius: Optional[float] = None):
+                 faction: Faction = Faction.FAUNA, vision_radius: float | None = None):
         """Создаёт био-титана."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
                           vision_radius=vision_radius)

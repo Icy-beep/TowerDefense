@@ -3,7 +3,7 @@
 from src.core.coordinate import Coordinate
 from src.core.map import Map
 from src.entities.fauna_nest import FaunaNest
-from src.systems.sector import Sector, build_sector_grid
+from src.systems.sector import build_sector_grid
 
 
 def test_map_without_sectors_treats_everything_as_unlocked():

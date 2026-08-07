@@ -2,14 +2,12 @@
 import os
 import random
 
-import pytest
-
 from src.core.coordinate import Coordinate
 from src.core.game_session import GameSession
 from src.core.map import Map
 from src.entities.enemies import DroneWalker
 from src.entities.turrets import LaserTurret
-from src.ui.sound_manager import discover_sound_files, SoundManager
+from src.ui.sound_manager import SoundManager, discover_sound_files
 
 
 def test_discover_sound_files_groups_by_subfolder_and_filters_extensions(tmp_path):

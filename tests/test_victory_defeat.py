@@ -1,10 +1,9 @@
 """Уменьшение прочности базы врагами и определение состояний победы/поражения."""
-from src.core.game_state import GameStateManager
-from src.core.game_session import GameSession
 from src.core.coordinate import Coordinate
+from src.core.game_session import GameSession
+from src.core.game_state import GameStateManager
 from src.entities.enemies import DroneWalker
 from src.enums import GameState
-
 
 
 def _enemy_that_reached_base():

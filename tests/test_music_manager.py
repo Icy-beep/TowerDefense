@@ -1,5 +1,5 @@
 """Категории фоновой музыки и MusicManager."""
-from src.ui.music_manager import discover_music_files, MusicManager
+from src.ui.music_manager import MusicManager, discover_music_files
 
 
 def test_discover_music_files_groups_by_subfolder_and_filters_extensions(tmp_path):

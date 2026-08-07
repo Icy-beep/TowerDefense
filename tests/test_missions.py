@@ -6,7 +6,7 @@ from src.core.game_session import GameSession
 from src.core.map import Map
 from src.entities.turrets import LaserTurret
 from src.enums import GameState
-from src.systems.mission import Objective, SurviveDurationObjective, ProtectTowersObjective
+from src.systems.mission import Objective, ProtectTowersObjective, SurviveDurationObjective
 
 
 def _fake_session(state=GameState.PLAYING, elapsed_time=0.0, towers_lost=0):

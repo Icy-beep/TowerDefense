@@ -1,15 +1,16 @@
-from typing import List, Optional
-from src.entities.defense_module import DefenseModule
-from src.entities.projectile import Projectile, HitscanBeam, BulletProjectile, MortarShell
-from src.entities.hostile_entity import HostileEntity
-from src.enums import DamageType
+
 from src.core.coordinate import Coordinate
+from src.entities.defense_module import DefenseModule
+from src.entities.hostile_entity import HostileEntity
+from src.entities.projectile import BulletProjectile, HitscanBeam, MortarShell, Projectile
+from src.enums import DamageType
+
 
 class LaserTurret(DefenseModule):
     """Быстрая башня с энергетическим уроном."""
 
     def __init__(self, position: Coordinate, range_radius: float = 120, damage: float = 15,
-                 cost: int = 50, attack_speed: float = 2.0, upgrade_costs: Optional[List[int]] = None):
+                 cost: int = 50, attack_speed: float = 2.0, upgrade_costs: list[int] | None = None):
         """Создаёт лазерную башню."""
         super().__init__(position, range_radius=range_radius, damage=damage, cost=cost, attack_speed=attack_speed)
         self.damage_type = DamageType.ENERGY
@@ -30,7 +31,7 @@ class BulletTurret(DefenseModule):
     SPREAD_DEGREES = 6.0
 
     def __init__(self, position: Coordinate, range_radius: float = 150, damage: float = 30,
-                 cost: int = 100, attack_speed: float = 1.0, upgrade_costs: Optional[List[int]] = None):
+                 cost: int = 100, attack_speed: float = 1.0, upgrade_costs: list[int] | None = None):
         """Создаёт пулемётную башню."""
         super().__init__(position, range_radius=range_radius, damage=damage, cost=cost, attack_speed=attack_speed)
         self.damage_type = DamageType.KINETIC
@@ -52,7 +53,7 @@ class MortarTurret(DefenseModule):
     """Медленная башня с мощным взрывным уроном."""
 
     def __init__(self, position: Coordinate, range_radius: float = 200, damage: float = 80,
-                 cost: int = 200, attack_speed: float = 0.5, upgrade_costs: Optional[List[int]] = None):
+                 cost: int = 200, attack_speed: float = 0.5, upgrade_costs: list[int] | None = None):
         """Создаёт миномётную башню."""
         super().__init__(position, range_radius=range_radius, damage=damage, cost=cost, attack_speed=attack_speed)
         self.damage_type = DamageType.EXPLOSIVE

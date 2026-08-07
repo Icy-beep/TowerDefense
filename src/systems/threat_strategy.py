@@ -1,7 +1,7 @@
 """Источники угрозы: каждая фракция появляется на карте по своей логике."""
 import random
 from abc import ABC, abstractmethod
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 from src.core.coordinate import Coordinate
 from src.enums import Faction
@@ -31,10 +31,10 @@ class ThreatStrategy(ABC):
 class ShipLandingStrategy(ThreatStrategy):
     """Corporation высаживается с кораблей: маркер на границе карты, затем через warning_time отряд."""
 
-    def __init__(self, enemy_types: List[str], squad_size_range=(2, 4),
+    def __init__(self, enemy_types: list[str], squad_size_range=(2, 4),
                  base_interval: float = 14.0, min_interval: float = 5.0,
                  interval_decay_per_second: float = 0.03, warning_time: float = 3.0,
-                 rng: Optional[random.Random] = None):
+                 rng: random.Random | None = None):
         """Создаёт стратегию высадки с заданными типами врагов и темпом
         эскалации."""
         self.enemy_types = enemy_types
@@ -47,7 +47,7 @@ class ShipLandingStrategy(ThreatStrategy):
 
         self.elapsed = 0.0
         self.timer = base_interval
-        self.pending_landings: List[PendingLanding] = []
+        self.pending_landings: list[PendingLanding] = []
         self._spawn_count = 0
 
     def _current_interval(self) -> float:
@@ -115,9 +115,9 @@ class ShipLandingStrategy(ThreatStrategy):
 class NestSpawnStrategy(ThreatStrategy):
     """Fauna спавнит одного врага по таймеру с ограничением на число живых врагов фракции."""
 
-    def __init__(self, enemy_types: List[str], base_interval: float = 6.0,
+    def __init__(self, enemy_types: list[str], base_interval: float = 6.0,
                  min_interval: float = 1.5, interval_decay_per_second: float = 0.02,
-                 max_active: int = 25, rng: Optional[random.Random] = None):
+                 max_active: int = 25, rng: random.Random | None = None):
         """Создаёт стратегию спавна с заданными типами врагов и лимитом
         популяции."""
         self.enemy_types = enemy_types

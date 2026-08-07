@@ -4,18 +4,16 @@
 import types
 
 import pygame
-import pytest
 
 from src.core.coordinate import Coordinate
-from src.core.map import Map
 from src.core.game_session import GameSession
+from src.core.map import Map
 from src.entities.enemies import DroneWalker
 from src.entities.power_generator import PowerGenerator
 from src.entities.power_pylon import PowerPylon
 from src.entities.turrets import LaserTurret
 from src.enums import DamageType
 from src.factories.tower_factory import TowerFactory
-
 
 # --- Инфраструктура: базовое поведение -----------------------------------------
 
@@ -332,8 +330,9 @@ def test_renderer_draws_power_links():
 
 
 def test_renderer_marks_unpowered_tower_with_a_warning_ring():
-    from src.ui.map_renderer import MapRenderer
     import types as _types
+
+    from src.ui.map_renderer import MapRenderer
 
     renderer = MapRenderer()
     tower = LaserTurret(Coordinate(100, 100))

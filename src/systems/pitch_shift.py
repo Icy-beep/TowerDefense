@@ -1,6 +1,6 @@
 """Ресемплинг сэмплов для случайной вариации питча (высоты тона) звука."""
 import array
-from typing import Sequence
+from collections.abc import Sequence
 
 
 def resample_pitch(samples: Sequence[int], channels: int, pitch_factor: float) -> array.array:

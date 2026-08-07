@@ -5,7 +5,11 @@ import pytest
 
 from src.core.coordinate import Coordinate
 from src.systems.spatial_audio import (
-    ZOOM_FALLOFF_MIN_VOLUME, ZOOM_FALLOFF_START, volume_for_distance, volume_for_position, volume_for_zoom,
+    ZOOM_FALLOFF_MIN_VOLUME,
+    ZOOM_FALLOFF_START,
+    volume_for_distance,
+    volume_for_position,
+    volume_for_zoom,
 )
 
 

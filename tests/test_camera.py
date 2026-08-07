@@ -1,5 +1,6 @@
 """Регрессия: zoom_at_mouse должен держать мировую точку под курсором."""
 import pytest
+
 from src.core.camera import Camera
 
 

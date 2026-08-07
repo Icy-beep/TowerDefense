@@ -1,8 +1,8 @@
 """Загрузка и отдача спрайтов из assets/sprites/."""
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
 
 import pygame
 
@@ -22,9 +22,9 @@ DEFAULT_SPRITES_ROOT = _default_sprites_root()
 SUPPORTED_EXTENSIONS = (".png", ".jpg", ".jpeg", ".bmp")
 
 
-def discover_sprite_files(sprites_root: str) -> Dict[str, List[str]]:
+def discover_sprite_files(sprites_root: str) -> dict[str, list[str]]:
     """Сканирует sprites_root и возвращает {ключ: [пути к кадрам]}."""
-    result: Dict[str, List[str]] = {}
+    result: dict[str, list[str]] = {}
     if not os.path.isdir(sprites_root):
         return result
 
@@ -53,13 +53,13 @@ class SpriteManager:
     ANIMATION_FPS = 8.0
 
     def __init__(self, sprites_root: str = DEFAULT_SPRITES_ROOT,
-                 on_progress: Optional[Callable[[int, int], None]] = None):
+                 on_progress: Callable[[int, int], None] | None = None):
         """Загружает все найденные спрайты; несколько файлов в папке = кадры анимации.
 
         on_progress(done, total), если задан, вызывается после каждого файла — так же,
         как у SoundManager, чтобы загрузка большого количества спрайтов не подвешивала окно."""
         self.enabled = True
-        self._frames: Dict[str, List[pygame.Surface]] = {}
+        self._frames: dict[str, list[pygame.Surface]] = {}
 
         entries_by_key = discover_sprite_files(sprites_root)
         total_files = sum(len(paths) for paths in entries_by_key.values())
@@ -79,7 +79,7 @@ class SpriteManager:
             if loaded:
                 self._frames[key] = self._autocrop_group(loaded)
 
-    def _autocrop_group(self, frames: List[pygame.Surface]) -> List[pygame.Surface]:
+    def _autocrop_group(self, frames: list[pygame.Surface]) -> list[pygame.Surface]:
         """Обрезает все кадры одной папки по ОДНОЙ общей рамке — объединению непрозрачных
         областей всех кадров, а не каждый кадр по своей собственной. Если обрезать каждый кадр
         индивидуально, у кадров с разной формой силуэта (например, башня повёрнута под разными
@@ -113,7 +113,7 @@ class SpriteManager:
         """Проверяет, загружен ли хотя бы один спрайт для данного ключа."""
         return bool(self._frames.get(key))
 
-    def get_frame(self, key: str, elapsed_time: float = 0.0) -> Optional[pygame.Surface]:
+    def get_frame(self, key: str, elapsed_time: float = 0.0) -> pygame.Surface | None:
         """Возвращает текущий кадр спрайта для ключа, или None, если спрайтов нет.
 
         Один файл в папке — статичный спрайт, всегда отдаётся он же. Несколько файлов —
@@ -126,7 +126,7 @@ class SpriteManager:
         frame_index = int(elapsed_time * self.ANIMATION_FPS) % len(frames)
         return frames[frame_index]
 
-    def get_frame_for_angle(self, key: str, angle_degrees: float = 0.0) -> Optional[pygame.Surface]:
+    def get_frame_for_angle(self, key: str, angle_degrees: float = 0.0) -> pygame.Surface | None:
         """Возвращает кадр, ближайший к заданному азимуту (0° = кадр frame_01, "вверх/север",
         дальше по часовой стрелке) — для спрайтов, где несколько файлов в папке означают не
         кадры анимации, а вид объекта под разными углами поворота (например, направленные

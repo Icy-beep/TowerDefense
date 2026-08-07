@@ -1,18 +1,15 @@
 """Гнёзда фауны: разрушаемые точки спавна, расставляемые один раз при старте игры."""
-import math
 import random
 import types
 
 import pygame
-import pytest
 
 from src.core.coordinate import Coordinate
-from src.core.map import Map
 from src.core.game_session import GameSession
+from src.core.map import Map
 from src.entities.fauna_nest import FaunaNest
 from src.entities.turrets import LaserTurret
 from src.enums import DamageType, Faction
-
 
 # --- FaunaNest: базовое поведение ---------------------------------------------
 
@@ -305,7 +302,7 @@ def test_renderer_draws_health_bar_for_alive_nests():
 
 
 def test_renderer_skips_destroyed_nests():
-    from src.ui.map_renderer import MapRenderer, FACTION_SPAWN_COLORS
+    from src.ui.map_renderer import FACTION_SPAWN_COLORS, MapRenderer
 
     renderer = MapRenderer()
     nest = FaunaNest(Coordinate(100, 100))

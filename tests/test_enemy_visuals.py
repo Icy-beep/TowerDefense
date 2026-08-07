@@ -1,9 +1,10 @@
 """Визуальное различие типов врагов на карте (MapRenderer)."""
 import types
-from src.ui.map_renderer import MapRenderer, ENEMY_COLORS, DEFAULT_ENEMY_COLOR
-from src.factories.enemy_factory import EnemyFactory
+
 from src.core.coordinate import Coordinate
 from src.core.game_session import GameSession
+from src.factories.enemy_factory import EnemyFactory
+from src.ui.map_renderer import DEFAULT_ENEMY_COLOR, ENEMY_COLORS, MapRenderer
 
 
 def test_every_registered_enemy_type_has_a_distinct_color():

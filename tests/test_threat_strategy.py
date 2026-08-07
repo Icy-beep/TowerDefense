@@ -5,7 +5,12 @@ import types
 from src.core.coordinate import Coordinate
 from src.core.game_session import GameSession
 from src.enums import Faction
-from src.systems.threat_strategy import ShipLandingStrategy, NestSpawnStrategy, PendingLanding, ThreatStrategy
+from src.systems.threat_strategy import (
+    NestSpawnStrategy,
+    PendingLanding,
+    ShipLandingStrategy,
+    ThreatStrategy,
+)
 
 
 class _FakeMap:

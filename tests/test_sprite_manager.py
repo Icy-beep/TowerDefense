@@ -1,5 +1,5 @@
 """Загрузка спрайтов и смена кадров анимации в SpriteManager."""
-from src.ui.sprite_manager import discover_sprite_files, SpriteManager
+from src.ui.sprite_manager import SpriteManager, discover_sprite_files
 
 
 def test_discover_sprite_files_groups_by_subfolder_and_filters_extensions(tmp_path):

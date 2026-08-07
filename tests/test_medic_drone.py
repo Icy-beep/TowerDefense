@@ -1,13 +1,11 @@
 """Дрон-медик Corporation: не атакует, лечит союзников в группе, избегает башен вне группы."""
-import pytest
 
 from src.core.coordinate import Coordinate
+from src.core.game_session import GameSession
 from src.core.map import Map
-from src.entities.enemies import MedicDrone, HeavyAssaultDrone, GiantRoach
+from src.entities.enemies import GiantRoach, HeavyAssaultDrone, MedicDrone
 from src.enums import ArmorType, Faction
 from src.factories.enemy_factory import EnemyFactory
-from src.core.game_session import GameSession
-
 
 
 def test_medic_drone_cannot_attack_and_heals_allies():

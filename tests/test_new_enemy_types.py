@@ -1,6 +1,6 @@
 """HeavyAssaultDrone и BioTitan: каждый контрит один конкретный тип урона башен."""
 from src.core.coordinate import Coordinate
-from src.entities.enemies import HeavyAssaultDrone, BioTitan
+from src.entities.enemies import BioTitan, HeavyAssaultDrone
 from src.enums import ArmorType, Faction
 from src.factories.enemy_factory import EnemyFactory
 

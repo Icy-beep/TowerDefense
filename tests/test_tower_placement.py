@@ -1,8 +1,9 @@
 """Списание ресурсов при размещении башни и запрет при недостатке средств."""
 import pytest
-from src.core.game_session import GameSession
-from src.entities.turrets import LaserTurret, BulletTurret
+
 from src.core.coordinate import Coordinate
+from src.core.game_session import GameSession
+from src.entities.turrets import BulletTurret, LaserTurret
 
 
 @pytest.fixture

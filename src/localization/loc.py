@@ -2,7 +2,6 @@
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
 
 DEFAULT_LANGUAGE = "ru"
 
@@ -27,11 +26,11 @@ DEFAULT_LOCALE_DIR = _default_locale_dir()
 class Loc:
     """Загружает и возвращает переведённые строки интерфейса."""
 
-    def __init__(self, language: str = DEFAULT_LANGUAGE, locale_dir: Optional[Path] = None):
+    def __init__(self, language: str = DEFAULT_LANGUAGE, locale_dir: Path | None = None):
         """Создаёт локализацию для заданного языка."""
         self.language = language
         self.locale_dir = Path(locale_dir) if locale_dir else DEFAULT_LOCALE_DIR
-        self._cache: Dict[str, dict] = {}
+        self._cache: dict[str, dict] = {}
 
     def _strings(self) -> dict:
         """Загружает и кэширует словарь строк текущего языка."""
@@ -58,14 +57,14 @@ class Loc:
         """Переключает текущий язык; строки следующего языка подгружаются лениво."""
         self.language = language
 
-    def available_languages(self) -> List[str]:
+    def available_languages(self) -> list[str]:
         """Список кодов языков, для которых есть файл в locale_dir (по имени файла)."""
         if not self.locale_dir.is_dir():
             return [self.language]
         codes = sorted(p.stem for p in self.locale_dir.glob("*.json"))
         return codes or [self.language]
 
-    def language_name(self, language: Optional[str] = None) -> str:
+    def language_name(self, language: str | None = None) -> str:
         """Отображаемое имя языка для UI (например, для переключателя в настройках)."""
         return LANGUAGE_NAMES.get(language or self.language, language or self.language)
 

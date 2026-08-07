@@ -1,7 +1,6 @@
-import pytest
 from src.core.coordinate import Coordinate
-from src.entities.turrets import LaserTurret
 from src.entities.enemies import DroneWalker
+from src.entities.turrets import LaserTurret
 
 
 class TestTowerTargeting:

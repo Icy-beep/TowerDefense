@@ -2,13 +2,14 @@
 попал по башне и постройка не выбрана)."""
 import collections
 import types
+
 import pygame
 import pytest
 
 from src.core.camera import Camera
+from src.core.coordinate import Coordinate
 from src.core.game_session import GameSession
 from src.core.orbital_mode_controller import OrbitalModeController
-from src.core.coordinate import Coordinate
 
 
 def _keys(pressed: dict):

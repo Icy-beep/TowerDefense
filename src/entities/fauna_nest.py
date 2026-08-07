@@ -1,6 +1,6 @@
 """Гнездо фауны - неподвижная разрушаемая точка спавна."""
-from src.entities.entity import Entity
 from src.core.coordinate import Coordinate
+from src.entities.entity import Entity
 from src.enums import ArmorType, DamageType, Faction
 
 

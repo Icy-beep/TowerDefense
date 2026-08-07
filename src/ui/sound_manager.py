@@ -3,8 +3,8 @@ import array
 import os
 import random
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
 
 import pygame
 
@@ -29,11 +29,11 @@ COMMON_FILE_WEIGHT = 1.0
 RARE_FILE_WEIGHT = 0.1
 
 
-def discover_sound_files(sounds_root: str) -> Dict[str, List[Tuple[str, float]]]:
+def discover_sound_files(sounds_root: str) -> dict[str, list[tuple[str, float]]]:
     """Сканирует sounds_root и возвращает {имя_события: [(путь, вес), ...]}.
 
     Файлы из подпапки rare/ получают заниженный вес — редкие вариации звука."""
-    result: Dict[str, List[Tuple[str, float]]] = {}
+    result: dict[str, list[tuple[str, float]]] = {}
     if not os.path.isdir(sounds_root):
         return result
 
@@ -53,7 +53,7 @@ def discover_sound_files(sounds_root: str) -> Dict[str, List[Tuple[str, float]]]
     return result
 
 
-def _collect_weighted_files(directory: str, weight: float) -> List[Tuple[str, float]]:
+def _collect_weighted_files(directory: str, weight: float) -> list[tuple[str, float]]:
     """Возвращает список (путь, weight) для звуковых файлов прямо в directory."""
     return [
         (os.path.join(directory, filename), weight)
@@ -70,8 +70,8 @@ class SoundManager:
     PITCH_VARIANTS = 4
 
     def __init__(self, sounds_root: str = DEFAULT_SOUNDS_ROOT, volume: float = 0.45,
-                 rng: Optional[random.Random] = None,
-                 on_progress: Optional[Callable[[int, int], None]] = None):
+                 rng: random.Random | None = None,
+                 on_progress: Callable[[int, int], None] | None = None):
         """Загружает все звуки, найденные в sounds_root, по подпапкам-событиям.
 
         on_progress(done, total), если задан, вызывается после каждого обработанного файла —
@@ -80,9 +80,9 @@ class SoundManager:
         self._rng = rng or random
         self.volume = volume
         self.enabled = True
-        self._sounds: Dict[str, List[List[pygame.mixer.Sound]]] = {}
-        self._weights: Dict[str, List[float]] = {}
-        self._cooldowns: Dict[str, float] = {}
+        self._sounds: dict[str, list[list[pygame.mixer.Sound]]] = {}
+        self._weights: dict[str, list[float]] = {}
+        self._cooldowns: dict[str, float] = {}
 
         try:
             if not pygame.mixer.get_init():
@@ -113,7 +113,7 @@ class SoundManager:
                 self._sounds[event_name] = loaded_variant_groups
                 self._weights[event_name] = loaded_weights
 
-    def _build_pitch_variants(self, sound: "pygame.mixer.Sound") -> List["pygame.mixer.Sound"]:
+    def _build_pitch_variants(self, sound: "pygame.mixer.Sound") -> list["pygame.mixer.Sound"]:
         """Один раз при загрузке считает несколько готовых вариаций питча звука, чтобы
         play() не занимался ресемплингом на лету (это и вызывало статтер при частых звуках)."""
         variants = [sound]

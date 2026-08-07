@@ -1,13 +1,19 @@
 """Отложенная атака: враги ждут сбора группы у точки появления и наваливаются на базу
 массой, набрав Map.STAGING_GROUP_SIZE живых участников (см. Map._update_staging_groups)."""
-import pytest
 
 from src.core.coordinate import Coordinate
-from src.core.map import Map
 from src.core.game_session import GameSession
-from src.entities.enemies import DroneWalker, GiantRoach, HeavyAssaultDrone, BioTitan, ScoutDrone, MedicDrone
-from src.systems.group_formation import GroupFormationSystem
+from src.core.map import Map
+from src.entities.enemies import (
+    BioTitan,
+    DroneWalker,
+    GiantRoach,
+    HeavyAssaultDrone,
+    MedicDrone,
+    ScoutDrone,
+)
 from src.enums import Faction
+from src.systems.group_formation import GroupFormationSystem
 
 
 def test_combat_enemies_stage_before_attacking():

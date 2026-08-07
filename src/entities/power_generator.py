@@ -1,6 +1,6 @@
 """Генератор энергии - независимый источник питания энергосети."""
-from src.entities.power_infrastructure import PowerInfrastructure
 from src.core.coordinate import Coordinate
+from src.entities.power_infrastructure import PowerInfrastructure
 
 
 class PowerGenerator(PowerInfrastructure):

@@ -1,10 +1,9 @@
 """Базовый класс энергетической инфраструктуры (генераторы и пилоны)."""
-from typing import List, Optional
 
+from src.core.coordinate import Coordinate
 from src.entities.defense_module import DefenseModule
 from src.entities.hostile_entity import HostileEntity
 from src.entities.projectile import Projectile
-from src.core.coordinate import Coordinate
 
 
 class PowerInfrastructure(DefenseModule):
@@ -34,10 +33,10 @@ class PowerInfrastructure(DefenseModule):
         self.health = max_health
         self.max_level = 1
 
-    def find_target(self, enemies: List[HostileEntity]) -> Optional[HostileEntity]:
+    def find_target(self, enemies: list[HostileEntity]) -> HostileEntity | None:
         """Инфраструктура никогда не ищет цель - она не умеет стрелять."""
         return None
 
-    def fire(self, target: HostileEntity) -> Optional[Projectile]:
+    def fire(self, target: HostileEntity) -> Projectile | None:
         """Инфраструктура никогда не стреляет."""
         return None

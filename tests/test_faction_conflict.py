@@ -1,9 +1,8 @@
 """Бой между Corporation и Fauna при встрече в радиусе обзора, приоритет над охотой на башню."""
-import pytest
 
 from src.core.coordinate import Coordinate
 from src.core.map import Map
-from src.entities.enemies import DroneWalker, GiantRoach, ScoutDrone
+from src.entities.enemies import DroneWalker, GiantRoach
 from src.entities.turrets import LaserTurret
 from src.enums import Faction
 from src.systems.group_formation import GroupFormationSystem

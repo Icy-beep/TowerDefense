@@ -66,6 +66,7 @@ def test_render_computes_alt_held_from_either_alt_key(monkeypatch):
     """Смоук-тест полного render(): ALT читается через pygame.key.get_pressed()
     один раз в начале и не должен ронять остальной рендер."""
     import collections
+
     from src.core.game_session import GameSession
 
     session = GameSession()

@@ -5,9 +5,8 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
-from src.save_load.serializer import session_to_dict, apply_dict_to_session
+from src.save_load.serializer import apply_dict_to_session, session_to_dict
 
 QUICKSAVE_SLOT_ID = "_quicksave"
 
@@ -28,7 +27,7 @@ class SaveManager:
     сохранения. Ошибки чтения/записи (нет прав, битый файл) не бросают исключений -
     возвращают False/None, чтобы не ронять игру из-за проблем с диском."""
 
-    def __init__(self, saves_dir: Optional[Path] = None):
+    def __init__(self, saves_dir: Path | None = None):
         """Создаёт менеджер сохранений с заданной или стандартной папкой."""
         self.saves_dir = Path(saves_dir) if saves_dir else default_saves_dir()
 
@@ -48,7 +47,7 @@ class SaveManager:
         except OSError:
             return False
 
-    def save_to_new_slot(self, session) -> Optional[str]:
+    def save_to_new_slot(self, session) -> str | None:
         """Создаёт новый именованный слот с уникальным именем по текущему времени.
         Возвращает id созданного слота, или None при ошибке записи."""
         stamp = datetime.now().strftime("save_%Y%m%d_%H%M%S")
@@ -81,12 +80,12 @@ class SaveManager:
             return False
         return True
 
-    def list_slots(self) -> List[dict]:
+    def list_slots(self) -> list[dict]:
         """Метаданные всех именованных слотов (без быстрого сохранения),
         отсортированные от новых к старым."""
         return self._read_metadata(include_quicksave=False)
 
-    def quicksave_info(self) -> Optional[dict]:
+    def quicksave_info(self) -> dict | None:
         """Метаданные слота быстрого сохранения, или None, если его ещё нет."""
         path = self._path_for(QUICKSAVE_SLOT_ID)
         if not path.exists():
@@ -98,7 +97,7 @@ class SaveManager:
         кнопкой "Продолжить" в главном меню."""
         return bool(self.list_slots()) or self.quicksave_info() is not None
 
-    def most_recent_slot_id(self) -> Optional[str]:
+    def most_recent_slot_id(self) -> str | None:
         """Id самого свежего по времени сохранения (именованного или быстрого) -
         используется кнопкой "Продолжить" в главном меню."""
         candidates = self.list_slots()
@@ -109,7 +108,7 @@ class SaveManager:
             return None
         return max(candidates, key=lambda info: info["saved_at"])["slot_id"]
 
-    def _read_metadata(self, include_quicksave: bool) -> List[dict]:
+    def _read_metadata(self, include_quicksave: bool) -> list[dict]:
         """Читает метаданные (без полного состояния карты) из всех файлов слотов."""
         if not self.saves_dir.is_dir():
             return []
@@ -124,7 +123,7 @@ class SaveManager:
         results.sort(key=lambda info: info["saved_at"], reverse=True)
         return results
 
-    def _read_one(self, path: Path, slot_id: str) -> Optional[dict]:
+    def _read_one(self, path: Path, slot_id: str) -> dict | None:
         """Читает метаданные одного файла слота, не поднимая исключений при ошибке."""
         try:
             with open(path, encoding="utf-8") as f:

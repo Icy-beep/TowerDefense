@@ -1,9 +1,10 @@
 """Выбор врага кликом: приоритет клика и очистка выбора при исчезновении врага."""
 import pytest
+
+from src.core.coordinate import Coordinate
 from src.core.game_session import GameSession
 from src.core.orbital_mode_controller import OrbitalModeController
 from src.entities.enemies import DroneWalker
-from src.core.coordinate import Coordinate
 
 
 @pytest.fixture

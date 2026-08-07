@@ -1,17 +1,18 @@
 import math
 import random
-from typing import Callable, Dict, List, Optional, Set, Tuple
 from collections import deque
+from collections.abc import Callable
+
 from src.core.coordinate import Coordinate
+from src.core.navigation import NavigationGrid
 from src.entities.defense_module import DefenseModule
-from src.entities.hostile_entity import HostileEntity
 from src.entities.fauna_nest import FaunaNest
+from src.entities.hostile_entity import HostileEntity
 from src.entities.power_infrastructure import PowerInfrastructure
 from src.entities.projectile import Projectile
-from src.core.navigation import NavigationGrid
+from src.enums import Faction
 from src.systems.faction_intel import FactionIntel
 from src.systems.sector import Sector
-from src.enums import Faction
 
 
 class Map:
@@ -21,19 +22,19 @@ class Map:
         """Создаёт пустую карту заданного размера."""
         self.width = width
         self.height = height
-        self.on_event: Optional[Callable[[str], None]] = on_event
+        self.on_event: Callable[[str], None] | None = on_event
         self._rng = rng or random
         self._avoid_danger_searches_this_frame = 0
 
-        self.modules: List[DefenseModule] = []
-        self.enemies: List[HostileEntity] = []
-        self.fauna_nests: List[FaunaNest] = []
-        self.projectiles: List[Projectile] = []
+        self.modules: list[DefenseModule] = []
+        self.enemies: list[HostileEntity] = []
+        self.fauna_nests: list[FaunaNest] = []
+        self.projectiles: list[Projectile] = []
 
         self.nav_grid = NavigationGrid(width, height, cell_size=32)
 
-        self.base_position: Optional[Coordinate] = None
-        self.faction_intel: Dict[Faction, FactionIntel] = {faction: FactionIntel() for faction in Faction}
+        self.base_position: Coordinate | None = None
+        self.faction_intel: dict[Faction, FactionIntel] = {faction: FactionIntel() for faction in Faction}
 
         if group_formation is None:
             from src.systems.group_formation import GroupFormationSystem
@@ -41,24 +42,24 @@ class Map:
         self.group_formation = group_formation
 
         self.spawn_points = []
-        self.spawn_points_by_faction: Dict[Faction, List[Coordinate]] = {}
+        self.spawn_points_by_faction: dict[Faction, list[Coordinate]] = {}
         self.towers_lost_count = 0
 
         # Секторы прогрессии открытия карты (см. src/systems/sector.py). Пустой список -
         # прежнее поведение "всё открыто" для карт, созданных напрямую (как в большинстве
         # существующих тестов) - см. is_position_unlocked. GameSession.setup_game()
         # заполняет их через build_sector_grid.
-        self.sectors: List[Sector] = []
+        self.sectors: list[Sector] = []
 
         # Энергосеть выключена по умолчанию, чтобы карты, созданные напрямую (как в
         # большинстве существующих тестов) без генераторов/пилонов, вели себя как
         # раньше - лимит по питанию действует только там, где GameSession явно включил
         # его в setup_game(). См. _update_power_grid.
         self.power_grid_enabled = False
-        self.power_links: List[Tuple[Coordinate, Coordinate]] = []
+        self.power_links: list[tuple[Coordinate, Coordinate]] = []
         self._elapsed_time = 0.0
-        self._staging_anchor: Dict[Faction, List[Coordinate]] = {}
-        self._staging_anchor_created_at: Dict[int, float] = {}
+        self._staging_anchor: dict[Faction, list[Coordinate]] = {}
+        self._staging_anchor_created_at: dict[int, float] = {}
 
     def add_module(self, module: DefenseModule):
         """Добавляет башню на карту."""
@@ -73,13 +74,13 @@ class Map:
         if self.on_event:
             self.on_event(event_name, **data)
 
-    def spawn_points_for(self, faction: Faction) -> List[Coordinate]:
+    def spawn_points_for(self, faction: Faction) -> list[Coordinate]:
         """Возвращает точки спавна фракции."""
         if faction in self.spawn_points_by_faction:
             return self.spawn_points_by_faction[faction]
         return self.spawn_points
 
-    def _footprint_cells(self, position: Coordinate) -> Set[Tuple[int, int]]:
+    def _footprint_cells(self, position: Coordinate) -> set[tuple[int, int]]:
         """Возвращает клетки сетки (DefenseModule.FOOTPRINT_CELLS x FOOTPRINT_CELLS),
         которые займёт башня с центром в position."""
         node = self.nav_grid.get_node(position.x, position.y)
@@ -92,7 +93,7 @@ class Map:
             for dy in range(-radius, radius + 1)
         }
 
-    def sector_at(self, position: Coordinate) -> Optional[Sector]:
+    def sector_at(self, position: Coordinate) -> Sector | None:
         """Возвращает сектор, которому принадлежит точка, или None - если секторы не
         заданы (self.sectors пуст, как на картах без прогрессии открытия) или точка вне
         любого из них."""
@@ -108,7 +109,7 @@ class Map:
         sector = self.sector_at(position)
         return sector is None or sector.unlocked
 
-    def unlocked_fauna_spawn_points(self) -> List[Coordinate]:
+    def unlocked_fauna_spawn_points(self) -> list[Coordinate]:
         """Позиции живых гнёзд фауны в открытых секторах - именно из них должны появляться
         новые враги (см. NestSpawnStrategy.update). Гнёзда в закрытых секторах остаются на
         карте (видны/лечат отступающих - см. spawn_points_for), но не рожают новых врагов,
@@ -153,13 +154,13 @@ class Map:
 
     TOWER_AVOIDANCE_COST = 25.0
 
-    def path_to_base(self, start_pos: Coordinate, faction: Faction, avoid_danger: bool = False) -> List[Coordinate]:
+    def path_to_base(self, start_pos: Coordinate, faction: Faction, avoid_danger: bool = False) -> list[Coordinate]:
         """Строит путь до базы, обходя известные фракции башни."""
         if self.base_position is None:
             return []
         intel = self.faction_intel.setdefault(faction, FactionIntel())
         blocked_nodes = set()
-        avoidance_cost: Dict[tuple, float] = {}
+        avoidance_cost: dict[tuple, float] = {}
         covered_nodes = set()
         for tower in intel.known_towers():
             if tower.is_destroyed():
@@ -196,7 +197,7 @@ class Map:
     MAX_AVOID_DANGER_SEARCHES_PER_FRAME = 1
 
     def path_to_base_within_budget(self, start_pos: Coordinate, faction: Faction,
-                                    avoid_danger: bool = False) -> List[Coordinate]:
+                                    avoid_danger: bool = False) -> list[Coordinate]:
         """Как path_to_base, но дорогие avoid_danger=True поиски (жёсткий обход ВСЕХ
         известных башен) дополнительно делят один общий бюджет
         MAX_AVOID_DANGER_SEARCHES_PER_FRAME на кадр между всеми вызывающими местами
@@ -211,7 +212,7 @@ class Map:
             self._avoid_danger_searches_this_frame += 1
         return self.path_to_base(start_pos, faction, avoid_danger=avoid_danger)
 
-    def replan_enemy_paths(self, factions: Optional[set] = None):
+    def replan_enemy_paths(self, factions: set | None = None):
         """Пересчитывает путь живых врагов до базы (в рамках общего бюджета дорогих
         поисков на кадр - см. path_to_base_within_budget)."""
         for enemy in self.enemies:
@@ -240,7 +241,7 @@ class Map:
         """Радиус охоты на башни для фракции."""
         return self.TOWER_HUNT_RADIUS_OVERRIDES.get(faction, self.TOWER_HUNT_RADIUS)
 
-    def _update_group_targets(self, enemies: List[HostileEntity]):
+    def _update_group_targets(self, enemies: list[HostileEntity]):
         """Назначает лидерам групп известную башню в радиусе охоты - боевые башни
         приоритетнее инфраструктуры энергосети (генератор/пилон не могут ответить
         огнём, см. DefenseModule.IS_COMBAT_TOWER), а среди равных по приоритету
@@ -276,7 +277,7 @@ class Map:
         """Угол точки относительно базы, в радианах."""
         return math.atan2(position.y - self.base_position.y, position.x - self.base_position.x)
 
-    def _is_gap_at_angle(self, angle: float, known_towers: List[DefenseModule]) -> bool:
+    def _is_gap_at_angle(self, angle: float, known_towers: list[DefenseModule]) -> bool:
         """Правда ли, что в этом направлении от базы нет известной башни поблизости."""
         for tower in known_towers:
             tower_angle = self._bearing_from_base(tower.position)
@@ -285,7 +286,7 @@ class Map:
                 return False
         return True
 
-    def _advance_patrol(self, enemy: HostileEntity, delta_time: float, known_towers: List[DefenseModule]):
+    def _advance_patrol(self, enemy: HostileEntity, delta_time: float, known_towers: list[DefenseModule]):
         """Двигает врага по кругу вокруг базы на радиусе патрулирования."""
         patrol_radius = self.PATROL_RADIUS_PADDING + max((t.range_radius for t in known_towers), default=0.0)
         if enemy.patrol_angle is None:
@@ -426,7 +427,7 @@ class Map:
         self._staging_anchor_created_at[id(new_anchor)] = self._elapsed_time
         return new_anchor
 
-    def _update_staging_groups(self, enemies: List[HostileEntity]):
+    def _update_staging_groups(self, enemies: list[HostileEntity]):
         """Раз в кадр распределяет ожидающих врагов каждой фракции по якорям сбора -
         каждый якорь - это отдельная формирующаяся группа рядом с тем местом, где её
         участники появились (см. _find_or_create_anchor), а не одна общая точка на всю
@@ -437,7 +438,7 @@ class Map:
         далеко от всех остальных) может никогда не набрать STAGING_GROUP_SIZE сама по себе -
         чтобы она не кружила вечно, по истечении STAGING_MAX_WAIT она тоже выступает, каким
         бы малым ни был её состав."""
-        by_faction: Dict[Faction, List[HostileEntity]] = {}
+        by_faction: dict[Faction, list[HostileEntity]] = {}
         for enemy in enemies:
             if self._stage_eligible(enemy):
                 by_faction.setdefault(enemy.faction, []).append(enemy)
@@ -452,7 +453,7 @@ class Map:
                 if enemy.stage_anchor is None:
                     enemy.stage_anchor = self._find_or_create_anchor(faction, enemy.position)
 
-            clusters: Dict[int, List[HostileEntity]] = {}
+            clusters: dict[int, list[HostileEntity]] = {}
             for enemy in members:
                 clusters.setdefault(id(enemy.stage_anchor), []).append(enemy)
 
@@ -472,7 +473,7 @@ class Map:
             if anchor_id in live_anchor_ids
         }
 
-    def _commit_staging_group(self, members: List[HostileEntity]):
+    def _commit_staging_group(self, members: list[HostileEntity]):
         """Снимает набранную группу со сбора и отправляет её всей массой к базе -
         один участник становится лидером с маршрутом до базы, остальные пристраиваются
         к нему ведомыми (как в обычной групповой атаке, см. GroupFormationSystem)."""
@@ -507,7 +508,7 @@ class Map:
         )
         enemy.move_towards_point(target, delta_time)
 
-    def _nearest_covering_tower(self, position: Coordinate, margin: float = 0.0) -> Optional[DefenseModule]:
+    def _nearest_covering_tower(self, position: Coordinate, margin: float = 0.0) -> DefenseModule | None:
         """Возвращает ближайшую башню, простреливающую точку (с необязательным
         запасом margin к радиусу), или None."""
         covering = self._covering_towers(position, margin)
@@ -515,7 +516,7 @@ class Map:
             return None
         return min(covering, key=lambda m: position.distance_to(m.position))
 
-    def _covering_towers(self, position: Coordinate, margin: float = 0.0) -> List[DefenseModule]:
+    def _covering_towers(self, position: Coordinate, margin: float = 0.0) -> list[DefenseModule]:
         """Возвращает все боевые башни, простреливающие точку (с запасом margin).
         Инфраструктура энергосети не в счёт - см. is_position_covered."""
         return [m for m in self.modules
@@ -524,7 +525,7 @@ class Map:
     FLEE_EXIT_MARGIN = 60.0
     FLEE_TARGET_DISTANCE = 80.0
 
-    def _flee_target_from_towers(self, position: Coordinate, towers: List[DefenseModule]) -> Coordinate:
+    def _flee_target_from_towers(self, position: Coordinate, towers: list[DefenseModule]) -> Coordinate:
         """Точка бегства - шаг прочь от всех угрожающих башен сразу."""
         push_x = push_y = 0.0
         for tower in towers:
@@ -603,7 +604,7 @@ class Map:
     HEALER_HEAL_RADIUS = 120.0
     HEALER_HEAL_RATE_PER_SECOND = 0.12
 
-    def _find_nearest_ally_group_leader(self, enemy: HostileEntity) -> Optional[HostileEntity]:
+    def _find_nearest_ally_group_leader(self, enemy: HostileEntity) -> HostileEntity | None:
         """Находит ближайшего живого лидера группы своей фракции."""
         leaders = [
             other for other in self.enemies
@@ -681,7 +682,7 @@ class Map:
 
     ENEMY_COMBAT_DETECTION_RADIUS = 350.0
 
-    def _find_enemy_combat_target(self, enemy: HostileEntity) -> Optional[HostileEntity]:
+    def _find_enemy_combat_target(self, enemy: HostileEntity) -> HostileEntity | None:
         """Находит ближайшего живого врага чужой фракции в радиусе обнаружения.
         Это отдельный (и заметно больший) радиус от vision_radius - тот отвечает
         за туман войны над башнями, и если завязывать стычки между фракциями на
@@ -697,7 +698,7 @@ class Map:
             return None
         return min(candidates, key=lambda other: enemy.position.distance_to(other.position))
 
-    def _update_vision(self, enemies: List[HostileEntity]) -> set:
+    def _update_vision(self, enemies: list[HostileEntity]) -> set:
         """Открывает фракциям башни, попавшие в радиус обзора их врагов."""
         changed_factions = set()
         for enemy in enemies:
@@ -771,7 +772,7 @@ class Map:
             )
             module.is_powered = near_base or near_energized_node
 
-    def update(self, delta_time: float) -> tuple[List[HostileEntity], List[HostileEntity], List[FaunaNest]]:
+    def update(self, delta_time: float) -> tuple[list[HostileEntity], list[HostileEntity], list[FaunaNest]]:
         """Обновляет карту на один кадр. Возвращает (враги, дошедшие до базы, убитые
         враги, уничтоженные в этом кадре гнёзда фауны)."""
         self._elapsed_time += delta_time

@@ -1,6 +1,6 @@
 """Пилон - дешёвый ретранслятор энергосети без собственной генерации."""
-from src.entities.power_infrastructure import PowerInfrastructure
 from src.core.coordinate import Coordinate
+from src.entities.power_infrastructure import PowerInfrastructure
 
 
 class PowerPylon(PowerInfrastructure):

@@ -1,7 +1,8 @@
 """DefenseModule.upgrade()/can_upgrade()/get_upgrade_cost() — апгрейд башен по 'U'."""
 import pytest
-from src.entities.turrets import LaserTurret
+
 from src.core.coordinate import Coordinate
+from src.entities.turrets import LaserTurret
 
 
 @pytest.fixture
