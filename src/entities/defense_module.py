@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from src.core.coordinate import Coordinate
+from src.entities.hostile_entity import HostileEntity
 from src.entities.projectile import Projectile
 from src.enums import DamageType, ModuleStatus
 
@@ -79,7 +80,7 @@ class DefenseModule(Entity, ABC):
             return True
         return False
 
-    def update(self, delta_time: float, enemies: list['HostileEntity']) -> Projectile | None:
+    def update(self, delta_time: float, enemies: list[HostileEntity]) -> Projectile | None:
         """Обновляет башню на один кадр и стреляет по цели, если готова."""
         if self.is_landing:
             self._advance_landing(delta_time, enemies)
@@ -115,7 +116,7 @@ class DefenseModule(Entity, ABC):
             return
         self.facing_angle = math.degrees(math.atan2(dx, -dy)) % 360.0
 
-    def _advance_landing(self, delta_time: float, enemies: list['HostileEntity']):
+    def _advance_landing(self, delta_time: float, enemies: list[HostileEntity]):
         """Двигает башню вниз по высоте и наносит урон при приземлении."""
         self.landing_elapsed += delta_time
         t = self.landing_progress
@@ -127,7 +128,7 @@ class DefenseModule(Entity, ABC):
             self._pending_landed_event = True
             self._deal_landing_impact(enemies)
 
-    def _deal_landing_impact(self, enemies: list['HostileEntity']):
+    def _deal_landing_impact(self, enemies: list[HostileEntity]):
         """Наносит урон всем врагам, оказавшимся под точкой приземления. Инфраструктура
         энергосети (генератор/пилон) создаётся с damage=0.0 и никогда не задаёт
         self.damage_type (см. PowerInfrastructure) - она физически не может атаковать,
@@ -140,7 +141,7 @@ class DefenseModule(Entity, ABC):
             if enemy.is_alive() and self.position.distance_to(enemy.position) <= self.LANDING_IMPACT_RADIUS:
                 enemy.take_damage(impact_damage, self.damage_type)
 
-    def find_target(self, enemies: list['HostileEntity']) -> Optional['HostileEntity']:
+    def find_target(self, enemies: list[HostileEntity]) -> Optional[HostileEntity]:
         """Находит ближайшего врага в радиусе действия."""
         valid_targets = [
             e for e in enemies
@@ -151,7 +152,7 @@ class DefenseModule(Entity, ABC):
         return min(valid_targets, key=lambda e: self.position.distance_to(e.position))
 
     @abstractmethod
-    def fire(self, target: 'HostileEntity') -> Projectile | None:
+    def fire(self, target: HostileEntity) -> Projectile | None:
         """Создаёт снаряд по цели."""
         pass
 

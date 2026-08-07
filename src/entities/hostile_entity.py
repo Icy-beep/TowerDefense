@@ -1,11 +1,17 @@
 import math
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from src.core.coordinate import Coordinate
 from src.enums import ArmorType, DamageType, Faction
 
 from .entity import Entity
+
+if TYPE_CHECKING:
+    # Импорт только для проверки типов - projectile.py импортирует HostileEntity
+    # напрямую, поэтому обратный импорт Projectile здесь на уровне модуля создал бы
+    # цикл.
+    from src.entities.projectile import Projectile
 
 
 class HostileEntity(Entity, ABC):

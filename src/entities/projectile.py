@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from src.core.coordinate import Coordinate
+from src.entities.hostile_entity import HostileEntity
 from src.enums import DamageType
 
 
@@ -20,7 +21,7 @@ class Projectile(ABC):
         self.damage_type = damage_type
 
     @abstractmethod
-    def update(self, delta_time: float, enemies: list["HostileEntity"]) -> bool:
+    def update(self, delta_time: float, enemies: list[HostileEntity]) -> bool:
         """Обновляет снаряд на один кадр. Возвращает False, если снаряд нужно убрать с карты."""
         pass
 
@@ -32,8 +33,8 @@ class Projectile(ABC):
         """Имя звукового события при исчезновении снаряда с карты, если оно есть."""
         return None
 
-    def _find_collision(self, enemies: list["HostileEntity"],
-                         hit_radius: float | None = None) -> Optional["HostileEntity"]:
+    def _find_collision(self, enemies: list[HostileEntity],
+                         hit_radius: float | None = None) -> Optional[HostileEntity]:
         """Находит ближайшего живого врага в радиусе поражения снаряда."""
         radius = hit_radius if hit_radius is not None else self.HIT_RADIUS
         candidates = [e for e in enemies if e.is_alive() and self.position.distance_to(e.position) <= radius]
@@ -42,8 +43,8 @@ class Projectile(ABC):
         return min(candidates, key=lambda e: self.position.distance_to(e.position))
 
     @staticmethod
-    def _find_path_collision(start: Coordinate, end: Coordinate, enemies: list["HostileEntity"],
-                              hit_radius: float) -> Optional["HostileEntity"]:
+    def _find_path_collision(start: Coordinate, end: Coordinate, enemies: list[HostileEntity],
+                              hit_radius: float) -> Optional[HostileEntity]:
         """Находит врага, столкнувшегося со снарядом на пути от start до end."""
         dx, dy = end.x - start.x, end.y - start.y
         length_sq = dx * dx + dy * dy
@@ -71,7 +72,7 @@ class HitscanBeam(Projectile):
 
     BEAM_LIFETIME = 0.08
 
-    def __init__(self, position: Coordinate, target: "HostileEntity", damage: float, damage_type: DamageType):
+    def __init__(self, position: Coordinate, target: HostileEntity, damage: float, damage_type: DamageType):
         """Создаёт луч от башни до цели и сразу наносит урон."""
         super().__init__(Coordinate(position.x, position.y), damage, damage_type)
         self.origin = Coordinate(position.x, position.y)
@@ -82,7 +83,7 @@ class HitscanBeam(Projectile):
         if self._hit:
             self._target.take_damage(self.damage, self.damage_type)
 
-    def update(self, delta_time: float, enemies: list["HostileEntity"]) -> bool:
+    def update(self, delta_time: float, enemies: list[HostileEntity]) -> bool:
         """Отсчитывает время жизни луча на экране (урон уже нанесён при создании)."""
         self._time_left -= delta_time
         return self._time_left > 0
@@ -125,7 +126,7 @@ class _LinearProjectile(Projectile):
         self.traveled = 0.0
         self._hit_something = False
 
-    def update(self, delta_time: float, enemies: list["HostileEntity"]) -> bool:
+    def update(self, delta_time: float, enemies: list[HostileEntity]) -> bool:
         """Двигает снаряд вперёд и проверяет столкновение с врагами."""
         step = self.speed * delta_time
         start = Coordinate(self.position.x, self.position.y)
@@ -145,7 +146,7 @@ class _LinearProjectile(Projectile):
 class BulletProjectile(_LinearProjectile):
     """Пуля, летящая по прямой к позиции цели на момент выстрела."""
 
-    def __init__(self, position: Coordinate, target: "HostileEntity", damage: float, damage_type: DamageType,
+    def __init__(self, position: Coordinate, target: HostileEntity, damage: float, damage_type: DamageType,
                  speed: float, max_distance: float = 900.0, spread_degrees: float = 0.0,
                  rng: random.Random | None = None):
         """Создаёт пулю, летящую в сторону цели с необязательным случайным
@@ -180,7 +181,7 @@ class MortarShell(Projectile):
     SHRAPNEL_RANGE = 90.0
     SHRAPNEL_SPEED = 200.0
 
-    def __init__(self, position: Coordinate, target: "HostileEntity", damage: float, damage_type: DamageType,
+    def __init__(self, position: Coordinate, target: HostileEntity, damage: float, damage_type: DamageType,
                  rng: random.Random | None = None):
         """Создаёт миномётный снаряд, летящий в точку цели на момент выстрела."""
         super().__init__(Coordinate(position.x, position.y), damage, damage_type)
@@ -199,7 +200,7 @@ class MortarShell(Projectile):
         """Доля пройденного пути полёта от 0 до 1."""
         return min(1.0, self.elapsed / self.flight_time)
 
-    def update(self, delta_time: float, enemies: list["HostileEntity"]) -> bool:
+    def update(self, delta_time: float, enemies: list[HostileEntity]) -> bool:
         """Двигает снаряд по параболе и взрывается по приземлении."""
         if self._landed:
             return False
