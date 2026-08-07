@@ -18,7 +18,11 @@ from src.systems.sector import Sector
 class Map:
     """Игровая карта: башни, враги, снаряды, разведка и пути."""
 
-    def __init__(self, width=6000, height=6000, group_formation=None, on_event=None, rng=None):
+    DEFAULT_WIDTH = 6000
+    DEFAULT_HEIGHT = 6000
+    DEFAULT_CELL_SIZE = 32
+
+    def __init__(self, width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT, group_formation=None, on_event=None, rng=None):
         """Создаёт пустую карту заданного размера."""
         self.width = width
         self.height = height
@@ -31,7 +35,7 @@ class Map:
         self.fauna_nests: list[FaunaNest] = []
         self.projectiles: list[Projectile] = []
 
-        self.nav_grid = NavigationGrid(width, height, cell_size=32)
+        self.nav_grid = NavigationGrid(width, height, cell_size=self.DEFAULT_CELL_SIZE)
 
         self.base_position: Coordinate | None = None
         self.faction_intel: dict[Faction, FactionIntel] = {faction: FactionIntel() for faction in Faction}
