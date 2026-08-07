@@ -6,6 +6,7 @@ from src.localization.loc import loc
 BUTTON_WIDTH = 260
 BUTTON_HEIGHT = 60
 BUTTON_GAP = 20
+TITLE_BUTTON_GAP = 40
 
 
 class MenuScreen:
@@ -18,6 +19,7 @@ class MenuScreen:
         self._start_rect = (0, 0, 0, 0)
         self._settings_rect = (0, 0, 0, 0)
         self._exit_rect = (0, 0, 0, 0)
+        self._title_rect = (0, 0, 0, 0)
 
     def _layout(self, width, height, has_continue=False):
         """Рассчитывает положение кнопок под размер окна. Кнопка "Продолжить"
@@ -48,7 +50,13 @@ class MenuScreen:
 
         title = title_font.render(loc.get("menu.title"), True, (255, 255, 255))
         tw, th = title.get_size()
-        screen.blit(title, ((width - tw) // 2, height // 2 - 160))
+        # Позиция заголовка привязана к верхней кнопке, а не к фиксированному отступу от
+        # центра - иначе при появлении кнопки "Продолжить" блок кнопок вырастает на одну
+        # строку и наезжает на заголовок (регрессия, см. жалобу пользователя со скриншотом).
+        top_button_y = self._continue_rect[1] if has_continue else self._start_rect[1]
+        title_pos = ((width - tw) // 2, top_button_y - TITLE_BUTTON_GAP - th)
+        self._title_rect = (title_pos[0], title_pos[1], tw, th)
+        screen.blit(title, title_pos)
 
         if has_continue:
             self._draw_button(screen, self._continue_rect, loc.get("menu.continue"), font, (60, 130, 160))

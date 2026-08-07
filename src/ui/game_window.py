@@ -416,7 +416,15 @@ class GameView:
             self.settings.autosave_interval_seconds += value * AUTOSAVE_STEP_SECONDS
             self.settings.clamp_autosave_interval()
         elif kind == "back":
-            self.menu_view = "main"
+            # Настройки открываются и из главного меню (state MENU, актуален
+            # menu_view), и из меню паузы поверх игры (state PAUSED, актуален
+            # pause_view) - возврат должен затрагивать то состояние, которое
+            # реально сейчас на экране, иначе кнопка "Назад" в паузе молча
+            # ничего не делает (см. жалобу пользователя, ESC работал, кнопка нет).
+            if self.session.state == GameState.MENU:
+                self.menu_view = "main"
+            else:
+                self.pause_view = "menu"
         self.settings.save()
 
     def _cycle_resolution(self, direction):

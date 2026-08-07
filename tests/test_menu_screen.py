@@ -104,3 +104,32 @@ def test_render_with_continue_does_not_crash():
     title_font = pygame.font.SysFont("Arial", 40, bold=True)
 
     menu.render(surface, 900, 600, font, title_font, has_continue=True)
+
+
+def test_title_does_not_overlap_continue_button():
+    """Регрессия: с кнопкой "Продолжить" блок кнопок вырастает на одну строку и
+    раньше наезжал на заголовок при фиксированном отступе от центра экрана
+    (см. жалобу пользователя со скриншотом)."""
+    menu = MenuScreen()
+    pygame.init()
+    surface = pygame.Surface((900, 600))
+    font = pygame.font.SysFont("Arial", 18)
+    title_font = pygame.font.SysFont("Arial", 40, bold=True)
+
+    menu.render(surface, 900, 600, font, title_font, has_continue=True)
+
+    title_bottom = menu._title_rect[1] + menu._title_rect[3]
+    assert title_bottom <= menu._continue_rect[1], "заголовок не должен наезжать на кнопку \"Продолжить\""
+
+
+def test_title_does_not_overlap_start_button_without_continue():
+    menu = MenuScreen()
+    pygame.init()
+    surface = pygame.Surface((900, 600))
+    font = pygame.font.SysFont("Arial", 18)
+    title_font = pygame.font.SysFont("Arial", 40, bold=True)
+
+    menu.render(surface, 900, 600, font, title_font, has_continue=False)
+
+    title_bottom = menu._title_rect[1] + menu._title_rect[3]
+    assert title_bottom <= menu._start_rect[1]

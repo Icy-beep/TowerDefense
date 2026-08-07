@@ -99,6 +99,21 @@ def test_settings_button_switches_pause_view(view):
     assert view.pause_view == "settings"
 
 
+def test_settings_back_button_returns_to_pause_menu_without_resuming(view):
+    """Регрессия: кнопка "Назад" в настройках всегда переключала menu_view
+    ("main"), не глядя на то, что во время паузы актуален pause_view - клик по
+    ней молча ничего не делал, хотя ESC из того же места работал (см. жалобу
+    пользователя)."""
+    view._handle_escape()
+    view._apply_pause_action("settings")
+    assert view.pause_view == "settings"
+
+    view._apply_settings_action(("back", None))
+
+    assert view.pause_view == "menu"
+    assert view.session.state == GameState.PAUSED
+
+
 def test_main_menu_button_returns_to_main_menu_and_clears_controller(view):
     view._handle_escape()
 
