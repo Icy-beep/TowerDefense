@@ -18,7 +18,7 @@ def test_heavy_armor_halves_kinetic_damage():
 
     enemy.take_damage(100, DamageType.KINETIC)
 
-    assert enemy.health == 200, "HEAVY против KINETIC должен снижать урон на 50%"
+    assert enemy.health == enemy.max_health - 50, "HEAVY против KINETIC должен снижать урон на 50%"
 
 
 def test_heavy_armor_does_not_reduce_energy_damage():
@@ -26,7 +26,7 @@ def test_heavy_armor_does_not_reduce_energy_damage():
 
     enemy.take_damage(100, DamageType.ENERGY)
 
-    assert enemy.health == 150, "HEAVY снижает только KINETIC — ENERGY проходит полностью"
+    assert enemy.health == enemy.max_health - 100, "HEAVY снижает только KINETIC — ENERGY проходит полностью"
 
 
 def test_organic_armor_halves_explosive_damage():
@@ -52,7 +52,7 @@ def test_heavy_armor_does_not_reduce_explosive_damage():
 
     enemy.take_damage(100, DamageType.EXPLOSIVE)
 
-    assert enemy.health == 150, "HEAVY не защищает от EXPLOSIVE — это работа ORGANIC"
+    assert enemy.health == enemy.max_health - 100, "HEAVY не защищает от EXPLOSIVE — это работа ORGANIC"
 
 
 def test_enemy_dies_when_health_reaches_zero_or_below():

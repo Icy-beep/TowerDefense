@@ -7,8 +7,8 @@
     "faction": "Corporation"
   },
   "giant_roach": {
-    "max_health": 250,
-    "speed": 25,
+    "max_health": 300,
+    "speed": 20,
     "armor": "Heavy",
     "reward": 40,
     "faction": "Fauna"

@@ -18,6 +18,13 @@ ENEMY_COLORS = {
 }
 DEFAULT_ENEMY_COLOR = (220, 50, 50)
 
+# Множитель к обычному размеру спрайта врага (см. MapRenderer._enemy_screen_size) -
+# "гигантский" таракан должен и выглядеть крупнее, а не только иметь больше HP (см.
+# задачу пользователя на замедление + компенсацию здоровьем/бронёй).
+ENEMY_SPRITE_SIZE_MULTIPLIERS = {
+    "giant_roach": 1.4,
+}
+
 FACTION_SPAWN_COLORS = {
     Faction.CORPORATION: (80, 160, 255),
     Faction.FAUNA: (120, 200, 60),
@@ -96,11 +103,14 @@ class MapRenderer:
         world_size = DefenseModule.FOOTPRINT_CELLS * cell_size - self.TOWER_SPRITE_FOOTPRINT_MARGIN
         return max(world_size * camera.zoom, self.TOWER_SPRITE_MIN_SCREEN_SIZE)
 
-    def _enemy_screen_size(self, camera):
+    def _enemy_screen_size(self, camera, type_name=None):
         """Диаметр спрайта врага в пикселях: растёт вместе с зумом камеры (раньше был жёстко
         зафиксирован, из-за чего при приближении враг визуально становился мельче на фоне
-        выросшей остальной карты), но не мельче ENEMY_SPRITE_MIN_SCREEN_SIZE при отдалении."""
-        return max(self.ENEMY_SPRITE_WORLD_SIZE * camera.zoom, self.ENEMY_SPRITE_MIN_SCREEN_SIZE)
+        выросшей остальной карты), но не мельче ENEMY_SPRITE_MIN_SCREEN_SIZE при отдалении.
+        type_name умножает итоговый размер по ENEMY_SPRITE_SIZE_MULTIPLIERS (например,
+        giant_roach крупнее остальных)."""
+        base = max(self.ENEMY_SPRITE_WORLD_SIZE * camera.zoom, self.ENEMY_SPRITE_MIN_SCREEN_SIZE)
+        return base * ENEMY_SPRITE_SIZE_MULTIPLIERS.get(type_name, 1.0)
 
     def _base_screen_size(self, camera):
         """Диаметр спрайта базы в пикселях: растёт вместе с зумом камеры, как башни и враги -
@@ -476,12 +486,13 @@ class MapRenderer:
                 pygame.draw.rect(screen, (0, 255, 0) if hp_ratio > 0.5 else (255, 50, 50),
                                  (int(sx) - 12, int(sy) - 18, int(24 * hp_ratio), 4))
 
-                enemy_size = self._enemy_screen_size(camera)
-                sprite = self._sprite_for(f"enemy_{getattr(enemy, 'type_name', None)}", getattr(session, "elapsed_time", 0.0))
+                type_name = getattr(enemy, "type_name", None)
+                enemy_size = self._enemy_screen_size(camera, type_name)
+                sprite = self._sprite_for(f"enemy_{type_name}", getattr(session, "elapsed_time", 0.0))
                 if sprite:
                     self._blit_scaled(screen, sprite, sx, sy, target_size=enemy_size)
                 else:
-                    color = ENEMY_COLORS.get(getattr(enemy, "type_name", None), DEFAULT_ENEMY_COLOR)
+                    color = ENEMY_COLORS.get(type_name, DEFAULT_ENEMY_COLOR)
                     pygame.draw.circle(screen, color, (int(sx), int(sy)), int(enemy_size / 2))
 
     def _draw_projectiles(self, screen, camera, session):

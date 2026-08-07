@@ -41,7 +41,7 @@ class GiantRoach(HostileEntity):
     ENRAGE_SPEED_MULTIPLIER = 1.6
     ENRAGE_DAMAGE_MULTIPLIER = 1.5
 
-    def __init__(self, position: Coordinate, max_health: float = 250, speed: float = 25,
+    def __init__(self, position: Coordinate, max_health: float = 300, speed: float = 20,
                  armor: ArmorType = ArmorType.HEAVY, reward: int = 40,
                  faction: Faction = Faction.FAUNA, vision_radius: float | None = None):
         """Создаёт гигантского таракана."""
