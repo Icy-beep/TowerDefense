@@ -11,13 +11,19 @@ from src.core.settings import (
     DISPLAY_MODE_WINDOWED,
     Settings,
 )
+from src.save_load.save_manager import SaveManager
 from src.ui.game_window import GameView
 
 
 @pytest.fixture
-def view(monkeypatch):
+def view(monkeypatch, tmp_path):
     game_view = GameView(GameSession(), settings=Settings())
     monkeypatch.setattr(game_view.settings, "save", lambda *a, **kw: None)
+    # SaveManager() по умолчанию смотрит на реальную папку saves/ в корне
+    # проекта - если там лежат сохранения игрока, в меню появляется лишняя
+    # кнопка "Продолжить" и раскладка кнопок сдвигается, из-за чего клики
+    # по координатам, посчитанным тестом, промахиваются мимо цели.
+    game_view.save_manager = SaveManager(tmp_path)
     return game_view
 
 

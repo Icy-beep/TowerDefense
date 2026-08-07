@@ -31,16 +31,20 @@ def _session_with_two_adjacent_locked_sectors():
     return types.SimpleNamespace(map=types.SimpleNamespace(sectors=[left, right])), left, right
 
 
-def _spy_blits(monkeypatch, screen):
-    calls = []
-    original_blit = screen.blit
+class _SpySurface(pygame.Surface):
+    """pygame.Surface - C-тип без __dict__ на экземпляре, поэтому
+    monkeypatch.setattr(screen, "blit", ...) падает с "attribute is
+    read-only"; вместо этого переопределяем blit в Python-подклассе."""
 
-    def spy_blit(source, dest, *a, **k):
-        calls.append((source.get_size(), (dest[0], dest[1]) if isinstance(dest, tuple) else (dest.x, dest.y)))
-        return original_blit(source, dest, *a, **k)
+    def __init__(self, size):
+        super().__init__(size)
+        self.blit_calls = []
 
-    monkeypatch.setattr(screen, "blit", spy_blit)
-    return calls
+    def blit(self, source, dest, *a, **k):
+        self.blit_calls.append(
+            (source.get_size(), (dest[0], dest[1]) if isinstance(dest, tuple) else (dest.x, dest.y))
+        )
+        return super().blit(source, dest, *a, **k)
 
 
 def _spy_draw_rects(monkeypatch):
@@ -53,20 +57,20 @@ def _spy_draw_rects(monkeypatch):
     return calls
 
 
-def test_no_gap_or_overlap_between_adjacent_locked_sectors_at_integer_zoom(monkeypatch):
+def test_no_gap_or_overlap_between_adjacent_locked_sectors_at_integer_zoom():
     session, left, right = _session_with_two_adjacent_locked_sectors()
     camera = _camera(zoom=1.0)
-    screen = pygame.Surface((WIDTH, HEIGHT))
-    calls = _spy_blits(monkeypatch, screen)
+    screen = _SpySurface((WIDTH, HEIGHT))
 
     MapRenderer()._draw_sector_overlay(screen, camera, session, WIDTH, HEIGHT)
 
+    calls = screen.blit_calls
     assert len(calls) == 2
     (size_a, pos_a), (size_b, pos_b) = calls
     assert pos_a[0] + size_a[0] == pos_b[0], "правый край левого сектора должен точно совпадать с левым краем правого"
 
 
-def test_no_gap_or_overlap_between_adjacent_locked_sectors_across_fractional_zoom_levels(monkeypatch):
+def test_no_gap_or_overlap_between_adjacent_locked_sectors_across_fractional_zoom_levels():
     """Регрессия: щель между секторами то появлялась, то пропадала при смене зума -
     значит баг зависел от дробной части экранных координат. Проверяем на нескольких
     "некруглых" значениях zoom/позиции камеры, а не только на zoom=1.0."""
@@ -75,11 +79,11 @@ def test_no_gap_or_overlap_between_adjacent_locked_sectors_across_fractional_zoo
                                 (-88.1, 15.0, 1.734), (500.5, 500.5, 0.777)]:
         session, left, right = _session_with_two_adjacent_locked_sectors()
         camera = _camera(cam_x=cam_x, cam_y=cam_y, zoom=zoom)
-        screen = pygame.Surface((WIDTH, HEIGHT))
-        calls = _spy_blits(monkeypatch, screen)
+        screen = _SpySurface((WIDTH, HEIGHT))
 
         MapRenderer()._draw_sector_overlay(screen, camera, session, WIDTH, HEIGHT)
 
+        calls = screen.blit_calls
         if len(calls) != 2:
             continue  # один из секторов мог полностью уйти за экран при таком зуме/пане
         checked_cases += 1
@@ -93,28 +97,26 @@ def test_no_gap_or_overlap_between_adjacent_locked_sectors_across_fractional_zoo
     assert checked_cases >= 3, "тест не должен молча пропускать почти все случаи"
 
 
-def test_unlocked_sectors_get_no_overlay(monkeypatch):
+def test_unlocked_sectors_get_no_overlay():
     session, left, right = _session_with_two_adjacent_locked_sectors()
     left.unlocked = True
     right.unlocked = True
     camera = _camera()
-    screen = pygame.Surface((WIDTH, HEIGHT))
-    calls = _spy_blits(monkeypatch, screen)
+    screen = _SpySurface((WIDTH, HEIGHT))
 
     MapRenderer()._draw_sector_overlay(screen, camera, session, WIDTH, HEIGHT)
 
-    assert calls == []
+    assert screen.blit_calls == []
 
 
-def test_map_without_sectors_draws_nothing(monkeypatch):
+def test_map_without_sectors_draws_nothing():
     session = types.SimpleNamespace(map=types.SimpleNamespace(sectors=[]))
     camera = _camera()
-    screen = pygame.Surface((WIDTH, HEIGHT))
-    calls = _spy_blits(monkeypatch, screen)
+    screen = _SpySurface((WIDTH, HEIGHT))
 
     MapRenderer()._draw_sector_overlay(screen, camera, session, WIDTH, HEIGHT)
 
-    assert calls == []
+    assert screen.blit_calls == []
 
 
 def test_locked_sector_border_uses_locked_color(monkeypatch):
@@ -138,13 +140,12 @@ def test_unlocked_sector_border_uses_unlocked_color(monkeypatch):
     left.unlocked = True
     right.unlocked = True
     camera = _camera()
-    screen = pygame.Surface((WIDTH, HEIGHT))
-    blit_calls = _spy_blits(monkeypatch, screen)
+    screen = _SpySurface((WIDTH, HEIGHT))
     rect_calls = _spy_draw_rects(monkeypatch)
 
     MapRenderer()._draw_sector_overlay(screen, camera, session, WIDTH, HEIGHT)
 
-    assert blit_calls == [], "у открытых секторов не должно быть тёмной заливки"
+    assert screen.blit_calls == [], "у открытых секторов не должно быть тёмной заливки"
     colors_used = {c for c, _rect, _w in rect_calls}
     assert MapRenderer.SECTOR_BORDER_COLOR_UNLOCKED in colors_used
     assert MapRenderer.SECTOR_BORDER_COLOR_LOCKED not in colors_used
