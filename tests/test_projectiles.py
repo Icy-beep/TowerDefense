@@ -234,6 +234,33 @@ def test_mortar_shell_spawns_shrapnel_on_landing():
     assert total_damage == pytest.approx(80.0)
 
 
+def test_mortar_shell_deals_direct_impact_damage_on_landing():
+    """Регрессия: осколки шрапнели летят 8 узкими линиями и на практике задевают
+    от силы 1-2 врага рядом с воронкой - снаряд наносил в разы меньше заявленного
+    урона. Прямой взрыв по площади должен гарантированно наносить полный damage
+    всем, кто оказался в MortarShell.IMPACT_RADIUS от точки падения."""
+    target = _enemy(300, 0)
+    victim = _enemy(300 + MortarShell.IMPACT_RADIUS - 1, 0)
+    shell = MortarShell(Coordinate(0, 0), target, damage=80, damage_type=DamageType.EXPLOSIVE)
+
+    shell.update(shell.flight_time + 1.0, [victim])
+
+    assert victim.health == pytest.approx(1000 - 80)
+
+
+def test_mortar_shell_impact_damage_skips_enemy_outside_radius():
+    """bystander стоит дальше и IMPACT_RADIUS, и SHRAPNEL_RANGE от точки падения -
+    его не должен задеть ни прямой взрыв, ни осколки, чтобы тест однозначно
+    проверял именно радиус прямого урона, а не случайное попадание осколком."""
+    target = _enemy(300, 0)
+    bystander = _enemy(300, MortarShell.SHRAPNEL_RANGE + 50)
+    shell = MortarShell(Coordinate(0, 0), target, damage=80, damage_type=DamageType.EXPLOSIVE)
+
+    shell.update(shell.flight_time + 1.0, [bystander])
+
+    assert bystander.health == 1000
+
+
 def test_mortar_shrapnel_spread_evenly_in_a_circle():
     target = _enemy(300, 0)
     shell = MortarShell(Coordinate(0, 0), target, damage=80, damage_type=DamageType.EXPLOSIVE)

@@ -181,6 +181,14 @@ class MortarShell(Projectile):
     SHRAPNEL_RANGE = 90.0
     SHRAPNEL_SPEED = 200.0
 
+    # Прямой взрыв по площади в момент приземления, отдельно от осколков ниже.
+    # Осколки летят 8 узкими линиями через 45° и на практике задевают от силы
+    # 1-2 врага рядом с воронкой - снаряд с уроном 80, растащенным по 8 осколкам
+    # (10 урона на осколок), на деле наносил в разы меньше заявленного. Прямой
+    # взрыв гарантирует полный self.damage всем, кто оказался достаточно близко
+    # к точке падения, независимо от того, куда полетели осколки.
+    IMPACT_RADIUS = 40.0
+
     def __init__(self, position: Coordinate, target: HostileEntity, damage: float, damage_type: DamageType,
                  rng: random.Random | None = None):
         """Создаёт миномётный снаряд, летящий в точку цели на момент выстрела."""
@@ -212,7 +220,7 @@ class MortarShell(Projectile):
         self.height = 4 * self.PEAK_HEIGHT * t * (1 - t)
 
         if t >= 1.0:
-            self._land()
+            self._land(enemies)
             return False
         return True
 
@@ -220,10 +228,12 @@ class MortarShell(Projectile):
         """Имя звукового события взрыва миномётного снаряда."""
         return "mortar_explosion"
 
-    def _land(self):
-        """Взрывается и создаёт осколки шрапнели вокруг точки падения."""
+    def _land(self, enemies: list[HostileEntity]):
+        """Взрывается: наносит прямой урон по площади рядом с воронкой и создаёт
+        осколки шрапнели дальше вокруг точки падения."""
         self._landed = True
         self.height = 0.0
+        self._deal_impact_damage(enemies)
         pellet_damage = self.damage / self.SHRAPNEL_COUNT
         base_angle = self._rng.uniform(0, 2 * math.pi)
         for i in range(self.SHRAPNEL_COUNT):
@@ -237,6 +247,13 @@ class MortarShell(Projectile):
                 speed=self.SHRAPNEL_SPEED,
                 max_distance=self.SHRAPNEL_RANGE,
             ))
+
+    def _deal_impact_damage(self, enemies: list[HostileEntity]):
+        """Наносит полный self.damage всем живым врагам в IMPACT_RADIUS от точки
+        падения - независимо от осколков, летящих отдельным проходом ниже."""
+        for enemy in enemies:
+            if enemy.is_alive() and self.position.distance_to(enemy.position) <= self.IMPACT_RADIUS:
+                enemy.take_damage(self.damage, self.damage_type)
 
     def collect_spawned(self) -> list[Projectile]:
         """Возвращает и очищает список созданных осколков шрапнели."""
