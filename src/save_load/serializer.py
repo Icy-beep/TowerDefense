@@ -33,6 +33,7 @@ def session_to_dict(session) -> dict:
         "max_base_health": session.max_base_health,
         "credits": session.resources.credits,
         "scrap": session.resources.scrap,
+        "tech_tree": session.tech_tree.levels,
         "map": {
             "width": game_map.width,
             "height": game_map.height,
@@ -51,13 +52,14 @@ def session_to_dict(session) -> dict:
 
 
 def _module_to_dict(module) -> dict:
-    """Сериализует одну башню: тип, позиция, уровень (апгрейды пересчитают урон/
-    радиус/скорострельность заново при загрузке - см. DefenseModule.upgrade) и HP."""
+    """Сериализует одну башню: тип, позиция и HP. Урон/радиус/скорострельность не
+    сохраняются - их пересчитает apply_dict_to_session из session["tech_tree"]
+    (см. TechTree.apply_to), апгрейды теперь общие на весь тип, а не на конкретную
+    башню."""
     return {
         "type": module.type_name,
         "x": module.position.x,
         "y": module.position.y,
-        "level": module.level,
         "health": module.health,
     }
 
@@ -95,6 +97,11 @@ def apply_dict_to_session(session, data: dict) -> None:
     session.base_health = data.get("base_health", session.max_base_health)
     session.resources.credits = data.get("credits", session.resources.credits)
     session.resources.scrap = data.get("scrap", 0)
+    # До восстановления башен ниже - _restore_module применяет текущие уровни
+    # дерева технологий к каждой пересозданной башне (см. TechTree.apply_to).
+    session.tech_tree.levels = {
+        tower_type: dict(branches) for tower_type, branches in data.get("tech_tree", {}).items()
+    }
 
     map_data = data.get("map", {})
     game_map = session.map
@@ -129,13 +136,12 @@ def apply_dict_to_session(session, data: dict) -> None:
 
 def _restore_module(session, game_map, entry: dict) -> None:
     """Пересоздаёт башню через TowerFactory (правильные базовые характеристики из
-    конфига) и доводит её апгрейдами до сохранённого уровня."""
+    конфига) и применяет к ней уже восстановленные уровни дерева технологий (см.
+    apply_dict_to_session, TechTree.apply_to)."""
     module = session.tower_factory.create(entry["type"], Coordinate(entry["x"], entry["y"]))
     if module is None:
         return
-    target_level = max(1, int(entry.get("level", 1)))
-    while module.level < target_level and module.can_upgrade():
-        module.upgrade()
+    session.tech_tree.apply_to(module)
     module.health = entry.get("health", module.max_health)
     game_map.add_module(module)
 

@@ -65,8 +65,6 @@ class OrbitalModeController(IGameModeController):
         if event.type == pygame.KEYDOWN:
             if event.key in _KEY_TO_TOWER_TYPE:
                 self.select_tower(_KEY_TO_TOWER_TYPE[event.key])
-            elif event.key == pygame.K_u:
-                self.upgrade_selected()
             elif event.key == pygame.K_p:
                 self.pause_game()
             elif event.key == pygame.K_r:
@@ -150,16 +148,6 @@ class OrbitalModeController(IGameModeController):
         if success:
             self.selected_tower_type = None
         return success
-
-    def upgrade_selected(self) -> bool:
-        """Улучшает выбранную башню, если хватает денег."""
-        if not self.selected_module or not self.selected_module.can_upgrade():
-            return False
-        cost = self.selected_module.get_upgrade_cost()
-        if self.session.resources.spend(cost):
-            self.selected_module.upgrade()
-            return True
-        return False
 
     def install_ai_module(self, module_key: str) -> bool:
         """Устанавливает ИИ-модуль на выбранную башню за scrap (см.

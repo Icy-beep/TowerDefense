@@ -31,7 +31,6 @@ class PowerInfrastructure(DefenseModule):
         super().__init__(position, range_radius=range_radius, damage=0.0, cost=cost, attack_speed=1.0)
         self.max_health = max_health
         self.health = max_health
-        self.max_level = 1
 
     def find_target(self, enemies: list[HostileEntity]) -> HostileEntity | None:
         """Инфраструктура никогда не ищет цель - она не умеет стрелять."""

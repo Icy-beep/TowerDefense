@@ -48,3 +48,10 @@ class TowerFactory:
         экземпляр - нужно UI (например, панели построек), чтобы показать цену и
         подсветить недоступные по деньгам варианты."""
         return self._config_loader.get_tower_config(type_name).get("cost")
+
+    def get_upgrade_costs(self, type_name: str) -> list[int]:
+        """Возвращает прогрессию цен апгрейда веток дерева технологий для типа, не
+        создавая экземпляр - нужна TechTree.upgrade_cost, чтобы посчитать цену
+        следующего уровня даже для типа, у которого пока нет ни одной поставленной
+        башни на карте."""
+        return self._config_loader.get_tower_config(type_name).get("upgrade_costs", [])

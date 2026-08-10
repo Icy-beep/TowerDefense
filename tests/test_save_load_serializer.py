@@ -15,13 +15,13 @@ def session():
     return s
 
 
-def _place_tower(session, tower_type="bullet", offset=(300, 0), level=1):
-    """Создаёт и добавляет на карту башню заданного типа/уровня рядом с базой."""
+def _place_tower(session, tower_type="bullet", offset=(300, 0)):
+    """Создаёт и добавляет на карту башню заданного типа рядом с базой, применяя
+    текущие уровни дерева технологий (см. TechTree.apply_to)."""
     base = session.base_position
     position = session.map.snap_to_grid(Coordinate(base.x + offset[0], base.y + offset[1]))
     tower = session.tower_factory.create(tower_type, position)
-    for _ in range(level - 1):
-        tower.upgrade()
+    session.tech_tree.apply_to(tower)
     session.map.add_module(tower)
     return tower
 
@@ -62,8 +62,8 @@ def test_round_trip_restores_resources_and_progress(session):
     assert restored.map.towers_lost_count == 3
 
 
-def test_round_trip_restores_tower_type_level_and_health(session):
-    tower = _place_tower(session, "laser", level=2)
+def test_round_trip_restores_tower_type_and_health(session):
+    tower = _place_tower(session, "laser")
     tower.health = 40.0
 
     data = session_to_dict(session)
@@ -73,14 +73,25 @@ def test_round_trip_restores_tower_type_level_and_health(session):
     assert len(restored.map.modules) == 1
     restored_tower = restored.map.modules[0]
     assert restored_tower.type_name == "laser"
-    assert restored_tower.level == 2
     assert restored_tower.health == 40.0
-    # Уровень должен быть достигнут через DefenseModule.upgrade (см. serializer._restore_module),
-    # а не подмену полей напрямую - характеристики должны совпадать с обычным апгрейдом.
-    reference = session.tower_factory.create("laser", tower.position)
-    reference.upgrade()
-    assert restored_tower.damage == reference.damage
-    assert restored_tower.range_radius == reference.range_radius
+
+
+def test_round_trip_restores_tech_tree_levels_and_reapplies_them_to_towers(session):
+    """Апгрейды дерева технологий общие на тип (см. TechTree) - после загрузки
+    сохранённого уровня характеристики восстановленной башни должны совпадать с
+    тем, что дал бы тот же апгрейд заново, а не сбрасываться в базовые значения."""
+    session.resources.credits = 10_000
+    session.upgrade_tech_branch("laser", "damage")
+    tower = _place_tower(session, "laser")
+
+    data = session_to_dict(session)
+    restored = GameSession()
+    apply_dict_to_session(restored, data)
+
+    assert restored.tech_tree.level_for("laser", "damage") == 1
+    restored_tower = restored.map.modules[0]
+    assert restored_tower.damage == pytest.approx(tower.damage)
+    assert restored_tower.damage == pytest.approx(restored_tower.base_damage * 1.4)
 
 
 def test_round_trip_restores_enemy_type_health_and_recomputes_path(session):

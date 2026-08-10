@@ -428,10 +428,6 @@ class MapRenderer:
             if not is_powered:
                 pygame.draw.circle(screen, (255, 60, 60), (int(sx), int(sy)), int(tower_size / 2) + 3, 2)
 
-            for i in range(module.level):
-                pygame.draw.circle(screen, (255, 215, 0),
-                                   (int(sx) - 6 + i * 6, int(sy) - 20), 3)
-
             if module.health < module.max_health:
                 hp_ratio = max(0.0, module.health / module.max_health)
                 pygame.draw.rect(screen, (50, 50, 50), (int(sx) - 16, int(sy) - 28, 32, 5))

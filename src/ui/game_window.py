@@ -261,8 +261,9 @@ class GameView:
         if self.hud_renderer.handle_tech_tree_click(event.pos, self.width):
             self.tech_tree_open = False
             return
-        action = self.tech_tree_screen.handle_click(event.pos, self.width, self.height, self.combat_tower_options)
-        if action and action[0] == "back":
+        action = self.tech_tree_screen.handle_click(event.pos, self.width, self.height,
+                                                     self.combat_tower_options, self.session)
+        if action == "back":
             self.tech_tree_open = False
 
     def _handle_help_click(self, event) -> bool:
@@ -589,7 +590,7 @@ class GameView:
         if self.tech_tree_open:
             self.tech_tree_screen.render(self.screen, self.width, self.height,
                                           self.font, self.small_font, self.title_font,
-                                          self.combat_tower_options)
+                                          self.combat_tower_options, self.session)
 
         if self.session.state == GameState.PAUSED and self.pause_menu_open:
             if self.pause_view == "settings":

@@ -56,10 +56,6 @@ class DefenseModule(Entity, ABC):
         self.max_health = 100.0
         self.health = self.max_health
 
-        self.level = 1
-        self.max_level = 3
-        self.upgrade_costs: list[int] = []
-
         self.is_landing = False
         self.landing_elapsed = 0.0
         self.landing_height = 0.0
@@ -189,33 +185,6 @@ class DefenseModule(Entity, ABC):
     def fire(self, target: HostileEntity) -> Projectile | None:
         """Создаёт снаряд по цели."""
         pass
-
-    def get_upgrade_cost(self) -> int | None:
-        """Возвращает стоимость следующего уровня или None, если максимум."""
-        if self.level >= self.max_level:
-            return None
-        return self.upgrade_costs[self.level - 1]
-
-    def can_upgrade(self) -> bool:
-        """Проверяет, можно ли улучшить башню."""
-        return self.level < self.max_level
-
-    def upgrade(self) -> bool:
-        """Повышает уровень башни и пересчитывает характеристики."""
-        if not self.can_upgrade():
-            return False
-
-        self.level += 1
-
-        dmg_mult = 1.0 + (self.level - 1) * 0.4
-        rng_mult = 1.0 + (self.level - 1) * 0.2
-        spd_mult = 1.0 + (self.level - 1) * 0.25
-
-        self.damage = self.base_damage * dmg_mult
-        self.range_radius = self.base_range * rng_mult
-        self.attack_speed = self.base_attack_speed * spd_mult
-
-        return True
 
     def take_damage(self, amount: float, damage_type: DamageType):
         """Наносит урон башне. Пока башня высаживается, она неуязвима."""

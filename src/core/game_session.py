@@ -13,6 +13,7 @@ from src.factories.tower_factory import TowerFactory
 from src.systems.mission import Objective, ProtectTowersObjective, SurviveDurationObjective
 from src.systems.resource_bank import ResourceBank
 from src.systems.sector import build_sector_grid
+from src.systems.tech_tree import TechTree
 from src.systems.threat_strategy import NestSpawnStrategy, ShipLandingStrategy, ThreatStrategy
 
 
@@ -38,6 +39,7 @@ class GameSession:
         """Создаёт пустую игровую сессию в главном меню."""
         self.map = None
         self.resources = ResourceBank()
+        self.tech_tree = TechTree()
         self.threat_strategies: dict[Faction, ThreatStrategy] = {}
         self.tower_factory = TowerFactory()
         self.enemy_factory = EnemyFactory()
@@ -84,6 +86,7 @@ class GameSession:
         self.endless = endless
         self.base_health = self.max_base_health
         self.resources = ResourceBank(start_credits=1000)
+        self.tech_tree = TechTree()
 
         self.map = Map(on_event=self._emit)
         self.map.power_grid_enabled = True
@@ -198,6 +201,7 @@ class GameSession:
             return False
         if self.resources.spend(turret.cost):
             turret.start_landing()
+            self.tech_tree.apply_to(turret)
             self.map.add_module(turret)
             # Раньше здесь был self.map.replan_enemy_paths() - полный пересчёт пути
             # КАЖДОГО живого врага синхронно на каждый клик постройки. Это было не
@@ -213,6 +217,20 @@ class GameSession:
             # работы для факций, которым нечего пересчитывать.
             return True
         return False
+
+    def upgrade_tech_branch(self, tower_type: str, branch: str) -> bool:
+        """Покупает следующий уровень ветки branch дерева технологий для типа
+        tower_type (см. src/systems/tech_tree.py) - действует сразу на все текущие
+        башни этого типа на карте и на все будущие (см. place_turret)."""
+        costs = self.tower_factory.get_upgrade_costs(tower_type)
+        cost = self.tech_tree.upgrade_cost(tower_type, branch, costs)
+        if cost is None or not self.resources.spend(cost):
+            return False
+        self.tech_tree.upgrade(tower_type, branch)
+        for module in self.map.modules:
+            if getattr(module, "type_name", None) == tower_type:
+                self.tech_tree.apply_to(module)
+        return True
 
     def sector_unlock_cost(self) -> int:
         """Стоимость открытия следующего сектора - растёт с числом уже купленных

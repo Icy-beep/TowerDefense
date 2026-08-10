@@ -79,3 +79,15 @@ def test_tower_factory_falls_back_to_class_defaults_without_config(tmp_path):
 
     assert turret.range_radius == 120
     assert turret.cost == 50
+
+
+def test_get_upgrade_costs_reads_from_config_without_an_instance():
+    factory = TowerFactory()
+    assert factory.get_upgrade_costs("laser") == [80, 120]
+
+
+def test_get_upgrade_costs_returns_empty_list_for_infrastructure():
+    """У генератора/пилона в towers.json нет upgrade_costs - дерево технологий
+    должно корректно считать их немодернизируемыми (см. TechTree.upgrade_cost)."""
+    factory = TowerFactory()
+    assert factory.get_upgrade_costs("pylon") == []

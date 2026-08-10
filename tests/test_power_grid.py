@@ -14,6 +14,7 @@ from src.entities.power_pylon import PowerPylon
 from src.entities.turrets import LaserTurret
 from src.enums import DamageType
 from src.factories.tower_factory import TowerFactory
+from src.systems.tech_tree import TechTree
 
 # --- Инфраструктура: базовое поведение -----------------------------------------
 
@@ -43,10 +44,13 @@ def test_generator_is_a_source_pylon_is_not():
 
 
 def test_infrastructure_cannot_be_upgraded():
-    node = PowerPylon(Coordinate(0, 0))
+    """У pylon/generator в towers.json нет upgrade_costs - дерево технологий
+    должно считать их немодернизируемыми на любую ветку."""
+    tree = TechTree()
+    costs = TowerFactory().get_upgrade_costs("pylon")
 
-    assert node.can_upgrade() is False
-    assert node.get_upgrade_cost() is None
+    assert costs == []
+    assert tree.upgrade_cost("pylon", "damage", costs) is None
 
 
 def test_infrastructure_is_vulnerable_like_a_regular_tower():

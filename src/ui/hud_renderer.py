@@ -433,14 +433,13 @@ class HudRenderer:
             info_lines.append(loc.get("hud.build_hint"))
         elif controller.selected_module:
             mod = controller.selected_module
-            info_lines.append(loc.get("hud.tower_level", level=mod.level, max_level=mod.max_level))
-            if mod.can_upgrade():
-                cost = mod.get_upgrade_cost()
-                can_afford = state['credits'] >= cost
-                status = loc.get("hud.upgrade_yes") if can_afford else loc.get("hud.upgrade_no")
-                info_lines.append(loc.get("hud.upgrade_cost", cost=cost, status=status))
-            else:
-                info_lines.append(loc.get("hud.max_level"))
+            opt = next((o for o in tower_options if o["type"] == getattr(mod, "type_name", None)), None)
+            label = opt["name"] if opt else getattr(mod, "type_name", "")
+            info_lines.append(loc.get("hud.tower_selected", name=label))
+            if getattr(mod, "IS_COMBAT_TOWER", True):
+                info_lines.append(loc.get("hud.tower_stats", damage=int(mod.damage),
+                                           range=int(mod.range_radius), speed=round(mod.attack_speed, 2)))
+                info_lines.append(loc.get("hud.tower_tech_hint"))
         elif controller.selected_enemy:
             enemy = controller.selected_enemy
             name_key = ENEMY_DISPLAY_KEYS.get(getattr(enemy, "type_name", None))

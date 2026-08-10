@@ -6,6 +6,7 @@ from src.entities.enemies import SniperDrone
 from src.enums import ArmorType, Faction
 from src.factories.enemy_factory import EnemyFactory
 from src.factories.tower_factory import TowerFactory
+from src.systems.tech_tree import TechTree
 
 
 def test_sniper_drone_defaults():
@@ -54,7 +55,9 @@ def test_sniper_range_loses_to_mortar_and_to_upgraded_towers():
     assert sniper.ATTACK_RANGE < mortar.range_radius
 
     laser = factory.create("laser", Coordinate(0, 0))
-    laser.upgrade()
+    tree = TechTree()
+    tree.upgrade("laser", "radius")
+    tree.apply_to(laser)
     assert sniper.ATTACK_RANGE < laser.range_radius, "апгрейженный лазер должен доставать дальше снайпера"
 
 
@@ -109,7 +112,9 @@ def test_sniper_drone_walks_into_range_of_an_upgraded_tower_and_takes_fire_back(
     game_map.base_position = Coordinate(2000, 2000)
 
     tower = TowerFactory().create("laser", Coordinate(2000, 1000))
-    tower.upgrade()  # range_radius 480 > sniper ATTACK_RANGE 430
+    tree = TechTree()
+    tree.upgrade("laser", "radius")
+    tree.apply_to(tower)  # range_radius 480 > sniper ATTACK_RANGE 430
     game_map.modules.append(tower)
 
     sniper = SniperDrone(Coordinate(2000, 1000 + tower.range_radius + 20))

@@ -1,4 +1,6 @@
-"""OrbitalModeController.pause_game() ('P') и upgrade_selected() ('U')."""
+"""OrbitalModeController.pause_game() ('P') и GameSession.upgrade_tech_branch()
+(см. TechTreeScreen - апгрейд теперь общий на весь тип башни, не на одну
+конкретную постройку, как раньше был upgrade_selected() по 'U')."""
 import pytest
 
 from src.core.coordinate import Coordinate
@@ -47,43 +49,63 @@ def _place_and_select(controller, tower_type="laser", pos=Coordinate(2300, 2000)
     return controller.selected_module
 
 
-def test_upgrade_selected_spends_credits_and_upgrades_module(controller):
+def test_upgrade_tech_branch_spends_credits_and_boosts_the_tower(controller):
     module = _place_and_select(controller)
     credits_before = controller.session.resources.credits
-    cost = module.get_upgrade_cost()
+    cost = controller.session.tower_factory.get_upgrade_costs("laser")[0]
 
-    result = controller.upgrade_selected()
+    result = controller.session.upgrade_tech_branch("laser", "damage")
 
     assert result is True
-    assert module.level == 2
+    assert module.damage == pytest.approx(module.base_damage * 1.4)
     assert controller.session.resources.credits == credits_before - cost
 
 
-def test_upgrade_selected_fails_without_enough_credits(controller):
+def test_upgrade_tech_branch_fails_without_enough_credits(controller):
     module = _place_and_select(controller)
     controller.session.resources.credits = 0
 
-    result = controller.upgrade_selected()
+    result = controller.session.upgrade_tech_branch("laser", "damage")
 
     assert result is False
-    assert module.level == 1
+    assert module.damage == module.base_damage
 
 
-def test_upgrade_selected_fails_at_max_level(controller):
-    module = _place_and_select(controller)
+def test_upgrade_tech_branch_fails_at_max_level(controller):
+    _place_and_select(controller)
     controller.session.resources.credits = 10_000
-    while module.can_upgrade():
-        controller.upgrade_selected()
+    max_level = len(controller.session.tower_factory.get_upgrade_costs("laser"))
+    for _ in range(max_level):
+        controller.session.upgrade_tech_branch("laser", "damage")
 
-    result = controller.upgrade_selected()
+    result = controller.session.upgrade_tech_branch("laser", "damage")
 
     assert result is False
-    assert module.level == module.max_level
 
 
-def test_upgrade_selected_fails_when_nothing_selected(controller):
-    controller.selected_module = None
-    assert controller.upgrade_selected() is False
+def test_upgrade_tech_branch_applies_to_every_tower_of_that_type(controller):
+    """Апгрейд общий на тип - должен затронуть все уже стоящие башни этого типа,
+    а не только ту, что была выбрана при покупке."""
+    controller.session.resources.credits = 10_000
+    controller.select_tower("laser")
+    controller.place_tower(Coordinate(2300, 2000))
+    controller.select_tower("laser")
+    controller.place_tower(Coordinate(2400, 2000))
+    laser_1, laser_2 = controller.session.map.modules[-2:]
+
+    controller.session.upgrade_tech_branch("laser", "attack_speed")
+
+    assert laser_1.attack_speed == pytest.approx(laser_1.base_attack_speed * 1.25)
+    assert laser_2.attack_speed == pytest.approx(laser_2.base_attack_speed * 1.25)
+
+
+def test_newly_placed_tower_inherits_already_purchased_upgrades(controller):
+    controller.session.resources.credits = 10_000
+    controller.session.upgrade_tech_branch("laser", "radius")
+
+    module = _place_and_select(controller)
+
+    assert module.range_radius == pytest.approx(module.base_range * 1.2)
 
 
 def test_install_ai_module_spends_scrap_and_sets_module(controller):
