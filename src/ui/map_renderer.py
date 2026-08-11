@@ -25,6 +25,15 @@ ENEMY_SPRITE_SIZE_MULTIPLIERS = {
     "giant_roach": 1.4,
 }
 
+# Множитель ширины спрайта постройки (см. MapRenderer._blit_scaled) - генератор и
+# пилон после автообрезки реально шире, чем выше (bbox ~1.39 и ~1.33 к высоте), но
+# без этого сжимались в квадрат вместе со всеми остальными башнями (см. запрос
+# пользователя увеличить их по ширине).
+TOWER_SPRITE_WIDTH_MULTIPLIERS = {
+    "generator": 1.4,
+    "pylon": 1.35,
+}
+
 FACTION_SPAWN_COLORS = {
     Faction.CORPORATION: (80, 160, 255),
     Faction.FAUNA: (120, 200, 60),
@@ -89,10 +98,15 @@ class MapRenderer:
             return None
         return self.sprite_manager.get_frame_for_angle(key, angle_degrees)
 
-    def _blit_scaled(self, screen, sprite, sx, sy, target_size):
-        """Масштабирует спрайт под target_size (диаметр в пикселях) и рисует центром в (sx, sy)."""
+    def _blit_scaled(self, screen, sprite, sx, sy, target_size, width_multiplier=1.0):
+        """Масштабирует спрайт под target_size (диаметр в пикселях, высота) и рисует
+        центром в (sx, sy). width_multiplier растягивает только ширину - нужно
+        генератору/пилону, чьи спрайты после автообрезки реально шире, чем выше, но
+        раньше сжимались в квадрат вместе со всеми остальными постройками (см.
+        TOWER_SPRITE_WIDTH_MULTIPLIERS, запрос пользователя)."""
         target_size = max(1, int(target_size))
-        scaled = pygame.transform.smoothscale(sprite, (target_size, target_size))
+        target_width = max(1, int(target_size * width_multiplier))
+        scaled = pygame.transform.smoothscale(sprite, (target_width, target_size))
         rect = scaled.get_rect(center=(int(sx), int(sy)))
         screen.blit(scaled, rect)
 
@@ -417,11 +431,12 @@ class MapRenderer:
                                    (int(sx), int(sy)), int(module.range_radius * camera.zoom), 2)
                 any_ring_drawn = True
 
+            type_name = getattr(module, "type_name", "")
             tower_size = self._tower_screen_size(camera, cell_size)
-            sprite = self._sprite_for_angle(f"tower_{getattr(module, 'type_name', '')}",
-                                             getattr(module, "facing_angle", 0.0))
+            sprite = self._sprite_for_angle(f"tower_{type_name}", getattr(module, "facing_angle", 0.0))
             if sprite:
-                self._blit_scaled(screen, sprite, sx, sy, target_size=tower_size)
+                width_mult = TOWER_SPRITE_WIDTH_MULTIPLIERS.get(type_name, 1.0)
+                self._blit_scaled(screen, sprite, sx, sy, target_size=tower_size, width_multiplier=width_mult)
             else:
                 pygame.draw.circle(screen, color, (int(sx), int(sy)), int(tower_size / 2))
 
