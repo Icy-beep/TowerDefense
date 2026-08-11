@@ -59,7 +59,7 @@
   "tech_tree.branch_attack_speed": "Скорострельность",
   "tech_tree.level": "Уровень {level}/{max_level}",
   "tech_tree.maxed": "МАКС.",
-  "tech_tree.cost": "{cost} cr",
+  "tech_tree.cost": "{cost} scrap",
 
   "settings.title": "Настройки",
   "settings.display_mode": "Экран",

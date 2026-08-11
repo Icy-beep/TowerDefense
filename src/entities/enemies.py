@@ -10,10 +10,11 @@ class DroneWalker(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 60, speed: float = 50,
                  armor: ArmorType = ArmorType.LIGHT, reward: int = 15,
-                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None,
+                 scrap_reward: int = 2):
         """Создаёт лёгкого дрона."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
-                          vision_radius=vision_radius)
+                          vision_radius=vision_radius, scrap_reward=scrap_reward)
 
     def act(self, delta_time: float, in_danger: bool = False):
         """Не выполняет особых действий."""
@@ -24,10 +25,11 @@ class HeavyAssaultDrone(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 180, speed: float = 35,
                  armor: ArmorType = ArmorType.HEAVY, reward: int = 45,
-                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None,
+                 scrap_reward: int = 3):
         """Создаёт тяжёлого штурмового дрона."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
-                          vision_radius=vision_radius)
+                          vision_radius=vision_radius, scrap_reward=scrap_reward)
 
     def act(self, delta_time: float, in_danger: bool = False):
         """Не выполняет особых действий."""
@@ -70,10 +72,11 @@ class ScoutDrone(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 100, speed: float = 70,
                  armor: ArmorType = ArmorType.ENERGY_SHIELDED, reward: int = 60,
-                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None,
+                 scrap_reward: int = 3):
         """Создаёт дрона-разведчика."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
-                          vision_radius=vision_radius)
+                          vision_radius=vision_radius, scrap_reward=scrap_reward)
 
     def act(self, delta_time: float, in_danger: bool = False):
         """Не выполняет особых действий — вся логика бегства находится в Map.update()."""
@@ -93,10 +96,11 @@ class SniperDrone(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 70, speed: float = 40,
                  armor: ArmorType = ArmorType.LIGHT, reward: int = 55,
-                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None,
+                 scrap_reward: int = 4):
         """Создаёт дрона-снайпера."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
-                          vision_radius=vision_radius)
+                          vision_radius=vision_radius, scrap_reward=scrap_reward)
 
     def act(self, delta_time: float, in_danger: bool = False):
         """Не выполняет особых действий - дальнобойность реализована через ATTACK_RANGE."""
@@ -127,10 +131,11 @@ class MedicDrone(HostileEntity):
 
     def __init__(self, position: Coordinate, max_health: float = 90, speed: float = 55,
                  armor: ArmorType = ArmorType.ENERGY_SHIELDED, reward: int = 50,
-                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None):
+                 faction: Faction = Faction.CORPORATION, vision_radius: float | None = None,
+                 scrap_reward: int = 3):
         """Создаёт дрона-медика."""
         super().__init__(position, max_health=max_health, speed=speed, armor=armor, reward=reward, faction=faction,
-                          vision_radius=vision_radius)
+                          vision_radius=vision_radius, scrap_reward=scrap_reward)
 
     def act(self, delta_time: float, in_danger: bool = False):
         """Не выполняет особых действий - поиск группы и лечение находятся в Map.update()."""

@@ -1,8 +1,9 @@
-"""Дерево технологий башен: выбор типа башни сверху, три покупаемые ветки
+"""Дерево технологий башен: выбор типа башни сверху, три покупаемые за scrap ветки
 (радиус/урон/скорострельность) по центру. Апгрейд ветки действует на ВЕСЬ ТИП
 башни сразу (все текущие и будущие), а не на одну конкретную постройку - см.
 src/systems/tech_tree.py, GameSession.upgrade_tech_branch. Отдельная система от
-ИИ-модулей за scrap (DefenseModule.AI_MODULE_COSTS)."""
+ИИ-модулей, которые достаются случайным дропом (DefenseModule.AI_MODULE_KEYS,
+GameSession.ai_module_stock)."""
 import pygame
 
 from src.localization.loc import loc
@@ -75,12 +76,12 @@ class TechTreeScreen:
             self._draw_button(screen, rect, opt["name"], font, color, highlighted=is_selected)
 
         upgrade_costs = session.tower_factory.get_upgrade_costs(self.selected_type)
-        credits = session.resources.credits
+        scrap = session.resources.scrap
         for key in BRANCHES:
             rect = self._branch_rects[key]
             level = session.tech_tree.level_for(self.selected_type, key)
             cost = session.tech_tree.upgrade_cost(self.selected_type, key, upgrade_costs)
-            self._draw_branch(screen, rect, key, font, small_font, level, len(upgrade_costs), cost, credits)
+            self._draw_branch(screen, rect, key, font, small_font, level, len(upgrade_costs), cost, scrap)
 
         self._draw_button(screen, self._back_rect, loc.get("menu.back"), font, (100, 100, 100))
 
@@ -94,7 +95,7 @@ class TechTreeScreen:
         lw, lh = label.get_size()
         screen.blit(label, (x + (w - lw) // 2, y + (h - lh) // 2))
 
-    def _draw_branch(self, screen, rect, key, font, small_font, level, max_level, cost, credits):
+    def _draw_branch(self, screen, rect, key, font, small_font, level, max_level, cost, scrap):
         """Рисует одну ветку: название, текущий уровень и цену следующего (или
         МАКС, если уже максимальна)."""
         x, y, w, h = rect
@@ -113,7 +114,7 @@ class TechTreeScreen:
         if maxed:
             status = small_font.render(loc.get("tech_tree.maxed"), True, MAXED_COLOR)
         else:
-            can_afford = credits >= cost
+            can_afford = scrap >= cost
             color = AFFORDABLE_COLOR if can_afford else UNAFFORDABLE_COLOR
             status = small_font.render(loc.get("tech_tree.cost", cost=cost), True, color)
         screen.blit(status, (x + (w - status.get_width()) // 2, y + h // 2))

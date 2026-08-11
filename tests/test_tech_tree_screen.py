@@ -37,20 +37,21 @@ def test_click_branch_purchases_upgrade_via_session(session):
     screen = TechTreeScreen()
     width, height = 900, 600
     screen._layout(width, height, TOWER_OPTIONS)
+    session.resources.scrap = 1000
     x, y, w, h = screen._branch_rects["damage"]
-    credits_before = session.resources.credits
+    scrap_before = session.resources.scrap
 
     screen.handle_click((x + w // 2, y + h // 2), width, height, TOWER_OPTIONS, session)
 
     assert session.tech_tree.level_for("laser", "damage") == 1
-    assert session.resources.credits < credits_before
+    assert session.resources.scrap < scrap_before
 
 
-def test_click_branch_without_enough_credits_does_not_upgrade(session):
+def test_click_branch_without_enough_scrap_does_not_upgrade(session):
     screen = TechTreeScreen()
     width, height = 900, 600
     screen._layout(width, height, TOWER_OPTIONS)
-    session.resources.credits = 0
+    session.resources.scrap = 0
     x, y, w, h = screen._branch_rects["damage"]
 
     screen.handle_click((x + w // 2, y + h // 2), width, height, TOWER_OPTIONS, session)
@@ -109,7 +110,7 @@ def test_render_does_not_crash(session):
 def test_render_does_not_crash_when_branch_is_maxed(session):
     """Регрессия: когда ветка достигает максимума, upgrade_cost возвращает None -
     отрисовка не должна на этом падать."""
-    session.resources.credits = 10_000
+    session.resources.scrap = 10_000
     max_level = len(session.tower_factory.get_upgrade_costs("laser"))
     for _ in range(max_level):
         session.upgrade_tech_branch("laser", "damage")

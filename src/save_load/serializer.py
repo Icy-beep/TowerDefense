@@ -34,6 +34,7 @@ def session_to_dict(session) -> dict:
         "credits": session.resources.credits,
         "scrap": session.resources.scrap,
         "tech_tree": session.tech_tree.levels,
+        "ai_module_stock": session.ai_module_stock,
         "map": {
             "width": game_map.width,
             "height": game_map.height,
@@ -52,15 +53,16 @@ def session_to_dict(session) -> dict:
 
 
 def _module_to_dict(module) -> dict:
-    """Сериализует одну башню: тип, позиция и HP. Урон/радиус/скорострельность не
-    сохраняются - их пересчитает apply_dict_to_session из session["tech_tree"]
-    (см. TechTree.apply_to), апгрейды теперь общие на весь тип, а не на конкретную
-    башню."""
+    """Сериализует одну башню: тип, позиция, HP и установленный ИИ-модуль (см.
+    DefenseModule.ai_module - привязан к конкретной башне, в отличие от дерева
+    технологий). Урон/радиус/скорострельность не сохраняются - их пересчитает
+    apply_dict_to_session из session["tech_tree"] (см. TechTree.apply_to)."""
     return {
         "type": module.type_name,
         "x": module.position.x,
         "y": module.position.y,
         "health": module.health,
+        "ai_module": module.ai_module,
     }
 
 
@@ -102,6 +104,7 @@ def apply_dict_to_session(session, data: dict) -> None:
     session.tech_tree.levels = {
         tower_type: dict(branches) for tower_type, branches in data.get("tech_tree", {}).items()
     }
+    session.ai_module_stock = dict(data.get("ai_module_stock", {}))
 
     map_data = data.get("map", {})
     game_map = session.map
@@ -143,6 +146,7 @@ def _restore_module(session, game_map, entry: dict) -> None:
         return
     session.tech_tree.apply_to(module)
     module.health = entry.get("health", module.max_health)
+    module.ai_module = entry.get("ai_module")
     game_map.add_module(module)
 
 

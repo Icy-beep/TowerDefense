@@ -23,8 +23,10 @@ class HostileEntity(Entity, ABC):
     ATTACK_DAMAGE_PER_SECOND = 20.0
 
     def __init__(self, position: Coordinate, max_health: float, speed: float, armor: ArmorType, reward: int,
-                 faction: Faction | None = None, vision_radius: float | None = None):
-        """Создаёт врага с базовыми характеристиками."""
+                 faction: Faction | None = None, vision_radius: float | None = None, scrap_reward: int = 0):
+        """Создаёт врага с базовыми характеристиками. scrap_reward - фиксированный
+        (100% шанс) дроп scrap при убийстве, ненулевой только у фракции Corporation
+        (см. GameSession.update, data/config/enemies.json)."""
         super().__init__(position)
         self.max_health = max_health
         self.health = max_health
@@ -33,6 +35,7 @@ class HostileEntity(Entity, ABC):
         self.reward = reward
         self.faction = faction or Faction.FAUNA
         self.vision_radius = vision_radius if vision_radius is not None else self.VISION_RADIUS
+        self.scrap_reward = scrap_reward
         self.path: list[Coordinate] = []
         self.path_index = 0
 

@@ -150,18 +150,19 @@ class OrbitalModeController(IGameModeController):
         return success
 
     def install_ai_module(self, module_key: str) -> bool:
-        """Устанавливает ИИ-модуль на выбранную башню за scrap (см.
-        DefenseModule.AI_MODULE_COSTS) - один модуль на башню, повторная установка
+        """Устанавливает ИИ-модуль на выбранную башню из инвентаря (см.
+        GameSession.ai_module_stock - модули достаются редким дропом с врагов
+        Corporation, а не покупаются) - один модуль на башню, повторная установка
         не заменяет уже стоящий."""
         if not self.selected_module or self.selected_module.ai_module is not None:
             return False
-        cost = self.selected_module.AI_MODULE_COSTS.get(module_key)
-        if cost is None:
+        if module_key not in self.selected_module.AI_MODULE_KEYS:
             return False
-        if self.session.resources.spend_scrap(cost):
-            self.selected_module.ai_module = module_key
-            return True
-        return False
+        if self.session.ai_module_stock.get(module_key, 0) <= 0:
+            return False
+        self.session.ai_module_stock[module_key] -= 1
+        self.selected_module.ai_module = module_key
+        return True
 
     def toggle_power_radii(self) -> bool:
         """Переключает постоянный показ радиусов охвата энергосети (пилоны/генераторы -

@@ -129,3 +129,40 @@ def test_full_kill_to_reward_pipeline_via_game_session():
 
     assert session.resources.credits == credits_before + enemy.reward
     assert enemy not in session.map.enemies
+
+
+def test_corporation_kill_also_awards_scrap():
+    """Дрон корпорации должен приносить и кредиты (reward), и scrap (scrap_reward) -
+    см. HostileEntity.scrap_reward, GameSession.update."""
+    from src.core.game_session import GameSession
+
+    session = GameSession()
+    session.setup_game()
+
+    enemy = DroneWalker(Coordinate(100, 100))
+    enemy.set_path([Coordinate(200, 100)])
+    session.map.spawn_enemy(enemy)
+    enemy.health = 0
+
+    scrap_before = session.resources.scrap
+    session.update(delta_time=0.01)
+
+    assert session.resources.scrap == scrap_before + enemy.scrap_reward
+    assert enemy.scrap_reward > 0
+
+
+def test_fauna_kill_does_not_award_scrap():
+    """У фауны scrap_reward=0 по умолчанию - только Corporation роняет scrap."""
+    from src.core.game_session import GameSession
+
+    session = GameSession()
+    session.setup_game()
+
+    enemy = GiantRoach(Coordinate(100, 100))
+    enemy.set_path([Coordinate(200, 100)])
+    session.map.spawn_enemy(enemy)
+    enemy.health = 0
+
+    session.update(delta_time=0.01)
+
+    assert session.resources.scrap == 0

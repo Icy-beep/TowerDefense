@@ -60,8 +60,9 @@ class GameView:
     ALWAYS_AUDIBLE_EVENTS = {"base_hit"}
 
     # Дерево технологий (см. tech_tree_open) открывается и хоткеем, и кнопкой в
-    # HUD (см. запрос пользователя) - пока экран-заготовка без реального
-    # содержимого, параллельно ИИ-модулям за scrap (DefenseModule.AI_MODULE_COSTS).
+    # HUD (см. запрос пользователя) - апгрейды по типу башни за scrap, отдельно от
+    # ИИ-модулей, которые достаются дропом (см. GameSession.upgrade_tech_branch,
+    # GameSession.ai_module_stock).
     TECH_TREE_KEY = pygame.K_k
     COMBAT_TOWER_TYPES = ("laser", "bullet", "mortar")
 

@@ -25,17 +25,14 @@ class DefenseModule(Entity, ABC):
     # шарахаться от них и обходить их радиус как радиус атаки.
     IS_COMBAT_TOWER = True
 
-    # ИИ-модули за scrap (см. ResourceBank.spend_scrap, OrbitalModeController.
-    # install_ai_module) - один модуль на башню, меняет логику find_target ниже:
+    # ИИ-модули - редкий случайный дроп с врагов Corporation (см. GameSession.update,
+    # session.ai_module_stock, OrbitalModeController.install_ai_module) - один модуль
+    # на башню, меняет логику find_target ниже:
     #   finish_wounded  - добивать раненых (минимум оставшегося HP)
     #   ignore_resistant - игнорировать цели, стойкие к своему типу урона, если
     #                      в радиусе есть кто-то без сопротивления
     #   hunt_leaders    - предпочитать лидеров вражеских групп
-    AI_MODULE_COSTS = {
-        "finish_wounded": 100,
-        "ignore_resistant": 100,
-        "hunt_leaders": 150,
-    }
+    AI_MODULE_KEYS = ("finish_wounded", "ignore_resistant", "hunt_leaders")
 
     def __init__(self, position: Coordinate, range_radius: float, damage: float, cost: int, attack_speed: float = 1.0):
         """Создаёт башню с базовыми характеристиками."""
@@ -70,7 +67,7 @@ class DefenseModule(Entity, ABC):
         # (Map.power_grid_enabled).
         self.is_powered = True
 
-        # Установленный ИИ-модуль (см. AI_MODULE_COSTS) или None - без модуля
+        # Установленный ИИ-модуль (см. AI_MODULE_KEYS) или None - без модуля
         # find_target ведёт себя как раньше (просто ближайший враг).
         self.ai_module: str | None = None
 
@@ -155,7 +152,7 @@ class DefenseModule(Entity, ABC):
 
     def find_target(self, enemies: list[HostileEntity]) -> Optional[HostileEntity]:
         """Находит цель в радиусе действия: без ИИ-модуля - просто ближайшего
-        врага, с модулем - по правилу конкретного модуля (см. AI_MODULE_COSTS)."""
+        врага, с модулем - по правилу конкретного модуля (см. AI_MODULE_KEYS)."""
         valid_targets = [
             e for e in enemies
             if self.position.distance_to(e.position) <= self.range_radius

@@ -59,7 +59,7 @@
   "tech_tree.branch_attack_speed": "Fire rate",
   "tech_tree.level": "Level {level}/{max_level}",
   "tech_tree.maxed": "MAX",
-  "tech_tree.cost": "{cost} cr",
+  "tech_tree.cost": "{cost} scrap",
 
   "settings.title": "Settings",
   "settings.display_mode": "Display",

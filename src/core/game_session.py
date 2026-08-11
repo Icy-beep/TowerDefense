@@ -5,6 +5,7 @@ from collections.abc import Callable
 from src.core.coordinate import Coordinate
 from src.core.game_state import GameStateManager
 from src.core.map import Map
+from src.entities.defense_module import DefenseModule
 from src.entities.fauna_nest import FaunaNest
 from src.entities.hostile_entity import HostileEntity
 from src.enums import Faction, GameState
@@ -35,11 +36,19 @@ class GameSession:
     SECTOR_UNLOCK_BASE_COST = 300
     SECTOR_UNLOCK_COST_STEP = 150
 
+    # Редкий случайный дроп ИИ-модуля с любого убитого врага Corporation (см.
+    # update, ResourceBank.add_scrap - scrap с той же фракции выпадает всегда,
+    # это отдельный маленький шанс сверху).
+    AI_MODULE_DROP_CHANCE = 0.03
+
     def __init__(self):
         """Создаёт пустую игровую сессию в главном меню."""
         self.map = None
         self.resources = ResourceBank()
         self.tech_tree = TechTree()
+        # Инвентарь ИИ-модулей, добытых дропом (см. update) и ещё не установленных
+        # ни на одну башню - {ключ модуля: количество}.
+        self.ai_module_stock: dict[str, int] = {}
         self.threat_strategies: dict[Faction, ThreatStrategy] = {}
         self.tower_factory = TowerFactory()
         self.enemy_factory = EnemyFactory()
@@ -87,6 +96,7 @@ class GameSession:
         self.base_health = self.max_base_health
         self.resources = ResourceBank(start_credits=1000)
         self.tech_tree = TechTree()
+        self.ai_module_stock = {}
 
         self.map = Map(on_event=self._emit)
         self.map.power_grid_enabled = True
@@ -169,6 +179,13 @@ class GameSession:
         reached_base, killed_enemies, destroyed_nests = self.map.update(delta_time)
         for enemy in killed_enemies:
             self.resources.add_reward(enemy.reward)
+            if enemy.faction == Faction.CORPORATION:
+                if enemy.scrap_reward:
+                    self.resources.add_scrap(enemy.scrap_reward)
+                if random.random() < self.AI_MODULE_DROP_CHANCE:
+                    module_key = random.choice(DefenseModule.AI_MODULE_KEYS)
+                    self.ai_module_stock[module_key] = self.ai_module_stock.get(module_key, 0) + 1
+                    self._emit("ai_module_dropped", module_key=module_key)
             self._emit("enemy_died", enemy_type=getattr(enemy, "type_name", None), position=enemy.position)
 
         for nest in destroyed_nests:
@@ -219,12 +236,12 @@ class GameSession:
         return False
 
     def upgrade_tech_branch(self, tower_type: str, branch: str) -> bool:
-        """Покупает следующий уровень ветки branch дерева технологий для типа
-        tower_type (см. src/systems/tech_tree.py) - действует сразу на все текущие
-        башни этого типа на карте и на все будущие (см. place_turret)."""
+        """Покупает за scrap следующий уровень ветки branch дерева технологий для
+        типа tower_type (см. src/systems/tech_tree.py) - действует сразу на все
+        текущие башни этого типа на карте и на все будущие (см. place_turret)."""
         costs = self.tower_factory.get_upgrade_costs(tower_type)
         cost = self.tech_tree.upgrade_cost(tower_type, branch, costs)
-        if cost is None or not self.resources.spend(cost):
+        if cost is None or not self.resources.spend_scrap(cost):
             return False
         self.tech_tree.upgrade(tower_type, branch)
         for module in self.map.modules:

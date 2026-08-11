@@ -40,8 +40,8 @@ class TestTowerTargeting:
 
 
 class TestAiModuleTargeting:
-    """ИИ-модули за scrap (см. DefenseModule.AI_MODULE_COSTS) меняют логику
-    find_target - без установленного модуля поведение остаётся прежним."""
+    """ИИ-модули (см. DefenseModule.AI_MODULE_KEYS) меняют логику find_target -
+    без установленного модуля поведение остаётся прежним."""
 
     def test_finish_wounded_prefers_lowest_health_over_nearest(self):
         tower = LaserTurret(Coordinate(100, 100))

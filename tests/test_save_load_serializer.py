@@ -80,7 +80,7 @@ def test_round_trip_restores_tech_tree_levels_and_reapplies_them_to_towers(sessi
     """Апгрейды дерева технологий общие на тип (см. TechTree) - после загрузки
     сохранённого уровня характеристики восстановленной башни должны совпадать с
     тем, что дал бы тот же апгрейд заново, а не сбрасываться в базовые значения."""
-    session.resources.credits = 10_000
+    session.resources.scrap = 10_000
     session.upgrade_tech_branch("laser", "damage")
     tower = _place_tower(session, "laser")
 
@@ -92,6 +92,33 @@ def test_round_trip_restores_tech_tree_levels_and_reapplies_them_to_towers(sessi
     restored_tower = restored.map.modules[0]
     assert restored_tower.damage == pytest.approx(tower.damage)
     assert restored_tower.damage == pytest.approx(restored_tower.base_damage * 1.4)
+
+
+def test_round_trip_restores_ai_module_stock(session):
+    """Инвентарь недоустановленных ИИ-модулей (см. GameSession.ai_module_stock) не
+    должен теряться при сохранении/загрузке."""
+    session.ai_module_stock["hunt_leaders"] = 2
+    session.ai_module_stock["finish_wounded"] = 1
+
+    data = session_to_dict(session)
+    restored = GameSession()
+    apply_dict_to_session(restored, data)
+
+    assert restored.ai_module_stock == {"hunt_leaders": 2, "finish_wounded": 1}
+
+
+def test_round_trip_restores_ai_module_installed_on_a_specific_tower(session):
+    """ai_module установленный на конкретной башне - привязан к экземпляру, а не к
+    типу (в отличие от дерева технологий), поэтому сохраняется отдельно на каждую
+    башню (см. DefenseModule.ai_module)."""
+    tower = _place_tower(session, "laser")
+    tower.ai_module = "ignore_resistant"
+
+    data = session_to_dict(session)
+    restored = GameSession()
+    apply_dict_to_session(restored, data)
+
+    assert restored.map.modules[0].ai_module == "ignore_resistant"
 
 
 def test_round_trip_restores_enemy_type_health_and_recomputes_path(session):

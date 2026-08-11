@@ -43,6 +43,15 @@ def test_add_reward_increases_credits():
     assert bank.credits == 55
 
 
+def test_add_scrap_increases_scrap():
+    bank = ResourceBank()
+
+    bank.add_scrap(2)
+    bank.add_scrap(3)
+
+    assert bank.scrap == 5
+
+
 def test_spend_scrap_succeeds_when_enough_scrap():
     bank = ResourceBank()
     bank.scrap = 150

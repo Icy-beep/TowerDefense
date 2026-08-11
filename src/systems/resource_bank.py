@@ -14,7 +14,7 @@ class ResourceBank:
         return False
 
     def spend_scrap(self, amount: int) -> bool:
-        """Списывает scrap, если его достаточно (см. DefenseModule.AI_MODULE_COSTS)."""
+        """Списывает scrap, если его достаточно (см. GameSession.upgrade_tech_branch)."""
         if self.scrap >= amount:
             self.scrap -= amount
             return True
@@ -24,3 +24,9 @@ class ResourceBank:
         """Начисляет кредиты за убитого врага."""
         self.credits += amount
         print(f"+{amount} credits. Total: {self.credits}")
+
+    def add_scrap(self, amount: int):
+        """Начисляет scrap за убитого врага фракции Corporation (см.
+        HostileEntity.scrap_reward, GameSession.update)."""
+        self.scrap += amount
+        print(f"+{amount} scrap. Total: {self.scrap}")
