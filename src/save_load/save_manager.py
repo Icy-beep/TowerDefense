@@ -2,24 +2,18 @@
 быстрого сохранения (см. Settings.autosave_interval_seconds и
 GameView._tick_autosave). Формат файлов - JSON (см. serializer.py)."""
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 
+from src.core.paths import user_data_dir
 from src.save_load.serializer import apply_dict_to_session, session_to_dict
 
 QUICKSAVE_SLOT_ID = "_quicksave"
 
 
 def default_saves_dir() -> Path:
-    """Путь к папке сохранений: рядом с исполняемым файлом при сборке PyInstaller,
-    иначе в корне проекта при запуске из исходников (тот же принцип, что и у
-    Settings.default_settings_path)."""
-    if getattr(sys, "frozen", False):
-        base = Path(sys.executable).resolve().parent
-    else:
-        base = Path(__file__).resolve().parent.parent.parent
-    return base / "saves"
+    """Путь к папке сохранений (см. src.core.paths.user_data_dir)."""
+    return user_data_dir() / "saves"
 
 
 class SaveManager:

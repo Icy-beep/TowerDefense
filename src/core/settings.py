@@ -1,8 +1,9 @@
-"""Настройки игрока (экран, звук, язык) с сохранением в JSON рядом с игрой."""
+"""Настройки игрока (экран, звук, язык) с сохранением в JSON."""
 import json
-import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
+
+from src.core.paths import user_data_dir
 
 DISPLAY_MODE_WINDOWED = "windowed"
 DISPLAY_MODE_BORDERLESS = "borderless"
@@ -26,13 +27,8 @@ AUTOSAVE_MAX_SECONDS = 300
 
 
 def default_settings_path() -> Path:
-    """Путь к settings.json: рядом с исполняемым файлом при сборке PyInstaller,
-    иначе в корне проекта (при запуске из исходников)."""
-    if getattr(sys, "frozen", False):
-        base = Path(sys.executable).resolve().parent
-    else:
-        base = Path(__file__).resolve().parent.parent.parent
-    return base / "settings.json"
+    """Путь к settings.json (см. src.core.paths.user_data_dir)."""
+    return user_data_dir() / "settings.json"
 
 
 @dataclass
