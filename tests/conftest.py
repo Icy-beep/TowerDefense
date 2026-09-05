@@ -1,4 +1,5 @@
 import random
+from functools import partial
 import sys
 from pathlib import Path
 
@@ -28,3 +29,24 @@ def _seed_random():
     сталкиваться с зашитыми в тестах координатами, делая падения тестов "плавающими"
     в зависимости от порядка запуска и состояния ОС-энтропии."""
     random.seed(12345)
+
+
+@pytest.fixture(autouse=True)
+def _lightweight_view_assets(monkeypatch, tmp_path, request):
+    """UI-тесты используют настоящие менеджеры с пустой папкой ресурсов.
+
+    Меняем только конструкторы в GameView: прямые тесты SoundManager,
+    SpriteManager и MusicManager по-прежнему проверяют загрузку ресурсов.
+    Маркер real_assets позволяет проверить и полное окно с ресурсами.
+    """
+    if request.node.get_closest_marker("real_assets"):
+        return
+    from src.ui import game_window
+    from src.ui.music_manager import MusicManager
+    from src.ui.sound_manager import SoundManager
+    from src.ui.sprite_manager import SpriteManager
+
+    root = str(tmp_path / "empty_assets")
+    monkeypatch.setattr(game_window, "SoundManager", partial(SoundManager, sounds_root=root))
+    monkeypatch.setattr(game_window, "SpriteManager", partial(SpriteManager, sprites_root=root))
+    monkeypatch.setattr(game_window, "MusicManager", partial(MusicManager, music_root=root))

@@ -23,6 +23,23 @@ def _click_event(pos):
     return types.SimpleNamespace(type=pygame.MOUSEBUTTONDOWN, button=1, pos=pos)
 
 
+@pytest.mark.parametrize("state", [GameState.VICTORY, GameState.GAME_OVER])
+def test_escape_after_match_returns_to_menu_and_allows_new_game(view, state):
+    view.session.state = state
+    view.operator_menu_open = True
+    view.tech_tree_open = True
+    view._handle_escape()
+    assert view.running
+    assert view.session.state == GameState.MENU
+    assert view.menu_view == "main"
+    assert view.controller is None
+    assert not view.operator_menu_open
+    assert not view.tech_tree_open
+    view._start_game(endless=True)
+    assert view.session.state == GameState.PLAYING
+    assert view.controller is not None
+
+
 def test_escape_during_play_opens_pause_menu_and_pauses(view):
     assert view.session.state == GameState.PLAYING
 

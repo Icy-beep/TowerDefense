@@ -8,10 +8,13 @@ from src.core.map import Map
 from src.entities.defense_module import DefenseModule
 from src.entities.fauna_nest import FaunaNest
 from src.entities.hostile_entity import HostileEntity
+from src.entities.operator import Operator
 from src.enums import Faction, GameState
 from src.factories.enemy_factory import EnemyFactory
 from src.factories.tower_factory import TowerFactory
-from src.systems.mission import Objective, ProtectTowersObjective, SurviveDurationObjective
+from src.systems.mission import (
+    ExpandAndClearObjective, Objective, ProtectTowersObjective, SurviveDurationObjective,
+)
 from src.systems.resource_bank import ResourceBank
 from src.systems.sector import build_sector_grid
 from src.systems.tech_tree import TechTree
@@ -59,7 +62,44 @@ class GameSession:
         self.survive_duration_target = 180.0
         self.objectives: list[Objective] = []
         self.endless = False
+        self.story = False
+        self.destroyed_nests_count = 0
         self.on_event: Callable[..., None] | None = None
+        self.operator = None
+        self.operator_deployed_once = False
+        self.operator_respawn_at = 0.0
+
+    def deploy_operator(self, kind):
+        if self.state != GameState.PLAYING or kind not in Operator.CLASSES:
+            return False
+        if self.operator and self.operator.is_alive():
+            return False
+        if self.elapsed_time < self.operator_respawn_at:
+            return False
+        cost = 200 if self.operator_deployed_once else 0
+        if self.resources.credits < cost:
+            return False
+        operator = Operator(kind, self.base_position)
+        blocked = operator.blocked_cells(self.map)
+        spawn = None
+        for radius in (80, 140, 220, 320):
+            for i in range(16):
+                angle = i * math.pi / 8
+                point = Coordinate(self.base_position.x + math.cos(angle) * radius,
+                                   self.base_position.y + math.sin(angle) * radius)
+                if operator.can_stand(point, self.map, blocked):
+                    spawn = point
+                    break
+            if spawn:
+                break
+        if spawn is None:
+            return False
+        self.resources.spend(cost)
+        operator.position = spawn
+        operator.aim = Coordinate(spawn.x + 100, spawn.y)
+        self.operator = self.map.operator = operator
+        self.operator_deployed_once = True
+        return True
 
     def _emit(self, event_name: str, **data):
         """Уведомляет подписчика (например, звуковую систему) об игровом событии."""
@@ -86,15 +126,22 @@ class GameSession:
         """Меняет состояние игры."""
         self.state_manager.change_state(new_state)
 
-    def setup_game(self, endless: bool = False):
+    def setup_game(self, endless: bool = False, story: bool = False):
         """Готовит новую игру: карту, базу, ресурсы, источники угроз и задания.
         endless=True - режим без ограничения по времени и без заданий (см. update):
         победы по таймеру не будет, база остаётся уязвимой, поражение по-прежнему
         возможно."""
         self.state = GameState.PLAYING
+        self.operator = None
+        self.operator_deployed_once = False
+        self.operator_respawn_at = 0.0
         self.endless = endless
+        self.story = story and not endless
+        self.destroyed_nests_count = 0
         self.base_health = self.max_base_health
         self.resources = ResourceBank(start_credits=1000)
+        if self.story:
+            self.resources = ResourceBank(start_credits=1600)
         self.tech_tree = TechTree()
         self.ai_module_stock = {}
 
@@ -115,6 +162,9 @@ class GameSession:
         ]
 
         fauna_nests = self._generate_fauna_nests()
+        if self.story:
+            fauna_nests = [FaunaNest(Coordinate(self.base_position.x + 1100,
+                                               self.base_position.y))]
         self.map.fauna_nests = fauna_nests
         self.map.spawn_points_by_faction = {
             Faction.CORPORATION: [],
@@ -136,6 +186,9 @@ class GameSession:
             SurviveDurationObjective(target_seconds=self.survive_duration_target),
             ProtectTowersObjective(),
         ]
+        if self.story:
+            self.objectives = [SurviveDurationObjective(self.survive_duration_target),
+                               ExpandAndClearObjective()]
 
     def _generate_fauna_nests(self, rng: random.Random | None = None) -> list[FaunaNest]:
         """Расставляет гнёзда фауны один раз при старте игры (новые не появляются, а
@@ -176,7 +229,15 @@ class GameSession:
         for strategy in self.threat_strategies.values():
             strategy.update(delta_time, self.map, self._spawn_enemy_factory)
 
+        operator_was_alive = self.operator is not None and self.operator.is_alive()
+        if operator_was_alive:
+            self.operator.update(delta_time, self.map)
         reached_base, killed_enemies, destroyed_nests = self.map.update(delta_time)
+        if operator_was_alive and not self.operator.is_alive():
+            self.operator.manual = False
+            self.operator.stop_input()
+            self.operator_respawn_at = self.elapsed_time + 20
+            self._emit("operator_died", position=self.operator.position)
         for enemy in killed_enemies:
             self.resources.add_reward(enemy.reward)
             if enemy.faction == Faction.CORPORATION:
@@ -189,6 +250,7 @@ class GameSession:
             self._emit("enemy_died", enemy_type=getattr(enemy, "type_name", None), position=enemy.position)
 
         for nest in destroyed_nests:
+            self.destroyed_nests_count += 1
             self.resources.add_reward(nest.reward)
 
         for _ in reached_base:
@@ -199,7 +261,7 @@ class GameSession:
             self.state = GameState.GAME_OVER
             self._emit("defeat")
 
-        if (not self.endless and self.state == GameState.PLAYING
+        if (not self.endless and not self.story and self.state == GameState.PLAYING
                 and self.state_manager.check_victory(self.elapsed_time, self.survive_duration_target)):
             self.state = GameState.VICTORY
             self._emit("victory")
@@ -207,6 +269,10 @@ class GameSession:
         for objective in self.objectives:
             if objective.is_active():
                 objective.update(self)
+        if (self.story and self.state == GameState.PLAYING
+                and all(objective.completed for objective in self.objectives)):
+            self.state = GameState.VICTORY
+            self._emit("victory")
 
     def place_turret(self, tower_type: str, position: Coordinate) -> bool:
         """Строит башню заданного типа в указанной точке."""

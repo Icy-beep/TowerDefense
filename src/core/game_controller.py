@@ -3,6 +3,8 @@ from src.core.coordinate import Coordinate
 from src.core.game_mode_controller import IGameModeController
 from src.core.game_session import GameSession
 from src.core.orbital_mode_controller import OrbitalModeController
+from src.core.operator_mode_controller import OperatorModeController
+from src.enums import GameState
 
 
 class GameController:
@@ -13,6 +15,32 @@ class GameController:
         текущий размер окна."""
         self.session = session
         self.active_mode: IGameModeController = OrbitalModeController(session, screen_w, screen_h)
+        self.orbital_mode = self.active_mode
+        if session.operator and session.operator.manual and session.operator.is_alive():
+            self.set_mode(OperatorModeController(session, screen_w, screen_h))
+
+    @property
+    def operator_mode(self):
+        return isinstance(self.active_mode, OperatorModeController)
+
+    def enter_operator(self, kind=None):
+        if self.session.state != GameState.PLAYING:
+            return False
+        if not self.session.operator or not self.session.operator.is_alive():
+            if not self.session.deploy_operator(kind):
+                return False
+        if not self.operator_mode:
+            self.orbital_mode = self.active_mode
+            self.orbital_mode.deselect()
+            self.set_mode(OperatorModeController(self.session, self.camera.screen_w, self.camera.screen_h))
+        return True
+
+    def return_to_orbit(self):
+        if self.operator_mode:
+            width, height = self.camera.screen_w, self.camera.screen_h
+            self.set_mode(self.orbital_mode)
+            self.camera.resize(width, height)
+            self.camera.center_on(self.session.operator.position)
 
     def set_mode(self, mode: IGameModeController):
         """Переключает активный режим игры."""
@@ -54,6 +82,8 @@ class GameController:
 
     def update(self, delta_time: float):
         """Обновляет активный режим на один кадр."""
+        if self.operator_mode and (not self.session.operator or not self.session.operator.is_alive()):
+            self.return_to_orbit()
         self.active_mode.update(delta_time)
 
     def handle_input(self, event) -> bool:
@@ -85,6 +115,15 @@ class GameController:
         if toggle is None:
             return False
         return toggle()
+
+    def install_ai_module(self, module_key: str) -> bool:
+        """Устанавливает ИИ-модуль на выбранную башню в активном режиме (если тот
+        это поддерживает - см. OrbitalModeController.install_ai_module). Нужно
+        HUD-кнопке в панели выбора башни."""
+        install = getattr(self.active_mode, "install_ai_module", None)
+        if install is None:
+            return False
+        return install(module_key)
 
     def get_game_state(self) -> dict:
         """Возвращает состояние игры для HUD."""

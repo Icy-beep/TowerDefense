@@ -126,16 +126,17 @@ def test_mode_select_endless_click_starts_an_endless_game(view):
     assert view.session.endless is True
 
 
-def test_mode_select_story_click_does_nothing(view):
-    """Кнопка "Сюжет" пока заглушка - клик по ней не должен запускать игру."""
+def test_mode_select_story_click_starts_mission(view):
+    """Кнопка миссии запускает игру с заданиями."""
     view.menu_view = "mode_select"
     view.mode_select_screen._layout(view.width, view.height)
     x, y, w, h = view.mode_select_screen._story_rect
 
     view._handle_menu_input(_click_event((x + w // 2, y + h // 2)))
 
-    assert view.menu_view == "mode_select"
-    assert view.controller is None
+    assert view.controller is not None
+    assert view.session.story is True
+    assert view.session.endless is False
 
 
 def test_mode_select_back_click_returns_to_main_menu(view):

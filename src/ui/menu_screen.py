@@ -1,4 +1,3 @@
-"""Экран главного меню."""
 import pygame
 
 from src.localization.loc import loc
@@ -10,8 +9,7 @@ TITLE_BUTTON_GAP = 40
 
 
 class MenuScreen:
-    """Главное меню с кнопками "Продолжить" (если есть сохранение), "Начать игру",
-    "Настройки" и "Выйти"."""
+    """Главное меню с кнопками."""
 
     def __init__(self):
         """Создаёт меню с пустой раскладкой кнопок."""
@@ -22,9 +20,7 @@ class MenuScreen:
         self._title_rect = (0, 0, 0, 0)
 
     def _layout(self, width, height, has_continue=False):
-        """Рассчитывает положение кнопок под размер окна. Кнопка "Продолжить"
-        появляется первой, только если есть хоть одно сохранение (см.
-        SaveManager.has_any_save)."""
+        """Рассчитывает положение кнопок под размер окна"""
         cx = width // 2
         button_count = 4 if has_continue else 3
         total_height = BUTTON_HEIGHT * button_count + BUTTON_GAP * (button_count - 1)
@@ -44,15 +40,12 @@ class MenuScreen:
         self._exit_rect = (cx - BUTTON_WIDTH // 2, y, BUTTON_WIDTH, BUTTON_HEIGHT)
 
     def render(self, screen, width, height, font, title_font, has_continue=False):
-        """Рисует экран меню."""
+        """Рисует экран меню"""
         self._layout(width, height, has_continue)
         screen.fill((20, 24, 28))
 
         title = title_font.render(loc.get("menu.title"), True, (255, 255, 255))
         tw, th = title.get_size()
-        # Позиция заголовка привязана к верхней кнопке, а не к фиксированному отступу от
-        # центра - иначе при появлении кнопки "Продолжить" блок кнопок вырастает на одну
-        # строку и наезжает на заголовок (регрессия, см. жалобу пользователя со скриншотом).
         top_button_y = self._continue_rect[1] if has_continue else self._start_rect[1]
         title_pos = ((width - tw) // 2, top_button_y - TITLE_BUTTON_GAP - th)
         self._title_rect = (title_pos[0], title_pos[1], tw, th)
@@ -65,7 +58,7 @@ class MenuScreen:
         self._draw_button(screen, self._exit_rect, loc.get("menu.exit"), font, (160, 60, 60))
 
     def _draw_button(self, screen, rect, text, font, color):
-        """Рисует одну кнопку с подписью."""
+        """Рисует одну кнопку с подписью"""
         x, y, w, h = rect
         pygame.draw.rect(screen, color, (x, y, w, h))
         pygame.draw.rect(screen, (255, 255, 255), (x, y, w, h), 2)
@@ -74,7 +67,7 @@ class MenuScreen:
         screen.blit(label, (x + (w - lw) // 2, y + (h - lh) // 2))
 
     def handle_click(self, pos, width, height, has_continue=False) -> "str | None":
-        """Определяет, по какой кнопке кликнули."""
+        """Определяет, по какой кнопке кликнули"""
         self._layout(width, height, has_continue)
         if has_continue and self._point_in(pos, self._continue_rect):
             return "continue"
@@ -88,7 +81,7 @@ class MenuScreen:
 
     @staticmethod
     def _point_in(pos, rect) -> bool:
-        """Проверяет, попадает ли точка в прямоугольник."""
+        """Проверяет, попадает ли точка в прямоугольник"""
         px, py = pos
         x, y, w, h = rect
         return x <= px <= x + w and y <= py <= y + h

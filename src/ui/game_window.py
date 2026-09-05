@@ -1,7 +1,7 @@
-"""Окно приложения и игровой цикл."""
 import sys
 
 import pygame
+from src.ui.operator_panel import OperatorPanel
 
 from src.core.game_controller import GameController
 from src.core.game_session import GameSession
@@ -58,18 +58,11 @@ class GameView:
         "mortar_explosion": 0.85,
     }
     ALWAYS_AUDIBLE_EVENTS = {"base_hit"}
-
-    # Дерево технологий (см. tech_tree_open) открывается и хоткеем, и кнопкой в
-    # HUD (см. запрос пользователя) - апгрейды по типу башни за scrap, отдельно от
-    # ИИ-модулей, которые достаются дропом (см. GameSession.upgrade_tech_branch,
-    # GameSession.ai_module_stock).
     TECH_TREE_KEY = pygame.K_k
     COMBAT_TOWER_TYPES = ("laser", "bullet", "mortar")
 
     def __init__(self, session: GameSession, settings: Settings | None = None):
-        """Создаёт окно и рендереры для заданной игровой сессии.
-        Параметр settings позволяет тестам подставить свой объект настроек, не трогая
-        settings.json в корне проекта."""
+        """Создаёт окно и рендереры для заданной игровой сессии"""
         self.session = session
         self.controller: GameController | None = None
 
@@ -93,6 +86,9 @@ class GameView:
         self._pause_notice = ""
         self._pause_notice_timer = 0.0
         self.tech_tree_open = False
+        self.operator_menu_open = False
+        self.operator_menu_error = False
+        self.operator_panel = OperatorPanel()
 
         self.save_manager = SaveManager()
         self._save_load_mode = "save"
@@ -129,8 +125,7 @@ class GameView:
         self.hud_renderer = HudRenderer(self.sprite_manager)
 
     def _on_sound_loading_progress(self, done: int, total: int):
-        """Перерисовывает экран загрузки и откачивает события после каждого загруженного звука —
-        расчёт вариаций питча небыстрый, и без этого ОС считает окно зависшим на время загрузки."""
+        """Перерисовывает экран загрузки"""
         percent = int(done / total * 100) if total else 100
         self._show_loading_screen(f"Loading sounds... {percent}%")
 
@@ -140,8 +135,8 @@ class GameView:
         self._show_loading_screen(f"Loading sprites... {percent}%")
 
     def _show_loading_screen(self, text_line: str = "Loading..."):
-        """Рисует кадр загрузки с текстом и откачивает очередь событий — вызывается регулярно
-        во время долгой загрузки ассетов, иначе ОС считает не обновляющееся окно зависшим."""
+        """Рисует кадр загрузки с текстом и откачивает очередь событий - вызывается регулярно
+        во время долгой загрузки ассетов, иначе ОС считает не обновляющееся окно зависшим"""
         self.screen.fill((20, 24, 28))
         text = self.title_font.render(text_line, True, (255, 255, 255))
         rect = text.get_rect(center=(self.width // 2, self.height // 2))
@@ -151,21 +146,23 @@ class GameView:
 
     @property
     def camera(self):
-        """Камера активного контроллера."""
+        """Камера активного контроллера"""
         return self.controller.camera
 
     def run(self):
-        """Запускает основной игровой цикл."""
+        """Запускает основной игровой цикл"""
         while self.running:
             dt = self.clock.tick(60) / 1000.0
             self.handle_events()
             self._pause_notice_timer = max(0.0, self._pause_notice_timer - dt)
-            # Не завязано на state/controller как звуки и автосейв ниже - плейлист должен
-            # переключать треки и в главном меню, и на паузе, а не только во время PLAYING.
             self.music_manager.update(dt)
             if self.session.state != GameState.MENU and self.controller:
+                self.controller.active_mode.input_blocked = (
+                    self.operator_menu_open or self.tech_tree_open or self.pause_menu_open)
                 self.controller.update(dt)
                 self.session.update(dt)
+                if self.controller.operator_mode and not self.session.operator.is_alive():
+                    self.controller.return_to_orbit()
                 self.sound_manager.update(dt)
                 if self.session.state == GameState.PLAYING:
                     self._tick_autosave(dt)
@@ -178,7 +175,7 @@ class GameView:
         sys.exit()
 
     def handle_events(self):
-        """Обрабатывает очередь событий pygame."""
+        """Обрабатывает очередь событий pygame"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -192,16 +189,26 @@ class GameView:
                 self._handle_pause_menu_input(event)
             elif self.controller and self.tech_tree_open:
                 self._handle_tech_tree_input(event)
+            elif self.controller and self.operator_menu_open:
+                kind = self.operator_panel.handle_choice(event, self.width, self.height)
+                if kind:
+                    success = self.controller.enter_operator(kind)
+                    self.operator_menu_error = not success
+                    self.operator_menu_open = not success
+            elif self.controller and self._handle_operator_toggle(event):
+                pass
+            elif self.controller and self.controller.operator_mode:
+                self.controller.handle_input(event)
             elif self.controller and event.type == pygame.KEYDOWN and event.key == self.TECH_TREE_KEY:
                 self.tech_tree_open = True
             elif self.controller:
-                if not self._handle_build_panel_click(event) and not self._handle_hud_toggle_click(event) \
+                if not self._handle_build_panel_click(event) and not self._handle_ai_module_click(event) \
+                        and not self._handle_hud_toggle_click(event) \
                         and not self._handle_tech_tree_button_click(event) and not self._handle_help_click(event):
                     self.controller.handle_input(event)
 
     def _tick_autosave(self, delta_time: float):
-        """Раз в settings.autosave_interval_seconds пишет быстрое сохранение поверх
-        одного и того же слота. 0 - автосохранение выключено (см. Settings)."""
+        """Раз в интервал автосейва делает автосейв"""
         interval = self.settings.autosave_interval_seconds
         if interval <= 0:
             return
@@ -211,11 +218,26 @@ class GameView:
         self._autosave_timer = 0.0
         self.save_manager.quicksave(self.session)
 
+    def _handle_operator_toggle(self, event):
+        requested = (event.type == pygame.KEYDOWN and event.key == pygame.K_o)
+        requested = requested or (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
+                                  and self.operator_panel.toggle_rect(self.width, self.height)
+                                  .collidepoint(event.pos))
+        if not requested or self.session.state != GameState.PLAYING:
+            return False
+        if self.controller.operator_mode:
+            self.controller.return_to_orbit()
+        elif self.session.operator and self.session.operator.is_alive():
+            self.controller.enter_operator()
+        else:
+            self.operator_menu_open = True
+            self.operator_menu_error = False
+        return True
+
     def _handle_build_panel_click(self, event) -> bool:
         """Перехватывает клик по иконке постройки в нижней HUD-панели раньше, чем
         событие дойдёт до контроллера - иначе тот же клик ещё и пытался бы что-то
-        сделать на карте под панелью (поставить/выбрать башню). Возвращает True,
-        если клик пришёлся на панель и был обработан."""
+        сделать на карте под панелью"""
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return False
         tower_type = self.hud_renderer.handle_build_click(event.pos, self.tower_options, self.width, self.height)
@@ -224,10 +246,21 @@ class GameView:
         self.controller.select_tower(tower_type)
         return True
 
+    def _handle_ai_module_click(self, event) -> bool:
+        """Перехватывает клик по кнопке установки ИИ-модуля в панели выбора
+        (нижняя HUD-панель) раньше контроллера"""
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return False
+        module_key = self.hud_renderer.handle_ai_module_click(
+            event.pos, self.controller, self.tower_options, self.width, self.height)
+        if module_key is None:
+            return False
+        self.controller.install_ai_module(module_key)
+        return True
+
     def _handle_hud_toggle_click(self, event) -> bool:
         """Перехватывает клик по кнопке-переключателю радиусов (энергосеть/атака
-        башен) в верхней HUD-панели раньше контроллера - тем же приёмом, что и
-        _handle_build_panel_click, чтобы клик по кнопке не долетал до карты под ней."""
+        башен) в верхней HUD-панели раньше контроллера"""
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return False
         key = self.hud_renderer.handle_toggle_click(event.pos, self.width)
@@ -250,10 +283,7 @@ class GameView:
         return True
 
     def _handle_tech_tree_input(self, event):
-        """Обрабатывает ввод, пока открыт экран дерева технологий (см.
-        tech_tree_open) - K и повторный клик по кнопке в HUD закрывают экран так
-        же, как открывают; ESC обрабатывается раньше в handle_events (см.
-        _handle_escape)."""
+        """Обрабатывает ввод, пока открыт экран дерева технологий"""
         if event.type == pygame.KEYDOWN and event.key == self.TECH_TREE_KEY:
             self.tech_tree_open = False
             return
@@ -269,14 +299,19 @@ class GameView:
 
     def _handle_help_click(self, event) -> bool:
         """Перехватывает клик по кнопке '?' (подсказка по управлению) раньше
-        контроллера - тем же приёмом, что и остальные HUD-перехватчики выше."""
+        контроллера"""
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return False
         return self.hud_renderer.handle_help_click(event.pos, self.width, self.height)
 
     def _handle_escape(self):
-        """ESC: из настроек — назад в меню; из дерева технологий — закрыть его; во
-        время игры — открыть/закрыть меню паузы; иначе — выход."""
+        """Обработка ESC в разных меню"""
+        if self.session.state in (GameState.VICTORY, GameState.GAME_OVER):
+            self._exit_to_main_menu()
+            return
+        if self.operator_menu_open:
+            self.operator_menu_open = False
+            return
         state = self.session.state
         if state == GameState.MENU:
             if self.menu_view in ("settings", "mode_select"):
@@ -291,8 +326,7 @@ class GameView:
             self.running = False
 
     def _toggle_pause_menu(self):
-        """Открывает меню паузы (ставя игру на паузу), возвращает из настроек в меню паузы,
-        либо закрывает меню паузы и снимает игру с паузы."""
+        """Открывает меню паузы"""
         if self.session.state == GameState.PLAYING:
             self.session.state = GameState.PAUSED
             self.pause_menu_open = True
@@ -306,14 +340,14 @@ class GameView:
             self.pause_view = "menu"
 
     def _resume_game(self):
-        """Закрывает меню паузы и снимает игру с паузы."""
+        """Закрывает меню паузы и снимает игру с паузы"""
         self.pause_menu_open = False
         self.pause_view = "menu"
         if self.session.state == GameState.PAUSED:
             self.session.state = GameState.PLAYING
 
     def _handle_pause_menu_input(self, event):
-        """Обрабатывает клики по меню паузы (и по настройкам, открытым из него)."""
+        """Обрабатывает клики по меню паузы"""
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return
 
@@ -334,7 +368,7 @@ class GameView:
         self._apply_pause_action(action)
 
     def _apply_pause_action(self, action):
-        """Применяет действие, полученное от PauseMenuScreen.handle_click."""
+        """Применяет действие, полученное клик хендлера"""
         if action == "resume":
             self._resume_game()
         elif action == "save":
@@ -351,8 +385,7 @@ class GameView:
             self.running = False
 
     def _current_save_slots(self, mode: str) -> list:
-        """Список слотов для SaveLoadScreen: именованные слоты от новых к старым, а
-        в режиме загрузки ещё и быстрое сохранение первой строкой, если оно есть."""
+        """Список слотов для сохранения загрузки"""
         slots = self.save_manager.list_slots()
         for info in slots:
             info["is_quicksave"] = False
@@ -365,7 +398,7 @@ class GameView:
         return slots
 
     def _apply_save_load_action(self, action):
-        """Применяет действие, полученное от SaveLoadScreen.handle_click."""
+        """Применяет действие, полученное от клик хендлера"""
         if action is None:
             return
         kind, slot_id = action
@@ -381,7 +414,7 @@ class GameView:
             self._load_slot_from_pause(slot_id)
 
     def _load_slot_from_pause(self, slot_id: str):
-        """Загружает выбранный слот поверх текущей сессии и возвращается в игру."""
+        """Загружает выбранный слот поверх текущей сессии и возвращается в игру"""
         if not self.save_manager.load_slot(self.session, slot_id):
             self._show_pause_notice(loc.get("pause.load_failed"))
             return
@@ -390,8 +423,10 @@ class GameView:
         self._resume_game()
 
     def _clear_selection_after_load(self):
-        """Снимает выделение башни/врага/типа постройки после загрузки - старые
-        объекты больше не существуют на новой карте, ссылка на них была бы битой."""
+        """Снимает выделение башни/врага/типа постройки после загрузки"""
+        self.hud_renderer.clear_notifications()
+        self.operator_menu_open = False
+        self.controller = GameController(self.session, self.width, self.height)
         active_mode = getattr(self.controller, "active_mode", None)
         if active_mode is None:
             return
@@ -402,18 +437,22 @@ class GameView:
             active_mode.camera.center_on(self.session.base_position)
 
     def _show_pause_notice(self, text: str):
-        """Показывает временную подсказку в меню паузы (например, для заглушек сохранения/загрузки)."""
+        """Показывает временную подсказку в меню паузы"""
         self._pause_notice = text
         self._pause_notice_timer = 1.6
 
     def _exit_to_main_menu(self):
-        """Прерывает текущую партию и возвращает в главное меню."""
+        """Прерывает текущую партию и возвращает в главное меню"""
         self.controller = None
         self.session.on_event = None
         self.session.state = GameState.MENU
         self.pause_menu_open = False
         self.pause_view = "menu"
         self.menu_view = "main"
+        self.operator_menu_open = False
+        self.operator_menu_error = False
+        self.tech_tree_open = False
+        self.hud_renderer.clear_notifications()
         self.music_manager.play_category("menu")
 
     def _handle_resize(self, width, height):
@@ -427,7 +466,7 @@ class GameView:
             self.controller.camera.resize(self.width, self.height)
 
     def _apply_display_mode(self):
-        """Применяет текущий self.settings.display_mode/resolution к окну pygame."""
+        """Применяет текущее разрешение"""
         if self.settings.display_mode == DISPLAY_MODE_FULLSCREEN:
             self.screen = pygame.display.set_mode(self.settings.resolution, pygame.FULLSCREEN)
         elif self.settings.display_mode == DISPLAY_MODE_BORDERLESS:
@@ -439,7 +478,7 @@ class GameView:
             self.controller.camera.resize(self.width, self.height)
 
     def _apply_settings_action(self, action):
-        """Применяет действие, полученное от SettingsScreen.handle_click, и сохраняет настройки."""
+        """Применяет действие, полученное от клик хендлера, и сохраняет настройки"""
         kind, value = action
         if kind == "display_mode":
             self.settings.display_mode = value
@@ -462,11 +501,6 @@ class GameView:
             self.settings.autosave_interval_seconds += value * AUTOSAVE_STEP_SECONDS
             self.settings.clamp_autosave_interval()
         elif kind == "back":
-            # Настройки открываются и из главного меню (state MENU, актуален
-            # menu_view), и из меню паузы поверх игры (state PAUSED, актуален
-            # pause_view) - возврат должен затрагивать то состояние, которое
-            # реально сейчас на экране, иначе кнопка "Назад" в паузе молча
-            # ничего не делает (см. жалобу пользователя, ESC работал, кнопка нет).
             if self.session.state == GameState.MENU:
                 self.menu_view = "main"
             else:
@@ -474,7 +508,7 @@ class GameView:
         self.settings.save()
 
     def _cycle_resolution(self, direction):
-        """Переключает разрешение на следующее/предыдущее из списка поддерживаемых."""
+        """Переключает разрешение на следующее/предыдущее из списка поддерживаемых"""
         try:
             index = RESOLUTIONS.index(tuple(self.settings.resolution))
         except ValueError:
@@ -482,14 +516,14 @@ class GameView:
         self.settings.resolution = RESOLUTIONS[(index + direction) % len(RESOLUTIONS)]
 
     def _cycle_language(self, direction):
-        """Переключает язык интерфейса на следующий/предыдущий из доступных locale-файлов."""
+        """Переключает язык интерфейса на следующий/предыдущий из доступных"""
         languages = loc.available_languages()
         index = languages.index(self.settings.language) if self.settings.language in languages else -1
         self.settings.language = languages[(index + direction) % len(languages)]
         loc.set_language(self.settings.language)
 
     def _handle_menu_input(self, event):
-        """Обрабатывает клики по кнопкам главного меню и экрана настроек."""
+        """Обрабатывает клики по кнопкам главного меню и экрана настроек"""
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return
 
@@ -503,6 +537,8 @@ class GameView:
             action = self.mode_select_screen.handle_click(event.pos, self.width, self.height)
             if action == "endless":
                 self._start_game(endless=True)
+            elif action == "story":
+                self._start_game(story=True)
             elif action == "back":
                 self.menu_view = "main"
             return
@@ -518,20 +554,22 @@ class GameView:
         elif action == "exit":
             self.running = False
 
-    def _start_game(self, endless: bool = False):
-        """Настраивает новую игру и создаёт контроллер."""
-        self.session.setup_game(endless=endless)
+    def _start_game(self, endless: bool = False, story: bool = False):
+        """Настраивает новую игру и создаёт контроллер"""
+        self.session.setup_game(endless=endless, story=story)
+        self.hud_renderer.clear_notifications()
+        self.operator_menu_open = False
         self.session.on_event = self._handle_game_event
         self.controller = GameController(self.session, self.width, self.height)
         self._autosave_timer = 0.0
         self.music_manager.play_category("gameplay")
 
     def _continue_game(self):
-        """Загружает самое свежее сохранение (именованное или быстрое) и сразу
-        входит в игру - кнопка "Продолжить" в главном меню."""
+        """Загружает самое свежее сохранение"""
         slot_id = self.save_manager.most_recent_slot_id()
         if slot_id is None or not self.save_manager.load_slot(self.session, slot_id):
             return
+        self.hud_renderer.clear_notifications()
         self.session.on_event = self._handle_game_event
         self.controller = GameController(self.session, self.width, self.height)
         self._autosave_timer = 0.0
@@ -541,11 +579,8 @@ class GameView:
 
     def _handle_game_event(self, event_name, **data):
         """Проигрывает звук, привязанный к игровому событию, приглушая его вне вида камеры,
-        на сильном отдалении зумом (см. volume_for_zoom - запрос пользователя) и с учётом
-        кулдауна. Зум-затухание применяется только к позиционным звукам вместе с
-        затуханием по краю кадра (одна и та же идея "насколько это сейчас видно на экране") -
-        не трогает ALWAYS_AUDIBLE_EVENTS (например base_hit - это тревога о базе, она обязана
-        быть слышна всегда) и не позиционные глобальные звуки вроде victory/defeat."""
+        на сильном отдалении зумом"""
+        self.hud_renderer.handle_event(event_name, self.session.elapsed_time, **data)
         position = data.get("position")
         if event_name in self.ALWAYS_AUDIBLE_EVENTS:
             volume_multiplier = 1.0
@@ -562,7 +597,7 @@ class GameView:
             self.sound_manager.play(self.SOUND_EVENTS[event_name], volume_multiplier, cooldown=cooldown)
 
     def render(self):
-        """Рисует текущий кадр игры."""
+        """Рисует текущий кадр игры"""
         if self.session.state == GameState.MENU:
             if self.menu_view == "settings":
                 self.settings_screen.render(self.screen, self.width, self.height,
@@ -586,6 +621,9 @@ class GameView:
             self.tower_options, self.width, self.height, self.font, self.small_font,
             tech_tree_open=self.tech_tree_open,
         )
+        self.operator_panel.render(self.screen, self.session, self.controller, self.small_font,
+                                   self.width, self.height, self.operator_menu_open,
+                                   self.operator_menu_error)
         self.game_over_screen.render(self.screen, self.session, self.width, self.height)
 
         if self.tech_tree_open:

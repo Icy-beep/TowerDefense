@@ -49,11 +49,16 @@ class OrbitalModeController(IGameModeController):
         return Camera(self.screen_w, self.screen_h, map_w=map_w, map_h=map_h)
 
     def update(self, delta_time: float):
-        """Обновляет камеру и снимает выделение с исчезнувшего врага."""
+        """Обновляет камеру и снимает выделение с исчезнувших объектов."""
         keys = pygame.key.get_pressed()
         self.camera.update(delta_time, keys)
         if self.selected_enemy is not None and self.selected_enemy not in self.session.map.enemies:
             self.selected_enemy = None
+        if self.selected_module is not None and (
+            self.selected_module.is_destroyed()
+            or self.selected_module not in self.session.map.modules
+        ):
+            self.selected_module = None
 
     def handle_input(self, event) -> bool:
         """Обрабатывает событие ввода: зум, клавиши, клики, перетаскивание камеры."""
@@ -156,6 +161,12 @@ class OrbitalModeController(IGameModeController):
         не заменяет уже стоящий."""
         if not self.selected_module or self.selected_module.ai_module is not None:
             return False
+        if (self.selected_module.is_destroyed()
+                or self.selected_module not in self.session.map.modules):
+            self.selected_module = None
+            return False
+        if self.selected_tower_type is not None:
+            return False
         if module_key not in self.selected_module.AI_MODULE_KEYS:
             return False
         if self.session.ai_module_stock.get(module_key, 0) <= 0:
@@ -205,6 +216,7 @@ class OrbitalModeController(IGameModeController):
             "selected_tower": self.selected_tower_type,
             "show_power_radii": self.show_power_radii,
             "show_tower_ranges": self.show_tower_ranges,
+            "ai_module_stock": dict(self.session.ai_module_stock),
         }
 
     def _is_valid_position(self, position: Coordinate) -> bool:

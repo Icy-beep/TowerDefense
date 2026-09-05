@@ -133,6 +133,12 @@ class Map:
         footprint = self._footprint_cells(position)
         if not footprint:
             return False
+        operator = getattr(self, "operator", None)
+        if operator and operator.is_alive():
+            for dx, dy in ((0, 0), (10, 0), (-10, 0), (0, 10), (0, -10)):
+                node = self.nav_grid.get_node(operator.position.x + dx, operator.position.y + dy)
+                if node and (node.x, node.y) in footprint:
+                    return False
         if not all(not footprint & self._footprint_cells(module.position) for module in self.modules):
             return False
         return all(not footprint & self._footprint_cells(nest.position)
@@ -784,6 +790,7 @@ class Map:
         destroyed_this_frame = sum(1 for module in self.modules if module.is_destroyed())
         self.towers_lost_count += destroyed_this_frame
         self.modules = [module for module in self.modules if not module.is_destroyed()]
+        health_before = [(module, module.health) for module in self.modules]
 
         self._update_power_grid()
 
@@ -807,6 +814,11 @@ class Map:
 
             target_tower = enemy.group_target_tower() if enemy.is_combatant() else None
             hunting_tower = target_tower is not None and not target_tower.is_destroyed()
+            operator = getattr(self, "operator", None)
+            hunting_operator = (operator is not None and operator.is_alive()
+                                and enemy.is_combatant()
+                                and enemy.position.distance_to(operator.position)
+                                <= max(180, enemy.ATTACK_RANGE))
 
             combat_target = self._find_enemy_combat_target(enemy) if enemy.is_combatant() else None
             in_combat = combat_target is not None
@@ -817,7 +829,7 @@ class Map:
             retreating_now = (allow_retreat and uses_retreat_healing and enemy.group_leader is None
                                and (enemy.is_healing or can_start_retreat))
 
-            if (not hunting_tower and not in_combat and not retreating_now
+            if (not hunting_tower and not hunting_operator and not in_combat and not retreating_now
                     and enemy.path and enemy.path_index >= len(enemy.path)):
                 enemies_reached_base.append(enemy)
                 continue
@@ -857,6 +869,14 @@ class Map:
                             self.projectiles.append(projectile)
                     else:
                         enemy.move_towards_point(combat_target.position, delta_time)
+                elif hunting_operator:
+                    distance = enemy.position.distance_to(operator.position)
+                    if distance <= enemy.ATTACK_RANGE:
+                        projectile = enemy.attack_tower(operator, delta_time)
+                        if projectile:
+                            self.projectiles.append(projectile)
+                    else:
+                        enemy.move_towards_point(operator.position, delta_time)
                 elif hunting_tower:
                     distance = enemy.position.distance_to(target_tower.position)
                     if distance <= enemy.ATTACK_RANGE:
@@ -939,6 +959,9 @@ class Map:
                 if event_name:
                     self._emit(event_name, position=projectile.position)
         self.projectiles = surviving_projectiles + spawned_projectiles
+        for module, health in health_before:
+            if module.health < health:
+                self._emit("tower_hit", position=module.position)
 
         destroyed_nests = []
         if self.fauna_nests:

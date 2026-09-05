@@ -1,4 +1,3 @@
-"""Экран настроек, открывается из главного меню: экран, звук, язык, автосохранение."""
 import pygame
 
 from src.core.settings import DISPLAY_MODE_BORDERLESS, DISPLAY_MODES
@@ -21,10 +20,10 @@ DISPLAY_MODE_LABEL_KEYS = {
 
 
 class SettingsScreen:
-    """Настройки: режим экрана, разрешение, громкость музыки/звуков, язык, кнопка "Назад"."""
+    """Настройки: режим экрана, разрешение, громкость музыки/звуков, язык, кнопка назад"""
 
     def __init__(self):
-        """Создаёт экран с пустой раскладкой (заполняется в _layout)."""
+        """Создаёт экран с пустой раскладкой"""
         self._display_mode_rects = {}
         self._resolution_prev_rect = (0, 0, 0, 0)
         self._resolution_next_rect = (0, 0, 0, 0)
@@ -39,7 +38,7 @@ class SettingsScreen:
         self._back_rect = (0, 0, 0, 0)
 
     def _layout(self, width, height):
-        """Рассчитывает положение всех элементов управления под размер окна."""
+        """Рассчитывает положение всех элементов управления под размер окна"""
         cx = width // 2
         panel_left = cx - PANEL_WIDTH // 2
         controls_left = panel_left + LABEL_WIDTH
@@ -85,7 +84,7 @@ class SettingsScreen:
         self._back_rect = (cx - BACK_BUTTON_WIDTH // 2, y, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT)
 
     def render(self, screen, width, height, font, small_font, title_font, settings):
-        """Рисует экран настроек по текущему объекту Settings."""
+        """Рисует экран настроек по текущему объекту Settings"""
         self._layout(width, height)
         screen.fill((20, 24, 28))
 
@@ -127,7 +126,7 @@ class SettingsScreen:
         self._draw_button(screen, self._back_rect, loc.get("settings.back"), font, (100, 100, 100))
 
     def _draw_row_label(self, screen, x, y, text, font):
-        """Рисует подпись строки настройки слева от элементов управления."""
+        """Рисует подпись строки настройки слева от элементов управления"""
         label = font.render(text, True, (200, 200, 200))
         _, lh = label.get_size()
         screen.blit(label, (x, y + (ROW_HEIGHT - lh) // 2))
@@ -150,7 +149,7 @@ class SettingsScreen:
         screen.blit(value_label, (value_x + (value_w - lw) // 2, my + (mh - lh) // 2))
 
     def _draw_button(self, screen, rect, text, font, color):
-        """Рисует одну кнопку с подписью."""
+        """Рисует одну кнопку с подписью"""
         x, y, w, h = rect
         pygame.draw.rect(screen, color, (x, y, w, h))
         pygame.draw.rect(screen, (255, 255, 255), (x, y, w, h), 2)
@@ -159,7 +158,7 @@ class SettingsScreen:
         screen.blit(label, (x + (w - lw) // 2, y + (h - lh) // 2))
 
     def handle_click(self, pos, width, height, settings) -> tuple | None:
-        """Определяет действие по клику: (тип, значение) или None, если мимо элементов управления."""
+        """Определяет действие по клику"""
         self._layout(width, height)
 
         for mode, rect in self._display_mode_rects.items():

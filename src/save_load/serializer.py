@@ -16,6 +16,7 @@ apply_dict_to_session переиспользует GameSession.setup_game() дл
 синхроне с логикой обычного старта игры, даже если она поменяется в будущем."""
 from src.core.coordinate import Coordinate
 from src.entities.fauna_nest import FaunaNest
+from src.entities.operator import Operator
 from src.enums import Faction
 
 SAVE_FORMAT_VERSION = 1
@@ -27,6 +28,8 @@ def session_to_dict(session) -> dict:
     return {
         "version": SAVE_FORMAT_VERSION,
         "endless": session.endless,
+        "story": session.story,
+        "destroyed_nests_count": session.destroyed_nests_count,
         "elapsed_time": session.elapsed_time,
         "survive_duration_target": session.survive_duration_target,
         "base_health": session.base_health,
@@ -35,6 +38,9 @@ def session_to_dict(session) -> dict:
         "scrap": session.resources.scrap,
         "tech_tree": session.tech_tree.levels,
         "ai_module_stock": session.ai_module_stock,
+        "operator": session.operator.to_dict() if session.operator else None,
+        "operator_deployed_once": session.operator_deployed_once,
+        "operator_respawn_at": session.operator_respawn_at,
         "map": {
             "width": game_map.width,
             "height": game_map.height,
@@ -92,7 +98,9 @@ def _nest_to_dict(nest) -> dict:
 def apply_dict_to_session(session, data: dict) -> None:
     """Восстанавливает игровую сессию из словаря, полученного session_to_dict."""
     endless = bool(data.get("endless", False))
-    session.setup_game(endless=endless)
+    session.survive_duration_target = data.get("survive_duration_target", 180.0)
+    session.setup_game(endless=endless, story=bool(data.get("story", False)))
+    session.destroyed_nests_count = data.get("destroyed_nests_count", 0)
 
     session.elapsed_time = data.get("elapsed_time", 0.0)
     session.max_base_health = data.get("max_base_health", session.max_base_health)
@@ -132,6 +140,11 @@ def apply_dict_to_session(session, data: dict) -> None:
             sector.unlocked = True
 
     strategy_elapsed = map_data.get("threat_strategy_elapsed", {})
+    session.operator_deployed_once = bool(data.get("operator_deployed_once", False))
+    session.operator_respawn_at = data.get("operator_respawn_at", 0.0)
+    operator_data = data.get("operator")
+    if operator_data and operator_data.get("kind") in Operator.CLASSES:
+        session.operator = game_map.operator = Operator.from_dict(operator_data, game_map)
     for faction, strategy in session.threat_strategies.items():
         if hasattr(strategy, "elapsed") and faction.value in strategy_elapsed:
             strategy.elapsed = strategy_elapsed[faction.value]

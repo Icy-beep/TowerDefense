@@ -64,3 +64,21 @@ class ProtectTowersObjective(Objective):
     def describe(self, session) -> str:
         """Возвращает текст прогресса задания."""
         return loc.get("mission.protect_towers", lost=session.map.towers_lost_count)
+
+
+class ExpandAndClearObjective(Objective):
+    """Открыть восточный сектор и уничтожить гнездо короткой миссии."""
+
+    def update(self, session):
+        if session.state == GameState.GAME_OVER:
+            self.failed = True
+        elif self.sector_open(session) and session.destroyed_nests_count >= 1:
+            self.completed = True
+
+    @staticmethod
+    def sector_open(session):
+        return any(s.row == 1 and s.col == 2 and s.unlocked for s in session.map.sectors)
+
+    def describe(self, session):
+        return loc.get("mission.expand_clear", opened=int(self.sector_open(session)),
+                       nests=min(1, session.destroyed_nests_count))

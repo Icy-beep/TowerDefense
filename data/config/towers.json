@@ -10,7 +10,7 @@
     "range_radius": 350,
     "damage": 20,
     "cost": 100,
-    "attack_speed": 5.0,
+    "attack_speed": 3.0,
     "upgrade_costs": [150, 200]
   },
   "mortar": {

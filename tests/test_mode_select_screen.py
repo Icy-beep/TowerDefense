@@ -12,15 +12,15 @@ def test_click_inside_endless_button_returns_endless():
     assert screen.handle_click(center, width, height) == "endless"
 
 
-def test_click_inside_story_button_returns_none():
-    """Кнопка "Сюжет" неактивна - клик по ней не должен ничего запускать."""
+def test_click_inside_story_button_starts_mission():
+    """Кнопка миссии запускает сюжетный режим."""
     screen = ModeSelectScreen()
     width, height = 900, 600
     screen._layout(width, height)
     x, y, w, h = screen._story_rect
     center = (x + w // 2, y + h // 2)
 
-    assert screen.handle_click(center, width, height) is None
+    assert screen.handle_click(center, width, height) == "story"
 
 
 def test_click_inside_back_button_returns_back():

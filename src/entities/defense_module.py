@@ -70,6 +70,24 @@ class DefenseModule(Entity, ABC):
         # Установленный ИИ-модуль (см. AI_MODULE_KEYS) или None - без модуля
         # find_target ведёт себя как раньше (просто ближайший враг).
         self.ai_module: str | None = None
+        self.current_target: HostileEntity | None = None
+
+    @property
+    def activity_reason(self) -> str:
+        """Ключ состояния для интерфейса; не меняет выбор цели."""
+        if self.is_destroyed() or self.status == ModuleStatus.OFFLINE:
+            return "offline"
+        if self.is_landing:
+            return "landing"
+        if not self.is_powered:
+            return "unpowered"
+        if self.status == ModuleStatus.OVERHEATED:
+            return "overheated"
+        if not self.IS_COMBAT_TOWER:
+            return "network"
+        if self.current_target is None or not self.current_target.is_alive():
+            return "out_of_range"
+        return "reloading" if self.cooldown_timer > 0 else "ready"
 
     def start_landing(self):
         """Запускает высадку с орбиты: башня неуязвима и не стреляет, пока не приземлится."""
@@ -91,6 +109,7 @@ class DefenseModule(Entity, ABC):
 
     def update(self, delta_time: float, enemies: list[HostileEntity]) -> Projectile | None:
         """Обновляет башню на один кадр и стреляет по цели, если готова."""
+        self.current_target = None
         if self.is_landing:
             self._advance_landing(delta_time, enemies)
             return None
@@ -102,6 +121,7 @@ class DefenseModule(Entity, ABC):
             return None
 
         target = self.find_target(enemies)
+        self.current_target = target
         if target:
             self._face_towards(target.position)
 
@@ -155,7 +175,7 @@ class DefenseModule(Entity, ABC):
         врага, с модулем - по правилу конкретного модуля (см. AI_MODULE_KEYS)."""
         valid_targets = [
             e for e in enemies
-            if self.position.distance_to(e.position) <= self.range_radius
+            if e.is_alive() and self.position.distance_to(e.position) <= self.range_radius
         ]
         if not valid_targets:
             return None

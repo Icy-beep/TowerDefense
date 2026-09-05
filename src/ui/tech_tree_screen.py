@@ -1,9 +1,3 @@
-"""Дерево технологий башен: выбор типа башни сверху, три покупаемые за scrap ветки
-(радиус/урон/скорострельность) по центру. Апгрейд ветки действует на ВЕСЬ ТИП
-башни сразу (все текущие и будущие), а не на одну конкретную постройку - см.
-src/systems/tech_tree.py, GameSession.upgrade_tech_branch. Отдельная система от
-ИИ-модулей, которые достаются случайным дропом (DefenseModule.AI_MODULE_KEYS,
-GameSession.ai_module_stock)."""
 import pygame
 
 from src.localization.loc import loc

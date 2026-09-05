@@ -1,4 +1,3 @@
-"""Загрузка и проигрывание фоновой музыки (OST) из assets/music/."""
 import os
 import random
 import sys
@@ -8,9 +7,7 @@ import pygame
 
 
 def _default_music_root() -> str:
-    """Путь к папке музыки: внутри временной распаковки PyInstaller (_MEIPASS)
-    при сборке в .exe, иначе в корне проекта при запуске из исходников (тот же
-    принцип, что и у ConfigLoader/Loc - см. src/config/config_loader.py)."""
+    """Путь к папке музыки"""
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         base = Path(sys._MEIPASS)
     else:
@@ -44,10 +41,7 @@ def discover_music_files(music_root: str) -> dict[str, list[str]]:
 
 
 class MusicManager:
-    """Проигрывает фоновую музыку по категориям (menu/gameplay) через pygame.mixer.music.
-
-    В отличие от SoundManager, треки не грузятся целиком в память — pygame.mixer.music
-    стримит файл с диска, что подходит для длинных OST-композиций."""
+    """Проигрывает фоновую музыку по категориям (menu/gameplay) через pygame.mixer.music"""
 
     FADE_IN_MS = 800
 
@@ -70,10 +64,7 @@ class MusicManager:
             self.enabled = False
 
     def play_category(self, category: str, loop: bool = True):
-        """Переключает музыку на случайный трек категории с фейд-ином; повторный вызов той же
-        категории ничего не делает, чтобы не перезапускать уже играющий трек. loop=True (по
-        умолчанию) - категория играет как плейлист (см. update): когда трек доигрывает,
-        запускается следующий случайный трек той же категории, а не тишина."""
+        """Переключает музыку на случайный трек категории с фейд-ином"""
         if not self.enabled or category == self.current_category:
             return
         tracks = self._tracks.get(category)
@@ -85,10 +76,7 @@ class MusicManager:
         self._loop_playlist = loop
 
     def update(self, delta_time: float):
-        """Раз в кадр проверяет, не доиграл ли текущий трек. play_category запускает ровно
-        один трек (без pygame loops=-1 на весь геймплей одной и той же композицией) - здесь
-        подхватывается его окончание и, если категория в режиме плейлиста, запускается
-        следующий случайный трек той же категории, по возможности не повторяя предыдущий."""
+        """Раз в кадр проверяет, не доиграл ли текущий трек"""
         if not self.enabled or self.current_category is None or not self._loop_playlist:
             return
         if pygame.mixer.music.get_busy():
@@ -99,15 +87,12 @@ class MusicManager:
         self._start_track(self._pick_track(tracks, avoid=self._current_track))
 
     def _pick_track(self, tracks: list[str], avoid: str | None = None) -> str:
-        """Выбирает случайный трек из списка, по возможности не совпадающий с avoid -
-        чтобы плейлист не проигрывал одну и ту же композицию два раза подряд, когда в
-        категории есть другие варианты."""
+        """Выбирает случайный трек из списка"""
         choices = [t for t in tracks if t != avoid] if avoid is not None and len(tracks) > 1 else tracks
         return self._rng.choice(choices or tracks)
 
     def _start_track(self, track: str) -> bool:
-        """Загружает и запускает трек с фейд-ином. Возвращает False, не трогая состояние
-        менеджера, если pygame не смог загрузить файл (например, он битый)."""
+        """Загружает и запускает трек с фейд-ином"""
         try:
             pygame.mixer.music.load(track)
             pygame.mixer.music.play(loops=0, fade_ms=self.FADE_IN_MS)
@@ -117,7 +102,7 @@ class MusicManager:
         return True
 
     def stop(self):
-        """Останавливает музыку с плавным затуханием."""
+        """Останавливает музыку с плавным затуханием"""
         if not self.enabled or self.current_category is None:
             return
         pygame.mixer.music.fadeout(self.FADE_IN_MS)
@@ -125,11 +110,11 @@ class MusicManager:
         self._current_track = None
 
     def set_volume(self, volume: float):
-        """Задаёт громкость музыки от 0.0 до 1.0."""
+        """Задаёт громкость музыки от 0.0 до 1.0"""
         self.volume = max(0.0, min(1.0, volume))
         if self.enabled:
             pygame.mixer.music.set_volume(self.volume)
 
     def has_tracks_for(self, category: str) -> bool:
-        """Проверяет, есть ли треки для данной категории."""
+        """Проверяет, есть ли треки для данной категории"""
         return bool(self._tracks.get(category))

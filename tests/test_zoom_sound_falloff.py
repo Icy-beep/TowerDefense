@@ -29,6 +29,8 @@ def _fake_view(zoom=1.0, min_zoom=0.1):
     _handle_game_event - без реального pygame.init()/загрузки ассетов."""
     calls = []
     view = types.SimpleNamespace()
+    view.session = types.SimpleNamespace(elapsed_time=0.0)
+    view.hud_renderer = types.SimpleNamespace(handle_event=lambda *args, **kwargs: None)
     view.controller = types.SimpleNamespace(camera=_FakeCamera(zoom=zoom, min_zoom=min_zoom))
     view.camera = view.controller.camera
     view.sound_manager = types.SimpleNamespace(

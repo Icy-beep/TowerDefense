@@ -1,12 +1,11 @@
-"""HUD-панели поверх игрового поля: единый RTS-стиль - панель ресурсов сверху,
-командная панель (выбор/постройки/подсказки) снизу (см. обсуждение с пользователем:
-раньше HUD был чисто текстовым, без кликабельных иконок построек)."""
 import logging
 
 import pygame
 
+from src.entities.defense_module import DefenseModule
 from src.enums import ArmorType, Faction
 from src.localization.loc import loc
+from src.ui.tactical_overlay import TacticalOverlay, wrapped_lines
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +32,7 @@ FACTION_LABEL_KEYS = {
 
 
 class HudRenderer:
-    """Рисует HUD-панели поверх игрового поля."""
-
-    # Общая палитра - одна и та же для всех панелей, чтобы HUD выглядел как единый
-    # набор, а не набор случайно раскрашенных прямоугольников.
+    """Рисует HUD-панели поверх игрового поля"""
     PANEL_BG = (18, 22, 30, 210)
     BORDER_COLOR = (90, 140, 190)
     BORDER_WIDTH = 2
@@ -52,10 +48,12 @@ class HudRenderer:
 
     TOGGLE_BUTTON_SIZE = 40
     TOGGLE_BUTTON_GAP = 8
-    # (ключ состояния, хоткей) - порядок и есть порядок отрисовки слева направо.
     TOGGLE_BUTTONS = [("power_radii", "G"), ("tower_ranges", "T")]
 
     TECH_TREE_HOTKEY = "K"
+
+    AI_MODULE_BUTTON_HEIGHT = 20
+    AI_MODULE_BUTTON_GAP = 6
 
     HELP_BUTTON_SIZE = 28
     HELP_POPUP_WIDTH = 380
@@ -63,41 +61,41 @@ class HudRenderer:
     HELP_POPUP_PADDING = 10
 
     def __init__(self, sprite_manager=None):
-        """Запоминает SpriteManager; без него (или без спрайта под ключ) иконки
-        построек рисуются цветными плашками вместо картинки."""
+        """Запоминает SpriteManager"""
         self.sprite_manager = sprite_manager
-        # Раньше подсказки по управлению висели статичным текстом в правом нижнем
-        # углу и при добавлении новой строки (см. hud.controls_ranges) стали вылезать
-        # за пределы экрана - теперь это всплывающая панель по кнопке "?" (см.
-        # запрос пользователя), состояние открытия - чисто UI, к сессии не относится.
         self.show_help = False
+        self.tactical_overlay = TacticalOverlay()
+
+    def clear_notifications(self):
+        self.tactical_overlay.clear()
+
+    def handle_event(self, event, now, **data):
+        self.tactical_overlay.handle_event(event, now, **data)
 
     def _sprite_for(self, key, elapsed_time=0.0):
-        """Возвращает статичный (первый) кадр спрайта для ключа, или None, если
-        спрайтов нет/не подключены - иконкам не нужна анимация/поворот."""
+        """Возвращает статичный (первый) кадр спрайта"""
         if not self.sprite_manager:
             return None
         return self.sprite_manager.get_frame(key, elapsed_time)
 
     def render(self, screen, camera, session, controller, tower_options, width, height, font, small_font,
                tech_tree_open=False):
-        """Рисует все панели HUD."""
+        """Рисует все панели HUD"""
         state = controller.get_game_state()
 
         self._draw_top_bar(screen, state, font, width)
-        self._draw_toggle_buttons(screen, state, width, small_font)
-        self._draw_tech_tree_button(screen, width, small_font, tech_tree_open)
+        if not getattr(controller, "operator_mode", False):
+            self._draw_toggle_buttons(screen, state, width, small_font)
+            self._draw_tech_tree_button(screen, width, small_font, tech_tree_open)
         self._draw_missions_panel(screen, session, small_font, width)
-        self._draw_bottom_bar(screen, state, controller, tower_options, camera, small_font, width, height)
+        if not getattr(controller, "operator_mode", False):
+            self._draw_bottom_bar(screen, state, controller, tower_options, camera, small_font, width, height)
+        self.tactical_overlay.render(screen, camera, session, controller, tower_options,
+                                     self, small_font, width, height)
 
-    # ------------------------------------------------------------------
-    # Верхняя панель: ресурсы, здоровье базы, таймер/бесконечный режим
-    # ------------------------------------------------------------------
 
     def _draw_top_bar(self, screen, state, font, width):
-        """Рисует полосу ресурсов во всю ширину экрана: деньги и здоровье базы
-        слева, таймер выживания (или ничего - в бесконечном режиме нет таймера,
-        см. GameSession.setup_game) справа."""
+        """Рисует полосу ресурсов во всю ширину экрана"""
         surf = pygame.Surface((width, self.TOP_BAR_HEIGHT), pygame.SRCALPHA)
         surf.fill(self.PANEL_BG)
         screen.blit(surf, (0, 0))
@@ -139,14 +137,14 @@ class HudRenderer:
         self._draw_clock_icon(screen, px - 24, cy)
 
     def _draw_label(self, screen, font, text, x, cy, color):
-        """Рисует строку с вертикальным центрированием по cy, возвращает x после текста."""
+        """Рисует строку с вертикальным центрированием"""
         surf = font.render(text, True, color)
         rect = surf.get_rect(midleft=(x, cy))
         screen.blit(surf, rect)
         return rect.right
 
     def _draw_mini_bar(self, screen, x, cy, w, h, ratio):
-        """Рисует небольшую полоску прогресса (для здоровья базы в верхней панели)."""
+        """Рисует небольшую полоску прогресса"""
         y = cy - h // 2
         pygame.draw.rect(screen, (50, 50, 55), (x, y, w, h))
         fill_color = (0, 220, 0) if ratio > 0.5 else (220, 60, 60)
@@ -154,14 +152,14 @@ class HudRenderer:
         pygame.draw.rect(screen, (10, 10, 12), (x, y, w, h), 1)
 
     def _draw_coin_icon(self, screen, x, cy):
-        """Рисует иконку-монету (кредиты). Возвращает x после иконки."""
+        """Рисует иконку-монету (кредиты)"""
         r = 10
         pygame.draw.circle(screen, (255, 215, 0), (x + r, cy), r)
         pygame.draw.circle(screen, (150, 110, 0), (x + r, cy), r, 2)
         return x + r * 2
 
     def _draw_heart_icon(self, screen, x, cy):
-        """Рисует иконку-крест (здоровье базы). Возвращает x после иконки."""
+        """Рисует иконку-крест (здоровье базы)"""
         size = 20
         rect = pygame.Rect(x, cy - size // 2, size, size)
         pygame.draw.rect(screen, (120, 30, 30), rect)
@@ -172,7 +170,7 @@ class HudRenderer:
         return x + size
 
     def _draw_clock_icon(self, screen, x, cy):
-        """Рисует иконку-часы (таймер выживания)."""
+        """Рисует иконку-часы"""
         r = 9
         pygame.draw.circle(screen, (40, 45, 55), (x + r, cy), r)
         pygame.draw.circle(screen, (150, 190, 220), (x + r, cy), r, 2)
@@ -188,9 +186,7 @@ class HudRenderer:
     # ------------------------------------------------------------------
 
     def _layout_toggle_buttons(self, width):
-        """Считает прямоугольники кнопок-переключателей - используется и при
-        отрисовке, и при обработке клика (handle_toggle_click), чтобы раскладка
-        совпадала (тот же приём, что и в _layout_build_panel)."""
+        """Считает прямоугольники кнопок-переключателей"""
         n = len(self.TOGGLE_BUTTONS)
         total_w = n * self.TOGGLE_BUTTON_SIZE + (n - 1) * self.TOGGLE_BUTTON_GAP
         start_x = (width - total_w) // 2
@@ -205,17 +201,14 @@ class HudRenderer:
         return slots
 
     def handle_toggle_click(self, pos, width) -> "str | None":
-        """Определяет, по какой кнопке-переключателю кликнули ('power_radii' /
-        'tower_ranges'), или None, если клик мимо. Раскладка та же, что и при
-        отрисовке (_layout_toggle_buttons)."""
+        """Определяет, по какой кнопке-переключателю кликнули"""
         for rect, key, _hotkey in self._layout_toggle_buttons(width):
             if rect.collidepoint(pos):
                 return key
         return None
 
     def _draw_toggle_buttons(self, screen, state, width, small_font):
-        """Рисует кнопки постоянного показа радиусов: золотая рамка и зеленоватый фон,
-        когда включено, иначе - обычный вид иконки построек."""
+        """Рисует кнопки постоянного показа радиусов"""
         active = {
             "power_radii": state.get("show_power_radii", False),
             "tower_ranges": state.get("show_tower_ranges", False),
@@ -238,9 +231,7 @@ class HudRenderer:
             screen.blit(badge, (rect.x + 3, rect.y + 1))
 
     def _layout_tech_tree_button(self, width):
-        """Прямоугольник кнопки дерева технологий - сразу справа от переключателей
-        радиусов в верхней панели. Используется и при отрисовке, и при обработке
-        клика (handle_tech_tree_click), чтобы раскладка совпадала."""
+        """Прямоугольник кнопки дерева технологий"""
         last_toggle_rect = self._layout_toggle_buttons(width)[-1][0]
         size = self.TOGGLE_BUTTON_SIZE
         y = (self.TOP_BAR_HEIGHT - size) // 2
@@ -248,12 +239,11 @@ class HudRenderer:
         return pygame.Rect(x, y, size, size)
 
     def handle_tech_tree_click(self, pos, width) -> bool:
-        """True, если клик пришёлся на кнопку дерева технологий (см.
-        GameView._handle_tech_tree_button_click)."""
+        """True, если клик пришёлся на кнопку дерева технологий"""
         return self._layout_tech_tree_button(width).collidepoint(pos)
 
     def _draw_tech_tree_button(self, screen, width, small_font, is_open):
-        """Рисует кнопку дерева технологий - золотая рамка, пока экран открыт."""
+        """Рисует кнопку дерева технологий - золотая рамка, пока экран открыт"""
         rect = self._layout_tech_tree_button(width)
         bg_color = (55, 75, 40) if is_open else (34, 38, 48)
         pygame.draw.rect(screen, bg_color, rect)
@@ -264,26 +254,23 @@ class HudRenderer:
         screen.blit(label, label.get_rect(center=rect.center))
 
     def _draw_power_toggle_icon(self, screen, rect):
-        """Иконка кнопки радиусов энергосети - молния."""
+        """Иконка кнопки радиусов энергосети - молния"""
         cx, cy = rect.center
         points = [(cx - 4, cy - 12), (cx + 4, cy - 2), (cx - 1, cy - 2),
                   (cx + 5, cy + 12), (cx - 5, cy + 2), (cx, cy + 2)]
         pygame.draw.polygon(screen, (255, 215, 0), points)
 
     def _draw_range_toggle_icon(self, screen, rect):
-        """Иконка кнопки радиусов атаки башен - прицел."""
+        """Иконка кнопки радиусов атаки башен - прицел"""
         cx, cy = rect.center
         r = 10
         pygame.draw.circle(screen, (220, 90, 90), (cx, cy), r, 2)
         pygame.draw.line(screen, (220, 90, 90), (cx - r - 3, cy), (cx + r + 3, cy), 2)
         pygame.draw.line(screen, (220, 90, 90), (cx, cy - r - 3), (cx, cy + r + 3), 2)
 
-    # ------------------------------------------------------------------
-    # Панель заданий (справа сверху, под верхней панелью ресурсов)
-    # ------------------------------------------------------------------
 
     def _draw_missions_panel(self, screen, session, small_font, width):
-        """Рисует панель заданий в правом верхнем углу, под панелью ресурсов."""
+        """Рисует панель заданий в правом верхнем углу, под панелью ресурсов"""
         objectives = getattr(session, "objectives", [])
         if not objectives:
             return
@@ -291,7 +278,18 @@ class HudRenderer:
         pad = 10
         line_height = 22
         w = 340
-        h = len(objectives) * line_height + 35
+        rows = []
+        for objective in objectives:
+            text = objective.describe(session)
+            color = (230, 230, 230)
+            if objective.completed:
+                text += f" — {loc.get('mission.status_completed')}"
+                color = (100, 255, 100)
+            elif objective.failed:
+                text += f" — {loc.get('mission.status_failed')}"
+                color = (255, 100, 100)
+            rows.extend((line, color) for line in wrapped_lines(text, small_font, w - 20))
+        h = len(rows) * line_height + 35
         surf = pygame.Surface((w, h), pygame.SRCALPHA)
         surf.fill(self.PANEL_BG)
         x = width - w - pad
@@ -302,26 +300,12 @@ class HudRenderer:
         screen.blit(small_font.render(loc.get("mission.title"), True, (200, 200, 255)),
                     (x + 10, y + 8))
 
-        for i, objective in enumerate(objectives):
-            text = objective.describe(session)
-            if objective.completed:
-                color = (100, 255, 100)
-                text += f" — {loc.get('mission.status_completed')}"
-            elif objective.failed:
-                color = (255, 100, 100)
-                text += f" — {loc.get('mission.status_failed')}"
-            else:
-                color = (230, 230, 230)
+        for i, (text, color) in enumerate(rows):
             screen.blit(small_font.render(text, True, color), (x + 10, y + 32 + i * line_height))
 
-    # ------------------------------------------------------------------
-    # Нижняя командная панель: инфо о выборе | иконки построек | подсказки
-    # ------------------------------------------------------------------
 
     def _draw_bottom_bar(self, screen, state, controller, tower_options, camera, small_font, width, height):
-        """Рисует единую нижнюю панель во всю ширину экрана, поделённую на три зоны:
-        слева - информация о текущем выборе, по центру - кликабельные иконки построек,
-        справа - подсказки по управлению."""
+        """Рисует единую нижнюю панель во всю ширину экрана"""
         bar_y = height - self.BOTTOM_BAR_HEIGHT
         surf = pygame.Surface((width, self.BOTTOM_BAR_HEIGHT), pygame.SRCALPHA)
         surf.fill(self.PANEL_BG)
@@ -340,8 +324,7 @@ class HudRenderer:
                                   width, height)
 
     def _layout_build_panel(self, tower_options, width, height):
-        """Считает прямоугольники иконок построек - используется и при отрисовке, и
-        при обработке клика (handle_build_click), чтобы раскладка совпадала."""
+        """Считает прямоугольники иконок построек"""
         n = len(tower_options)
         if n == 0:
             return []
@@ -358,17 +341,15 @@ class HudRenderer:
         return slots
 
     def handle_build_click(self, pos, tower_options, width, height) -> "str | None":
-        """Определяет, по какой иконке постройки кликнули - или None, если клик мимо
-        панели. Раскладка та же, что и при отрисовке (_layout_build_panel)."""
+        """Определяет, по какой иконке постройки кликнули None - если клик мимо
+        панели"""
         for rect, opt in self._layout_build_panel(tower_options, width, height):
             if rect.collidepoint(pos):
                 return opt["type"]
         return None
 
     def _draw_build_icons(self, screen, state, controller, slots, small_font):
-        """Рисует иконки построек: спрайт (если есть) или цветную плашку, значок
-        хоткея, цену (тусклую и красную, если не хватает денег) и золотую рамку
-        у текущего выбранного типа."""
+        """Рисует иконки построек"""
         credits = state.get('credits', 0)
         selected_type = state.get('selected_tower')
         tower_factory = getattr(controller.session, "tower_factory", None)
@@ -407,14 +388,14 @@ class HudRenderer:
                 screen.blit(cost_surf, crect)
 
     def _blit_icon_sprite(self, screen, sprite, rect):
-        """Масштабирует спрайт под размер иконки (с небольшим отступом от рамки)."""
+        """Масштабирует спрайт под размер иконки"""
         target = rect.inflate(-8, -8)
         scaled = pygame.transform.smoothscale(sprite, (target.width, target.height))
         screen.blit(scaled, target)
 
     @staticmethod
     def _hotkey_label(key) -> "str | None":
-        """Возвращает подпись хоткея для иконки постройки (например, "1" для K_1)."""
+        """Возвращает подпись хоткея для иконки постройки (например, "1" для K_1)"""
         if key is None:
             return None
         try:
@@ -424,7 +405,7 @@ class HudRenderer:
             return None
 
     def _build_selection_info(self, state, controller, tower_options):
-        """Собирает строки текста для панели выбора."""
+        """Собирает строки текста для панели выбора"""
         info_lines = []
         if state['selected_tower']:
             opt = next((o for o in tower_options if o["type"] == state['selected_tower']), None)
@@ -440,6 +421,11 @@ class HudRenderer:
                 info_lines.append(loc.get("hud.tower_stats", damage=int(mod.damage),
                                            range=int(mod.range_radius), speed=round(mod.attack_speed, 2)))
                 info_lines.append(loc.get("hud.tower_tech_hint"))
+                if mod.ai_module:
+                    full_name = loc.get(f"hud.ai_module_full_{mod.ai_module}")
+                    info_lines.append(loc.get("hud.ai_module_installed", name=full_name))
+                else:
+                    info_lines.append(loc.get("hud.ai_module_prompt"))
         elif controller.selected_enemy:
             enemy = controller.selected_enemy
             name_key = ENEMY_DISPLAY_KEYS.get(getattr(enemy, "type_name", None))
@@ -459,10 +445,14 @@ class HudRenderer:
         return info_lines
 
     def _draw_selection_zone(self, screen, state, controller, tower_options, small_font, x, y, right, h):
-        """Рисует информацию о текущем выборе в левой зоне нижней панели."""
+        """Рисует информацию о текущем выборе в левой зоне нижней панели"""
         info_lines = self._build_selection_info(state, controller, tower_options)
         line_height = 17
         for i, line in enumerate(info_lines):
+            if small_font.size(line)[0] > right - x:
+                while line and small_font.size(line + "…")[0] > right - x:
+                    line = line[:-1]
+                line += "…"
             col = self.TEXT_COLOR
             if "НЕТ" in line:
                 col = (255, 100, 100)
@@ -472,11 +462,61 @@ class HudRenderer:
                 col = self.HIGHLIGHT_COLOR
             screen.blit(small_font.render(line, True, col), (x, y + i * line_height))
 
+        self._draw_ai_module_buttons(screen, state, controller, small_font, x, y, right, h)
+
+    def _layout_ai_module_buttons(self, controller, x, y, right, h):
+        """Прямоугольники кнопок установки ИИ-модуля"""
+        if getattr(controller, "selected_tower_type", None) is not None:
+            return []
+        mod = controller.selected_module
+        if not mod or not getattr(mod, "IS_COMBAT_TOWER", True) or mod.ai_module is not None:
+            return []
+        keys = DefenseModule.AI_MODULE_KEYS
+        n = len(keys)
+        total_w = max(1, right - x)
+        btn_w = (total_w - (n - 1) * self.AI_MODULE_BUTTON_GAP) // n
+        row_y = y + h - self.AI_MODULE_BUTTON_HEIGHT
+
+        slots = []
+        bx = x
+        for key in keys:
+            rect = pygame.Rect(bx, row_y, btn_w, self.AI_MODULE_BUTTON_HEIGHT)
+            slots.append((rect, key))
+            bx += btn_w + self.AI_MODULE_BUTTON_GAP
+        return slots
+
+    def _draw_ai_module_buttons(self, screen, state, controller, small_font, x, y, right, h):
+        """Рисует кнопки установки ИИ-модуля"""
+        stock = state.get("ai_module_stock", {})
+        for rect, key in self._layout_ai_module_buttons(controller, x, y, right, h):
+            count = stock.get(key, 0)
+            available = count > 0
+            pygame.draw.rect(screen, (40, 60, 40) if available else (30, 30, 34), rect)
+            pygame.draw.rect(screen, self.BORDER_COLOR if available else self.DIM_TEXT_COLOR, rect, 1)
+            name = loc.get(f"hud.ai_module_short_{key}")
+            label = small_font.render(loc.get("hud.ai_module_button", name=name, count=count), True,
+                                       self.TEXT_COLOR if available else self.DIM_TEXT_COLOR)
+            if label.get_width() > rect.width - 6:
+                label = pygame.transform.smoothscale(label, (max(1, rect.width - 6), label.get_height()))
+            screen.blit(label, label.get_rect(center=rect.center))
+
+    def handle_ai_module_click(self, pos, controller, tower_options, width, height) -> "str | None":
+        """Определяет, по какой кнопке установки ИИ-модуля кликнули, или None, если
+        клик мимо"""
+        slots = self._layout_build_panel(tower_options, width, height)
+        build_left = slots[0][0].left if slots else width // 2
+        bar_y = height - self.BOTTOM_BAR_HEIGHT
+        zone_x, zone_y = 16, bar_y + 10
+        zone_right = build_left - 26
+        zone_h = self.BOTTOM_BAR_HEIGHT - 20
+
+        for rect, key in self._layout_ai_module_buttons(controller, zone_x, zone_y, zone_right, zone_h):
+            if rect.collidepoint(pos):
+                return key
+        return None
+
     def _draw_controls_zone(self, screen, camera, small_font, left, y, right, h, width, height):
-        """Рисует позицию камеры (живая информация) и кнопку '?' в правой зоне нижней
-        панели. Полный список подсказок по управлению раньше был статичным текстом
-        здесь же, но при добавлении новой строки стал вылезать за пределы экрана -
-        теперь это всплывающая панель по клику на кнопку (см. handle_help_click)."""
+        """Рисует позицию камеры (живая информация) и кнопку '?' в правой зоне нижней панели"""
         camera_text = loc.get("hud.camera_info", x=int(camera.x), y=int(camera.y), zoom=int(camera.zoom * 100))
         surf = small_font.render(camera_text, True, (180, 180, 180))
         rect = surf.get_rect(topright=(right, y))
@@ -487,7 +527,7 @@ class HudRenderer:
             self._draw_help_popup(screen, width, height, small_font)
 
     def _help_lines(self):
-        """Полный список строк подсказок по управлению для всплывающей панели."""
+        """Полный список строк подсказок по управлению для всплывающей панели"""
         return [
             loc.get("hud.controls_move"),
             loc.get("hud.controls_drag"),
@@ -500,22 +540,20 @@ class HudRenderer:
         ]
 
     def _layout_help_button(self, width, height):
-        """Прямоугольник кнопки '?' - нижний правый угол экрана. Используется и при
-        отрисовке, и при обработке клика (handle_help_click)."""
+        """Прямоугольник кнопки '?' - нижний правый угол экрана"""
         size = self.HELP_BUTTON_SIZE
         return pygame.Rect(width - 16 - size, height - 16 - size, size, size)
 
     def handle_help_click(self, pos, width, height) -> bool:
         """Переключает показ всплывающей подсказки по управлению, если клик пришёлся
-        на кнопку '?'. Возвращает True, если клик был обработан (нужно
-        GameView._handle_help_click, чтобы клик не долетал до карты под кнопкой)."""
+        на кнопку '?'. Возвращает True, если клик был обработан"""
         if self._layout_help_button(width, height).collidepoint(pos):
             self.show_help = not self.show_help
             return True
         return False
 
     def _draw_help_button(self, screen, width, height, small_font):
-        """Рисует саму кнопку '?': золотая рамка, пока подсказка открыта."""
+        """Рисует саму кнопку '?' золотая рамка пока подсказка открыта"""
         rect = self._layout_help_button(width, height)
         bg_color = (55, 75, 40) if self.show_help else (34, 38, 48)
         pygame.draw.rect(screen, bg_color, rect)
@@ -527,7 +565,7 @@ class HudRenderer:
 
     def _draw_help_popup(self, screen, width, height, small_font):
         """Рисует панель с подсказками по управлению над кнопкой '?' - растёт вверх от
-        кнопки, поэтому не может вылезти ни за низ, ни за правый край экрана."""
+        кнопки, поэтому не может вылезти ни за низ, ни за правый край экрана"""
         lines = self._help_lines()
         line_height = self.HELP_POPUP_LINE_HEIGHT
         pad = self.HELP_POPUP_PADDING

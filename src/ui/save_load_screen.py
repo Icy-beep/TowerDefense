@@ -1,7 +1,3 @@
-"""Экран сохранения/загрузки, открывается из меню паузы кнопками "Сохранить"
-("save") и "Загрузить" ("load"). Слоты приходят снаружи (GameView собирает их
-через SaveManager) - экран сам ничего не знает про диск, только рисует список и
-сообщает о клике."""
 import pygame
 
 from src.localization.loc import loc
@@ -15,11 +11,7 @@ BACK_BUTTON_HEIGHT = 50
 
 
 class SaveLoadScreen:
-    """Список слотов сохранения: в режиме "save" есть кнопка "Новое сохранение" и
-    клик по существующему слоту его перезаписывает; в режиме "load" клик по слоту
-    загружает его. Показывает не больше MAX_VISIBLE_SLOTS слотов (без прокрутки -
-    достаточно для курсового проекта, самые новые сохранения всегда видны, т.к.
-    список уже отсортирован по свежести вызывающей стороной)."""
+    """Список слотов сохранения"""
 
     def __init__(self):
         """Создаёт экран с пустой раскладкой (заполняется в _layout)."""
@@ -28,8 +20,7 @@ class SaveLoadScreen:
         self._back_rect = (0, 0, 0, 0)
 
     def _layout(self, width, height, mode, slots):
-        """Рассчитывает положение кнопки "Новое сохранение" (только в режиме save),
-        строк слотов и кнопки "Назад" под размер окна и число слотов."""
+        """Рассчитывает положение кнопки "Новое сохранение"."""
         cx = width // 2
         rows = list(slots[:MAX_VISIBLE_SLOTS])
         n_extra = 1 if mode == "save" else 0
@@ -54,7 +45,7 @@ class SaveLoadScreen:
         self._back_rect = (cx - BACK_BUTTON_WIDTH // 2, y, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT)
 
     def render(self, screen, width, height, font, small_font, title_font, mode, slots):
-        """Рисует полупрозрачную подложку, заголовок, список слотов и кнопку "Назад"."""
+        """Рисует полупрозрачную подложку, заголовок, список слотов и кнопку назад"""
         self._layout(width, height, mode, slots)
 
         overlay = pygame.Surface((width, height), pygame.SRCALPHA)
@@ -110,8 +101,7 @@ class SaveLoadScreen:
         screen.blit(label, (x + (w - lw) // 2, y + (h - lh) // 2))
 
     def handle_click(self, pos, width, height, mode, slots) -> "tuple | None":
-        """Определяет действие по клику: ("back", None), ("new_save", None) (только
-        save), ("save_slot", slot_id) или ("load_slot", slot_id)."""
+        """Определяет действие по клику"""
         self._layout(width, height, mode, slots)
 
         if self._point_in(pos, self._back_rect):
@@ -125,7 +115,7 @@ class SaveLoadScreen:
 
     @staticmethod
     def _point_in(pos, rect) -> bool:
-        """Проверяет, попадает ли точка в прямоугольник."""
+        """Проверяет, попадает ли точка в прямоугольник"""
         px, py = pos
         x, y, w, h = rect
         return x <= px <= x + w and y <= py <= y + h

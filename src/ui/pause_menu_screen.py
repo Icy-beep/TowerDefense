@@ -1,4 +1,3 @@
-"""Внутриигровое меню паузы, открывается по ESC во время игры."""
 import pygame
 
 from src.localization.loc import loc
@@ -17,8 +16,8 @@ BUTTON_LABEL_KEYS = {
 }
 BUTTON_COLORS = {
     "resume": (60, 160, 90),
-    "save": (70, 70, 80),
-    "load": (70, 70, 80),
+    "save": (110, 70, 150),
+    "load": (110, 70, 150),
     "settings": (60, 100, 150),
     "main_menu": (170, 120, 40),
     "exit": (160, 60, 60),

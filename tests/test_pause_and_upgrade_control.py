@@ -156,3 +156,41 @@ def test_install_ai_module_fails_when_nothing_selected(controller):
     controller.selected_module = None
     controller.session.ai_module_stock["finish_wounded"] = 1
     assert controller.install_ai_module("finish_wounded") is False
+
+
+@pytest.mark.parametrize("removed", [False, True])
+def test_install_ai_module_rejects_destroyed_or_removed_tower(controller, removed):
+    module = _place_and_select(controller)
+    controller.session.ai_module_stock["finish_wounded"] = 1
+    if removed:
+        controller.session.map.modules.remove(module)
+    else:
+        module.health = 0
+
+    assert controller.install_ai_module("finish_wounded") is False
+    assert controller.session.ai_module_stock["finish_wounded"] == 1
+    assert module.ai_module is None
+    assert controller.selected_module is None
+
+
+@pytest.mark.parametrize("removed", [False, True])
+def test_update_clears_destroyed_or_removed_tower_selection(controller, removed):
+    module = _place_and_select(controller)
+    if removed:
+        controller.session.map.modules.remove(module)
+    else:
+        module.health = 0
+
+    controller.update(0.016)
+
+    assert controller.selected_module is None
+
+
+def test_install_ai_module_rejects_previous_tower_while_building(controller):
+    module = _place_and_select(controller)
+    controller.session.ai_module_stock["finish_wounded"] = 1
+    controller.select_tower("mortar")
+
+    assert controller.install_ai_module("finish_wounded") is False
+    assert controller.session.ai_module_stock["finish_wounded"] == 1
+    assert module.ai_module is None

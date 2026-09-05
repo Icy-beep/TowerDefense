@@ -1,4 +1,3 @@
-"""Загрузка и проигрывание звуков из assets/sounds/."""
 import array
 import os
 import random
@@ -12,9 +11,7 @@ from src.systems.pitch_shift import resample_pitch
 
 
 def _default_sounds_root() -> str:
-    """Путь к папке звуков: внутри временной распаковки PyInstaller (_MEIPASS)
-    при сборке в .exe, иначе в корне проекта при запуске из исходников (тот же
-    принцип, что и у ConfigLoader/Loc - см. src/config/config_loader.py)."""
+    """Путь к папке звуков"""
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         base = Path(sys._MEIPASS)
     else:
@@ -30,9 +27,7 @@ RARE_FILE_WEIGHT = 0.1
 
 
 def discover_sound_files(sounds_root: str) -> dict[str, list[tuple[str, float]]]:
-    """Сканирует sounds_root и возвращает {имя_события: [(путь, вес), ...]}.
-
-    Файлы из подпапки rare/ получают заниженный вес — редкие вариации звука."""
+    """Сканирует sounds_root и возвращает {имя_события: [(путь, вес), ...]}"""
     result: dict[str, list[tuple[str, float]]] = {}
     if not os.path.isdir(sounds_root):
         return result
@@ -72,11 +67,7 @@ class SoundManager:
     def __init__(self, sounds_root: str = DEFAULT_SOUNDS_ROOT, volume: float = 0.45,
                  rng: random.Random | None = None,
                  on_progress: Callable[[int, int], None] | None = None):
-        """Загружает все звуки, найденные в sounds_root, по подпапкам-событиям.
-
-        on_progress(done, total), если задан, вызывается после каждого обработанного файла —
-        расчёт вариаций питча небыстрый (доли секунды на файл), и без периодических пауз на
-        откачку событий ОС считает окно игры зависшим на время всей загрузки."""
+        """Загружает все звуки, найденные в sounds_root, по подпапкам-событиям"""
         self._rng = rng or random
         self.volume = volume
         self.enabled = True
@@ -114,8 +105,7 @@ class SoundManager:
                 self._weights[event_name] = loaded_weights
 
     def _build_pitch_variants(self, sound: "pygame.mixer.Sound") -> list["pygame.mixer.Sound"]:
-        """Один раз при загрузке считает несколько готовых вариаций питча звука, чтобы
-        play() не занимался ресемплингом на лету (это и вызывало статтер при частых звуках)."""
+        """Один раз при загрузке считает несколько готовых вариаций питча звука"""
         variants = [sound]
         init = pygame.mixer.get_init()
         if not init or abs(init[1]) != 16:
@@ -139,7 +129,7 @@ class SoundManager:
         return variants
 
     def update(self, delta_time: float):
-        """Уменьшает таймеры кулдаунов звуковых событий на время кадра."""
+        """Уменьшает таймеры кулдаунов звуковых событий на время кадра"""
         for event_name in list(self._cooldowns):
             remaining = self._cooldowns[event_name] - delta_time
             if remaining <= 0.0:
@@ -148,7 +138,7 @@ class SoundManager:
                 self._cooldowns[event_name] = remaining
 
     def play(self, event_name: str, volume_multiplier: float = 1.0, cooldown: float = 0.0):
-        """Проигрывает случайный звук для события, если не идёт его кулдаун; варьирует питч и громкость."""
+        """Проигрывает случайный звук для события, если не идёт его кулдаун варьирует питч и громкость"""
         if not self.enabled or volume_multiplier <= 0.0:
             return
         file_variants = self._sounds.get(event_name)
@@ -164,9 +154,9 @@ class SoundManager:
         sound_to_play.play()
 
     def has_sounds_for(self, event_name: str) -> bool:
-        """Проверяет, загружены ли звуки для данного события."""
+        """Проверяет, загружены ли звуки для данного события"""
         return bool(self._sounds.get(event_name))
 
     def set_volume(self, volume: float):
-        """Задаёт громкость воспроизведения от 0.0 до 1.0."""
+        """Задаёт громкость воспроизведения от 0.0 до 1.0"""
         self.volume = max(0.0, min(1.0, volume))
